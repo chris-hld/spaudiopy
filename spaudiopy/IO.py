@@ -5,6 +5,7 @@
 
 import numpy as np
 from scipy.io import loadmat
+import h5py
 
 import matplotlib.pyplot as plt
 from matplotlib import cm, colors
@@ -49,9 +50,9 @@ def load_hrir(fs, filename=None, dummy=False):
     """
     if filename is None:
         if fs == 44100:
-            filename = './__cache_dir/HRTF_expanded.mat'
+            filename = './HRTF_default.mat'
         elif fs == 48000:
-            filename = './__cache_dir/HRTF_expanded48k.mat'
+            filename = './HRTF_default48k.mat'
         else:
             raise ValueError("No default hrirs. Run 'HRIRS_from_SH.py'.")
     mat = loadmat(filename)
@@ -128,3 +129,13 @@ def load_audio(*filenames):
     # Assert same sample rate for all channels
     assert all(x == loaded_fs[0] for x in loaded_fs)
     return sig.MultiSignal(*loaded_data, fs=fs)
+
+
+def load_SOFA_data(filename):
+    """Load .sofa file into python dictionary that contains the data in
+    numpy arrays."""
+    with h5py.File(filename, 'r') as f:
+        out_dict = {}
+        for key, value in f.items():
+            out_dict[key] = np.squeeze(value)
+    return out_dict
