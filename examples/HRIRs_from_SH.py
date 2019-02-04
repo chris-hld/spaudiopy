@@ -32,11 +32,8 @@ from scipy import signal as scysignal
 
 import soundfile as sf
 
-from spaudiopy import plots
-from spaudiopy import sph
-from spaudiopy import process
-from spaudiopy import utils
-from spaudiopy import grids
+from spaudiopy import plots, sph, process, utils, grids, IO
+
 
 # %% Setup
 N = 35  # modal order of grid
@@ -47,9 +44,19 @@ plt.figure()
 plt.scatter(azi, colat)
 
 # %% Load HRTF
-# TODO load from http://dx.doi.org/10.14279/depositonce-5718.2
-file = loadmat(
+try:
+    file = loadmat(
     './FABIAN_HRTF_DATABASE_V2/1 HRIRs/SphericalHarmonics/FABIAN_HRIR_measured_HATO_0.mat')
+except FileNotFoundError:
+    import requests, zipfile, io
+    print("Downloading from http://dx.doi.org/10.14279/depositonce-5718.2...")
+    r = requests.get('https://depositonce.tu-berlin.de/bitstream/11303/6153.2/18/FABIAN_HRTF_DATABASE_V2.zip')
+    with zipfile.ZipFile(io.BytesIO(r.content)) as zip_ref:
+        zip_ref.extractall()
+    file = loadmat(
+    './FABIAN_HRTF_DATABASE_V2/1 HRIRs/SphericalHarmonics/FABIAN_HRIR_measured_HATO_0.mat')
+
+# Extracting the data is a bit ugly here...
 SamplingRate = int(file['SamplingRate'])
 SH_l = file['SH'][0][0][0]
 SH_r = file['SH'][0][0][1]
@@ -78,7 +85,7 @@ plots.fresp(f, [utils.dB(HRTF_l[plt_idx, :]),
 # The inverse spherical harmonics transform renders from the spherical harmonics representation to the defined grid.
 # Since the original input to the SHT are HRTFs we obtain again the time-frequency transfer functions.
 #
-# Now, from time-frequency domain to time domain HRIRs by the inverse time Fourier transform.
+# Now, from time-frequency domain to time domain HRIRs by the inverse Fourier transform.
 
 # %%
 hrir_l = np.fft.irfft(HRTF_l)  # creates 256 samples(t)
@@ -95,17 +102,21 @@ plt.xlabel('t in samples')
 plt.ylabel('A in dB')
 plt.title('HRIR ETC')
 
-# %% Headphone compensation
-h_headphone, h_samplerate = sf.read(
-    '/home/chris/Audio/HRTFs/FABIAN_CTF_inverted_smoothed.wav')
+# %% Headphone compensation / applying inverse common transfer function
+sofa_data = IO.load_SOFA_data('./FABIAN_HRTF_DATABASE_V2/1 HRIRs/SOFA/FABIAN_CTF_measured_inverted_smoothed.sofa')
+h_headphone = sofa_data['Data.IR']
+h_samplerate = sofa_data['Data.SamplingRate']
+
 assert SamplingRate == h_samplerate
 plots.fresp(np.fft.rfftfreq(len(h_headphone), 1 / h_samplerate),
             utils.dB(np.fft.rfft(h_headphone, axis=0)),
             labels=['HP Filter'], title='Headphone compensation')
 
-hrir_l_hp = np.apply_along_axis(lambda m: scysignal.convolve(m, h_headphone),
+hrir_l_hp = np.apply_along_axis(lambda m:
+                                scysignal.convolve(m, h_headphone),
                                 axis=1, arr=hrir_l)
-hrir_r_hp = np.apply_along_axis(lambda m: scysignal.convolve(m, h_headphone),
+hrir_r_hp = np.apply_along_axis(lambda m:
+                                scysignal.convolve(m, h_headphone),
                                 axis=1, arr=hrir_r)
 
 print("Compensated HRIR:", hrir_l_hp.shape)
@@ -118,9 +129,9 @@ plots.fresp(freq, [utils.dB(np.fft.rfft(hrir_l_hp[plt_idx, :])),
 
 # %% Resample to 48k
 fs_target = 48000
-hrir_l_hp48k, hrir_r_hp48k, _, _ = process.resample_HRIRs(hrir_l_hp, hrir_r_hp,
-                                                          SamplingRate,
-                                                          fs_target)
+hrir_l_hp48k, hrir_r_hp48k, _ = process.resample_HRIRs(hrir_l_hp, hrir_r_hp,
+                                                       SamplingRate,
+                                                       fs_target)
 print("Resampled HRIR:", hrir_l_hp48k.shape)
 freq = np.fft.rfftfreq(hrir_l_hp48k.shape[1], d=1. / SamplingRate)
 plots.fresp(freq, [utils.dB(np.fft.rfft(hrir_l_hp48k[plt_idx, :])),
@@ -129,14 +140,14 @@ plots.fresp(freq, [utils.dB(np.fft.rfft(hrir_l_hp48k[plt_idx, :])),
             title='Resampled HRTF')
 
 # %% Save to .mat
-savemat('./__cache_dir/HRTF_expanded', {'hrir_l': hrir_l_hp,
-                                        'hrir_r': hrir_r_hp,
-                                        'azi': azi, 'elev': colat,
-                                        'SamplingRate': SamplingRate})
-savemat('./__cache_dir/HRTF_expanded48k', {'hrir_l': hrir_l_hp48k,
-                                           'hrir_r': hrir_r_hp48k,
-                                           'azi': azi, 'elev': colat,
-                                           'SamplingRate': fs_target})
+savemat('HRTF_default', {'hrir_l': hrir_l_hp,
+                         'hrir_r': hrir_r_hp,
+                         'azi': azi, 'elev': colat,
+                         'SamplingRate': SamplingRate})
+savemat('HRTF_default48k', {'hrir_l': hrir_l_hp48k,
+                            'hrir_r': hrir_r_hp48k,
+                            'azi': azi, 'elev': colat,
+                            'SamplingRate': fs_target})
 
 # %%
 plt.show()
