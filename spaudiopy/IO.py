@@ -3,19 +3,14 @@
 @author: chris
 """
 
+import os
+
 import numpy as np
+import pandas as pd
 from scipy.io import loadmat
 import h5py
 
-import matplotlib.pyplot as plt
-from matplotlib import cm, colors
-from mpl_toolkits.mplot3d import Axes3D  # for (projection='3d')
-
-from plotly import offline as pltlyof
-import plotly.graph_objs as pltlygo
-
 import soundfile as sf
-import pandas as pd
 
 from . import utils
 from . import sig
@@ -50,11 +45,14 @@ def load_hrir(fs, filename=None, dummy=False):
     """
     if filename is None:
         if fs == 44100:
-            filename = './HRTF_default.mat'
+            default_file = '../data/HRTF_default.mat'
         elif fs == 48000:
-            filename = './HRTF_default48k.mat'
+            default_file = '../data/HRTF_default48k.mat'
         else:
-            raise ValueError("No default hrirs. Run 'HRIRS_from_SH.py'.")
+            raise ValueError("No default hrirs.")
+        current_file_dir = os.path.dirname(__file__)
+        filename = os.path.join(current_file_dir, default_file)
+
     mat = loadmat(filename)
     hrir_l = np.array(np.squeeze(mat['hrir_l']), dtype=float)
     hrir_r = np.array(np.squeeze(mat['hrir_r']), dtype=float)

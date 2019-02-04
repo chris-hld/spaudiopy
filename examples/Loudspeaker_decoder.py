@@ -34,7 +34,7 @@ from spaudiopy import utils, IO, sig, decoder, sph, plots, grids
 # %% User setup
 setupname = "graz"
 NONUNIFORM = False
-LISTEN = False
+LISTEN = True
 
 if setupname is "aalto_full":
     ls_dirs = np.array([[-18, -54, -90, -126, -162, -198, -234, -270, -306,
@@ -89,6 +89,7 @@ plots.hull_normals(ls_setup)
 
 # Test source location
 src = np.array([1, .6, .2])
+src_azi, src_colat, _ = utils.cart2sph(*src.tolist())
 
 # %% VBAP
 gains_VBAP = decoder.vbap(src, ls_setup)
@@ -117,27 +118,12 @@ plots.decoder_performance(ls_setup, 'ALLRAP')
 
 # %% Binauralize
 fs = 44100
-s_in = sig.MonoSignal.from_file('../data/piano1.wav', fs)
-s_in.trim(0, 3)
 hrirs = IO.load_hrir(fs)
 
 l_vbap_IR, r_vbap_IR = ls_setup.binauralize(gains_VBAP, fs)
-s_out_vbap = sig.MultiSignal([s_in.filter(l_vbap_IR),
-                              s_in.filter(r_vbap_IR)],
-                             fs=fs)
 
 l_allrap_IR, r_allrap_IR = ls_setup.binauralize(gains_ALLRAP, fs)
-s_out_allrap = sig.MultiSignal([s_in.filter(l_allrap_IR),
-                                s_in.filter(r_allrap_IR)],
-                               fs=fs)
 
-src_azi, src_colat, _ = utils.cart2sph(*src.tolist())
-s_out_hrir = sig.MultiSignal([s_in.filter(hrirs.select_direction(src_azi,
-                                                                 src_colat)[0]),
-                              s_in.filter(
-                                  hrirs.select_direction(src_azi,
-                                                         src_colat)[1])],
-                             fs=fs)
 
 # %%
 fig = plt.figure()
@@ -160,6 +146,22 @@ plt.tight_layout()
 
 # Listen to some
 if LISTEN:
+    s_in = sig.MonoSignal.from_file('../data/piano_mono.flac', fs)
+    s_in.trim(2.6, 6)
+
+    s_out_vbap = sig.MultiSignal([s_in.filter(l_vbap_IR),
+                                  s_in.filter(r_vbap_IR)],
+                                 fs=fs)
+    s_out_allrap = sig.MultiSignal([s_in.filter(l_allrap_IR),
+                                    s_in.filter(r_allrap_IR)],
+                                   fs=fs)
+    s_out_hrir = sig.MultiSignal([s_in.filter(
+                                      hrirs.select_direction(src_azi,
+                                                             src_colat)[0]),
+                                  s_in.filter(
+                                      hrirs.select_direction(src_azi,
+                                                             src_colat)[1])],
+                                 fs=fs)
     print("input")
     sd.play(s_in.signal,
             int(s_in.fs))

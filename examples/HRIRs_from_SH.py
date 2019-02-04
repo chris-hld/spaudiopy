@@ -46,15 +46,15 @@ plt.scatter(azi, colat)
 # %% Load HRTF
 try:
     file = loadmat(
-    './FABIAN_HRTF_DATABASE_V2/1 HRIRs/SphericalHarmonics/FABIAN_HRIR_measured_HATO_0.mat')
+    '../data/FABIAN_HRTF_DATABASE_V2/1 HRIRs/SphericalHarmonics/FABIAN_HRIR_measured_HATO_0.mat')
 except FileNotFoundError:
     import requests, zipfile, io
     print("Downloading from http://dx.doi.org/10.14279/depositonce-5718.2...")
     r = requests.get('https://depositonce.tu-berlin.de/bitstream/11303/6153.2/18/FABIAN_HRTF_DATABASE_V2.zip')
     with zipfile.ZipFile(io.BytesIO(r.content)) as zip_ref:
-        zip_ref.extractall()
+        zip_ref.extractall('../data/')
     file = loadmat(
-    './FABIAN_HRTF_DATABASE_V2/1 HRIRs/SphericalHarmonics/FABIAN_HRIR_measured_HATO_0.mat')
+    '../data/FABIAN_HRTF_DATABASE_V2/1 HRIRs/SphericalHarmonics/FABIAN_HRIR_measured_HATO_0.mat')
 
 # Extracting the data is a bit ugly here...
 SamplingRate = int(file['SamplingRate'])
@@ -103,7 +103,7 @@ plt.ylabel('A in dB')
 plt.title('HRIR ETC')
 
 # %% Headphone compensation / applying inverse common transfer function
-sofa_data = IO.load_SOFA_data('./FABIAN_HRTF_DATABASE_V2/1 HRIRs/SOFA/FABIAN_CTF_measured_inverted_smoothed.sofa')
+sofa_data = IO.load_SOFA_data('../data//FABIAN_HRTF_DATABASE_V2/1 HRIRs/SOFA/FABIAN_CTF_measured_inverted_smoothed.sofa')
 h_headphone = sofa_data['Data.IR']
 h_samplerate = sofa_data['Data.SamplingRate']
 
@@ -140,14 +140,14 @@ plots.fresp(freq, [utils.dB(np.fft.rfft(hrir_l_hp48k[plt_idx, :])),
             title='Resampled HRTF')
 
 # %% Save to .mat
-savemat('HRTF_default', {'hrir_l': hrir_l_hp,
-                         'hrir_r': hrir_r_hp,
-                         'azi': azi, 'elev': colat,
-                         'SamplingRate': SamplingRate})
-savemat('HRTF_default48k', {'hrir_l': hrir_l_hp48k,
-                            'hrir_r': hrir_r_hp48k,
-                            'azi': azi, 'elev': colat,
-                            'SamplingRate': fs_target})
+savemat('../data/HRTF_default', {'hrir_l': hrir_l_hp,
+                                 'hrir_r': hrir_r_hp,
+                                 'azi': azi, 'elev': colat,
+                                 'SamplingRate': SamplingRate})
+savemat('../data/HRTF_default48k', {'hrir_l': hrir_l_hp48k,
+                                   'hrir_r': hrir_r_hp48k,
+                                   'azi': azi, 'elev': colat,
+                                   'SamplingRate': fs_target})
 
 # %%
 plt.show()
