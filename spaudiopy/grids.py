@@ -16,7 +16,24 @@ except ImportError:
 
 
 def load_t_design(degree):
-    """Return the coordinates of minimal T-designs."""
+    """Return the unit coordinates of minimal T-designs.
+    The designs have been copied from:
+        http://neilsloane.com/sphdesigns/
+    and should be referenced as:
+        "McLaren's Improved Snub Cube and Other New Spherical Designs in
+        Three Dimensions", R. H. Hardin and N. J. A. Sloane, Discrete and
+        Computational Geometry, 15 (1996), pp. 429-441.
+
+    Parameters
+    ----------
+    degree : int
+        T-design degree between 1 and 21.
+
+    Returns
+    -------
+    vecs : numpy.ndarray
+        Coordinates of points.
+    """
     if degree > 21:
         raise ValueError('Designs of order > 21 are not implemented.')
     elif degree < 1:
@@ -27,13 +44,32 @@ def load_t_design(degree):
     mat = loadmat(file_path)
     t_designs_obj = mat['t_designs']
     t_designs = t_designs_obj[0].tolist()
-    # degree t>=2N should be used for SH
+    # degree t>=2N should be used for SHT
     vecs = t_designs[degree - 1]
     return vecs
 
 
 def load_Fliege_Maier_nodes(grid_order):
-    """Return Fliege-Maier grid nodes with associated weights."""
+    """Return Fliege-Maier grid nodes with associated weights.
+    The designs have been copied from:
+        http://www.personal.soton.ac.uk/jf1w07/nodes/nodes.html
+    and should be referenced as:
+        "A two-stage approach for computing cubature formulae for the sphere.",
+        Jorg Fliege and Ulrike Maier, Mathematik 139T, Universitat Dortmund,
+        Fachbereich Mathematik, Universitat Dortmund, 44221. 1996.
+
+    Parameters
+    ----------
+    grid_order : int
+        Grid order between 2 and 30
+
+    Returns
+    -------
+    vecs : numpy.ndarray
+        Coordinates of points.
+    weights : array_like
+        Quadrature weights.
+    """
     if grid_order > 30:
         raise ValueError('Designs of order > 30 are not implemented.')
     elif grid_order < 2:
@@ -43,7 +79,7 @@ def load_Fliege_Maier_nodes(grid_order):
     file_path = os.path.join(current_file_dir, 'fliegeMaierNodes_1_30.mat')
     mat = loadmat(file_path)
     fliege_maier_nodes = np.squeeze(mat['fliegeNodes'])
-    # grid_order >= N+1 should be used for SH
+    # grid_order >= N+1 should be used for SHT
     vecs = fliege_maier_nodes[grid_order - 1][:, :-1]
     weights = fliege_maier_nodes[grid_order - 1][:, -1]
     return vecs, weights
