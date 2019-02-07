@@ -275,7 +275,7 @@ def Ambeo_A2B(Ambi_A, filter_coeffs=None):
     Ambi_B : sig.AmbiBSignal
         B-format output signal.
     """
-    _B = sph.tetra_to_B(Ambi_A.get_signals())
+    _B = sph.soundfield_to_B(Ambi_A.get_signals())
     Ambi_B = sig.AmbiBSignal(_B[0, :], _B[1, :], _B[2, :], _B[3, :],
                              fs=Ambi_A.fs)
     if filter_coeffs is not None:

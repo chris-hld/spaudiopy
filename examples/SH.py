@@ -66,7 +66,7 @@ Y_nm_r = sph.SH_matrix(N, azi, colat, 'real')
 # Look at some SHTs
 sig = np.array([1, 1, 1, 1])
 sig_t = np.c_[np.eye(4), np.eye(4)]  # second axis s(t)
-sig_B = sph.tetra_to_B(sig)
+sig_B = sph.soundfield_to_B(sig)
 F_nm = sph.SHT(sig, N, azi, colat, SH_type='real')
 F_nm_t = sph.SHT(sig_t, N, azi, colat, SH_type='real')
 
