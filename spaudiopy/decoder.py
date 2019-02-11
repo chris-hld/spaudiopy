@@ -96,7 +96,7 @@ class LoudspeakerSetup:
 
     def setup_for_ambisonic(self, N_kernel):
         self.characteristic_order = self.get_characteristic_order()
-        self.ambisonics_hull, self.kernel_hull = _ALLRAP_hulls(self, N_kernel)
+        self.ambisonics_hull, self.kernel_hull = _ambisonic_hulls(self, N_kernel)
 
     def show(self):
         plots.hull(self, title='Loudspeaker Setup')
@@ -343,7 +343,7 @@ def vbap(src, hull, valid_simplices=None):
     return gains
 
 
-def _ALLRAP_hulls(hull, N_kernel):
+def _ambisonic_hulls(hull, N_kernel):
     """Prepare loudspeaker hull for ambisonic rendering."""
     ls = hull.points
     imaginary_loudspeaker = find_imaginary_loudspeaker(hull)
@@ -376,8 +376,8 @@ def ALLRAP(src, hull, N=None):
 
     Returns
     -------
-    gains : (n, npoints)
-        Panning gains for npoint loudspeakers to render n sources.
+    gains : (n, L)
+        Panning gains for L loudspeakers to render n sources.
     """
     if hull.ambisonics_hull:
         ambisonics_hull = hull.ambisonics_hull
@@ -393,7 +393,8 @@ def ALLRAP(src, hull, N=None):
     src = np.atleast_2d(src)
     # TODO: listener position
     src_count = src.shape[0]
-    ls_count = ambisonics_hull.valid_simplices.max() + 1  # contains also imaginary loudspeakers
+    # includes imaginary loudspeakers
+    ls_count = ambisonics_hull.valid_simplices.max() + 1
 
     # virtual t-design loudspeakers
     J = len(kernel_hull.points)
@@ -412,6 +413,60 @@ def ALLRAP(src, hull, N=None):
     # remove imaginary loudspeakers
     gains = np.delete(gains, ambisonics_hull.imaginary_speaker, axis=1)
     return gains
+
+
+def ALLRAD(F_nm, hull, N=None):
+    """Loudspeaker gains for All-Round Ambisonic Panning.
+    Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
+    Journal of Audio Engineering Society, Sec. 4.
+
+    Parameters
+    ----------
+    F_nm : ((N+1)**2, S) numpy.ndarray
+        Matrix of spherical harmonics coefficients of spherical function(S).
+    hull : LoudspeakerSetup
+    N : int
+        Decoding order, defaults to hull.characteristic_order.
+
+    Returns
+    -------
+    ls_sig : (L, S)
+        Loudspeaker L output signal S.
+    """
+    if hull.ambisonics_hull:
+        ambisonics_hull = hull.ambisonics_hull
+    else:
+        raise ValueError('Run hull.setup_for_ambisonic() first!')
+    if hull.kernel_hull:
+        kernel_hull = hull.kernel_hull
+    else:
+        raise ValueError('Run hull.setup_for_ambisonic() first!')
+    if N is None:
+        N = hull.characteristic_order
+
+    # virtual t-design loudspeakers
+    J = len(kernel_hull.points)
+    # virtual speakers expressed as VBAP phantom sources
+    G = vbap(src=kernel_hull.points, hull=ambisonics_hull)
+
+    # SH tapering coefficients
+    a_n = sph.max_rE_weights(N)
+    a_n = sph.repeat_order_coeffs(a_n)
+
+    # virtual Ambisonic decoder
+    _t_azi, _t_colat, _t_r = utils.cart2sph(kernel_hull.points[:, 0],
+                                      kernel_hull.points[:, 1],
+                                      kernel_hull.points[:, 2])
+    Y_td = sph.SH_matrix(N, _t_azi, _t_colat, SH_type='real')
+    # ALLRAD Decoder
+    D = 4 * np.pi / J * G.T @ Y_td
+    # apply tapering to decoder matrix
+    D = D @ np.diag(a_n)
+    # loudspeaker output signals
+    ls_sig = D @ F_nm
+    # remove imaginary loudspeakers
+    ls_sig = np.delete(ls_sig, ambisonics_hull.imaginary_speaker, axis=0)
+    return ls_sig, D
 
 
 def characteristic_ambisonic_order(hull):

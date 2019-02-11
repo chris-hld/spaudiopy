@@ -102,7 +102,7 @@ ls_setup.setup_for_ambisonic(N_kernel=9)
 gains_ALLRAP = decoder.ALLRAP(src, ls_setup, N=N_e)
 
 # Show ALLRAP hulls
-ambisonics_hull, kernel_hull = decoder._ALLRAP_hulls(ls_setup, N_kernel=9)
+ambisonics_hull, kernel_hull = decoder._ambisonic_hulls(ls_setup, N_kernel=9)
 plots.hull(ambisonics_hull, title='Ambisonic hull')
 plots.hull(kernel_hull, title='Kernel hull')
 
