@@ -91,16 +91,16 @@ def SH_matrix(N, azi, colat, SH_type='complex', weights=None):
 
 
 def SHT(f, N, azi, colat, SH_type, weights=None, Y_nm=None):
-    """Spherical harmonic transform of f for appropriate point sets.
+    """Spherical harmonics transform of f for appropriate point sets.
 
-    If f is a QxM matrix then the transform is applied to each column
+    If f is a QxS matrix then the transform is applied to each column
     of f, and returns the coefficients at each column of F_nm
-    respectively
+    respectively.
 
     Parameters
     ----------
-    f : (Q, L)
-        The spherical function(L) evaluated at Q directions 'azi/colat'.
+    f : (Q, S)
+        The spherical function(S) evaluated at Q directions 'azi/colat'.
     N : int
         Maximum SH order.
     azi : (Q,) array_like
@@ -115,9 +115,8 @@ def SHT(f, N, azi, colat, SH_type, weights=None, Y_nm=None):
 
     Returns
     -------
-    F_nm : (Q, L) numpy.ndarray
-        Matrix of spherical harmonics coefficients at directions 'azi/colat'.
-
+    F_nm : ((N+1)**2, S) numpy.ndarray
+        Matrix of spherical harmonics coefficients of spherical function(S).
     """
     if Y_nm is None:
         Y_nm = SH_matrix(N, azi, colat, SH_type)
@@ -132,16 +131,16 @@ def SHT(f, N, azi, colat, SH_type, weights=None, Y_nm=None):
 
 
 def SHT_lstsq(f, N, azi, colat, SH_type, Y_nm=None):
-    """Spherical harmonic transform as least-squares solution.
+    """Spherical harmonics transform  of f as least-squares solution.
 
-    If f is a QxM matrix then the transform is applied to each column
+    If f is a QxS matrix then the transform is applied to each column
     of f, and returns the coefficients at each column of F_nm
-    respectively
+    respectively.
 
     Parameters
     ----------
-    f : (Q, L)
-        The spherical function(L) evaluated at Q directions 'azi/colat'.
+    f : (Q, S)
+        The spherical function(S) evaluated at Q directions 'azi/colat'.
     N : int
         Maximum SH order.
     azi : (Q,) array_like
@@ -154,8 +153,8 @@ def SHT_lstsq(f, N, azi, colat, SH_type, Y_nm=None):
 
     Returns
     -------
-    F_nm : (Q, L) numpy.ndarray
-        Matrix of spherical harmonics coefficients at directions 'azi/colat'.
+    F_nm : ((N+1)**2, S) numpy.ndarray
+        Matrix of spherical harmonics coefficients of spherical function(S).
     """
     if Y_nm is None:
         Y_nm = SH_matrix(N, azi, colat, SH_type)
@@ -163,12 +162,12 @@ def SHT_lstsq(f, N, azi, colat, SH_type, Y_nm=None):
 
 
 def inverseSHT(F_nm, azi, colat, SH_type, Y_nm=None):
-    """Perform the inverse spherical harmonic transform.
+    """Perform the inverse spherical harmonics transform.
 
     Parameters
     ----------
-    F_nm : (Q, L) numpy.ndarray
-        Spherical harmonics function coefficients at directions 'azi/colat'.
+    F_nm : ((N+1)**2, S) numpy.ndarray
+        Matrix of spherical harmonics coefficients of spherical function(S).
     N : int
         Maximum SH order.
     azi : (Q,) array_like
@@ -181,8 +180,8 @@ def inverseSHT(F_nm, azi, colat, SH_type, Y_nm=None):
 
     Returns
     ----------
-    f : (Q, L)
-        The spherical function(L) evaluated at Q directions 'azi/colat'.
+    f : (Q, S)
+        The spherical function(S) evaluated at Q directions 'azi/colat'.
     """
     if Y_nm is None:
         N = int(np.sqrt(F_nm.shape[0]) - 1)
@@ -354,3 +353,27 @@ def project_on_sphere(x, y, z):
     phi, theta, r = utils.cart2sph(x, y, z)
     r = np.ones_like(r)
     return utils.sph2cart(phi, theta, r)
+
+
+def repeat_order_coeffs(c):
+    """Repeat each coefficient in 'c' m times per spherical order n.
+
+    Parameters
+    ----------
+    c : (N,) array_like
+        Coefficients up to SH order N.
+
+    Returns
+    -------
+    c_reshaped : ((N+1)**2,) array like
+        Reshaped input coefficients.
+    """
+    c = utils.asarray_1d(c)
+    N = len(c) - 1
+    c_reshaped = np.zeros((N + 1) ** 2)
+    idx = 0
+    for n in range(N+1):
+        for m in range(-n, n+1):
+            c_reshaped[idx] = c[n]
+            idx += 1
+    return c_reshaped
