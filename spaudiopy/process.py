@@ -321,11 +321,11 @@ def lagrange_delay(N, delay):
     h : (N+1,) array_like
         FIR Filter.
     """
-    n = np.arange(N+1)
-    h = np.ones(N+1)
-    for k in range(N+1):
+    n = np.arange(N + 1)
+    h = np.ones(N + 1)
+    for k in range(N + 1):
         index = np.where(n != k)
-        h[index] = h[index] *  (delay-k) / (n[index]-k)
+        h[index] = h[index] * (delay - k) / (n[index] - k)
     return h
 
 
