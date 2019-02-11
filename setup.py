@@ -1,9 +1,9 @@
 import setuptools
 
 setuptools.setup(name='spaudiopy',
-                 version='0.1',
-                 description='Masters Thesis Chris Hold',
-                 url='http://github.com/nothing',
+                 version='0.1 alpha',
+                 description='Spatial Audio Python Package',
+                 url='https://github.com/chris-hld/spaudiopy',
                  author='Chris Hold',
                  author_email='Chris.Hold@mailbox.tu-berlin.de',
                  license='MIT',
