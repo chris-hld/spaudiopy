@@ -95,16 +95,24 @@ src_azi, src_colat, _ = utils.cart2sph(*src.tolist())
 gains_VBAP = decoder.vbap(src, ls_setup)
 
 
-# %% ALLRAD
+# %% Ambisonic decoding
 # Ambisonic setup
 N_e = ls_setup.get_characteristic_order()
 ls_setup.setup_for_ambisonic(N_kernel=9)
-gains_ALLRAP = decoder.ALLRAP(src, ls_setup, N=N_e)
 
 # Show ALLRAP hulls
 ambisonics_hull, kernel_hull = decoder._ambisonic_hulls(ls_setup, N_kernel=9)
 plots.hull(ambisonics_hull, title='Ambisonic hull')
 plots.hull(kernel_hull, title='Kernel hull')
+
+# ALLRAP
+gains_ALLRAP = decoder.ALLRAP(src, ls_setup, N=N_e)
+# ALLRAD
+input_F_nm = sph.SH_matrix(N_e, src_azi, src_colat, 'real').T  # SH dirac
+out_ALLRAD, D = decoder.ALLRAD(input_F_nm, ls_setup, N=N_e)
+
+print("ALLRAD and ALLRAP:")
+utils.test_diff(gains_ALLRAP, out_ALLRAD)
 
 
 # %% test multiple sources
