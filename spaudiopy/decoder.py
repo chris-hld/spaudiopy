@@ -319,8 +319,8 @@ def vbap(src, hull, valid_simplices=None):
 
     Returns
     -------
-    gains : (n, npoints)
-        Panning gains for npoint loudspeakers to render n sources.
+    gains : (n, L) numpy.ndarray
+        Panning gains for L loudspeakers to render n sources.
     """
     if valid_simplices is None:
         valid_simplices = hull.valid_simplices
@@ -376,7 +376,7 @@ def ALLRAP(src, hull, N=None):
 
     Returns
     -------
-    gains : (n, L)
+    gains : (n, L) numpy.ndarray
         Panning gains for L loudspeakers to render n sources.
     """
     if hull.ambisonics_hull:
@@ -418,7 +418,7 @@ def ALLRAP(src, hull, N=None):
 def ALLRAD(F_nm, hull, N=None):
     """Loudspeaker gains for All-Round Ambisonic Panning.
     Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
-    Journal of Audio Engineering Society, Sec. 4.
+    Journal of Audio Engineering Society, Sec. 6.
 
     Parameters
     ----------
@@ -430,7 +430,7 @@ def ALLRAD(F_nm, hull, N=None):
 
     Returns
     -------
-    ls_sig : (L, S)
+    ls_sig : (L, S) numpy.ndarray
         Loudspeaker L output signal S.
     """
     if hull.ambisonics_hull:
@@ -466,7 +466,7 @@ def ALLRAD(F_nm, hull, N=None):
     ls_sig = D @ F_nm
     # remove imaginary loudspeakers
     ls_sig = np.delete(ls_sig, ambisonics_hull.imaginary_speaker, axis=0)
-    return ls_sig, D
+    return ls_sig
 
 
 def characteristic_ambisonic_order(hull):
