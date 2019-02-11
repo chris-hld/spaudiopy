@@ -37,10 +37,12 @@ class MonoSignal:
         """Alternative constructor, load signal from filename."""
         sig, fs_file = sf.read(filename)
         if fs is not None:
-            assert fs == fs_file, "File: Found different fs."
+            if fs != fs_file:
+                raise ValueError("File: Found different fs.")
         else:
             fs = fs_file
-        assert sig.ndim == 1, "Signal must be mono."
+        if sig.ndim != 1:
+            raise ValueError("Signal must be mono. Try MultiSignal.")
         return cls(sig, fs)
 
     def trim(self, start, stop):
@@ -76,7 +78,18 @@ class MultiSignal(MonoSignal):
 
     def __len__(self):
         """Override len()."""
-        return len(self.channel[0].signal)
+        return len(self.channel[0])
+
+    @classmethod
+    def from_file(cls, filename, fs=None):
+        """Alternative constructor, load signal from filename."""
+        sig, fs_file = sf.read(filename)
+        if fs is not None:
+            if fs != fs_file:
+                raise ValueError("File: Found different fs.")
+        else:
+            fs = fs_file
+        return cls(*sig.T, fs=fs)
 
     def get_signals(self):
         """Return ndarray of signals, stacked along first dimension."""
@@ -110,6 +123,12 @@ class HRIRs:
         self.right = right
         self.grid = grid
         self.fs = fs
+        assert len(grid) == len(left)
+        self.grid_points = len(grid)
+
+    def __len__(self):
+        """Override len()."""
+        return self.left.shape[1]
 
     def select_direction(self, phi, theta):
         """Return HRIRs for given direction."""
