@@ -205,15 +205,15 @@ def SH_to_B(F_nm, W_weight=None):
 
     Parameters
     ----------
-    F_nm : (4, L) numpy.ndarray
+    F_nm : (4, S) numpy.ndarray
         First order spherical harmonics function coefficients.
     W-weight : float
         Weight on W channel.
 
     Returns
     -------
-    B_nm : (4, L) numpy.ndarray
-        B-format signal(L).
+    B_nm : (4, S) numpy.ndarray
+        B-format signal(S).
     """
     # B-format
     if W_weight is None:
@@ -232,15 +232,15 @@ def B_to_SH(B, W_weight=None):
 
     Parameters
     ----------
-    B_nm : (4, L) numpy.ndarray
-        B-format signal(L).
+    B_nm : (4, S) numpy.ndarray
+        B-format signal(S).
 
     W-weight : float
         Weight on W channel.
 
     Returns
     -------
-    F_nm : (4, L) numpy.ndarray
+    F_nm : (4, S) numpy.ndarray
         First order spherical harmonics function coefficients.
     """
     # B-format
@@ -261,15 +261,15 @@ def soundfield_to_B(sig, W_weight=None):
 
     Parameters
     ----------
-    sig : (4, L)
-        Tetraeder mic signals(L).
+    sig : (4, S)
+        Tetraeder mic signals(S).
     W-weight : float
         Weight on W channel.
 
     Returns
     -------
-    B_nm : (4, L) numpy.ndarray
-        B-format signal(L).
+    B_nm : (4, S) numpy.ndarray
+        B-format signal(S).
     """
     # get tetraeder position
     N = 1
