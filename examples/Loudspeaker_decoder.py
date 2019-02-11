@@ -88,7 +88,7 @@ ls_setup.show()
 plots.hull_normals(ls_setup)
 
 # Test source location
-src = np.array([1, .6, .2])
+src = np.array([1, 0, 0])
 src_azi, src_colat, _ = utils.cart2sph(*src.tolist())
 
 # %% VBAP

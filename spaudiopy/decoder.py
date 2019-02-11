@@ -44,7 +44,6 @@ class LoudspeakerSetup:
         self.kernel_hull = []
         self.characteristic_order = None
 
-
     def is_simplex_valid(self, simplex):
         """Tests if simplex is in valid simplices (independent of orientation).
         """
@@ -77,7 +76,7 @@ class LoudspeakerSetup:
 
         for src_gains in ls_gains:
             for ch, ls_gain in enumerate(src_gains):
-                if abs(ls_gain) > 0.001:  # Gate at -60dB
+                if abs(ls_gain) > 10e-6:  # Gate at -100dB
                     # extract LS position
                     relative_position = self.points[ch, :] - \
                                         self.listener_position
@@ -96,7 +95,8 @@ class LoudspeakerSetup:
 
     def setup_for_ambisonic(self, N_kernel):
         self.characteristic_order = self.get_characteristic_order()
-        self.ambisonics_hull, self.kernel_hull = _ambisonic_hulls(self, N_kernel)
+        self.ambisonics_hull, self.kernel_hull = _ambisonic_hulls(self,
+                                                                  N_kernel)
 
     def show(self):
         plots.hull(self, title='Loudspeaker Setup')
@@ -126,7 +126,7 @@ def calculate_face_areas(hull):
     return face_areas
 
 
-def calculate_face_normals(hull, eps=10e-5, normalize=False):
+def calculate_face_normals(hull, eps=10e-6, normalize=False):
     """Calculate outwards pointing normal for each simplex."""
     face_normals = np.zeros((len(hull.simplices), 3))
     barycenter = np.mean(hull.points, axis=0)
@@ -173,16 +173,16 @@ def check_listener_inside(hull, listener_position=None):
     """Return valid simplices for which the listener is inside the hull."""
     if listener_position is None:
         listener_position = hull.listener_position
-    l = np.asarray(listener_position)
+    listener_position = np.asarray(listener_position)
     valid_simplices = []
     for face, centroid in zip(hull.simplices, hull.centroids):
         # centroid to listener
-        v1 = l - centroid
+        v1 = listener_position - centroid
         # centroid to barycenter
         v2 = hull.barycenter - centroid
         # listener inside if both point in the same direction
         if np.dot(v1, v2) < 0:
-            print(f"Listener {l} not inside {face}")
+            print(f"Listener {listener_position} not inside {face}")
         else:
             valid_simplices.append(face)
     return np.array(valid_simplices)
@@ -205,7 +205,8 @@ def check_normals(hull, normal_limit=85, listener_position=None):
 
 
 def check_aperture(hull, aperture_limit=90, listener_position=None):
-    """Return valid simplices, where the aperture form the listener is small."""
+    """Return valid simplices, where the aperture form the listener is small.
+    """
     if listener_position is None:
         listener_position = hull.listener_position
     valid_simplices = []
@@ -223,7 +224,8 @@ def check_aperture(hull, aperture_limit=90, listener_position=None):
 
 
 def check_opening(hull, opening_limit=135):
-    """Return valid simplices with all opening angles within simplex > limit."""
+    """Return valid simplices with all opening angles within simplex > limit.
+    """
     valid_simplices = []
     for face in hull.valid_simplices:
         # extract vertices face
@@ -273,8 +275,8 @@ def find_imaginary_loudspeaker(hull):
 
         # detect if edge occurs once
         for edge in edges:
-            occured_once = np.count_nonzero(np.isin(hull.valid_simplices,
-                                                    edge).sum(axis=1) == 2) == 1
+            occured_once = np.count_nonzero(np.isin(
+                            hull.valid_simplices, edge).sum(axis=1) == 2) == 1
             if occured_once:
                 rim_edges.append(edge)
     # Check that all rim vertices are connected
@@ -311,10 +313,10 @@ def vbap(src, hull, valid_simplices=None):
 
     Parameters
     ----------
-    src : (n, 3)
+    src : (n, 3) numpy.ndarray
         Cartesian coordinates of n sources to be rendered.
     hull : LoudspeakerSetup
-    valid_simplices : (nsimplex, 3)
+    valid_simplices : (nsimplex, 3) numpy.ndarray
         Valid simplices employed for rendering, defaults hull.valid_simplices.
 
     Returns
@@ -325,6 +327,7 @@ def vbap(src, hull, valid_simplices=None):
     if valid_simplices is None:
         valid_simplices = hull.valid_simplices
     src = np.atleast_2d(src)
+    assert(src.shape[1] == 3)
     # TODO: listener position
     src_count = src.shape[0]
     ls_count = valid_simplices.max() + 1
@@ -336,8 +339,9 @@ def vbap(src, hull, valid_simplices=None):
             projection = np.dot(LS_base, src[src_idx, :])
             # normalization
             projection /= np.sqrt(np.sum(projection**2))
-            if np.all(projection > 0):
-                # print(f"Source {src_i}: Gains {projection}")
+            if np.all(projection > -10e-6):
+                assert(np.count_nonzero(projection) <= 3)
+                # print(f"Source {src_idx}: Gains {projection}")
                 gains[src_idx, valid_simplices[face_idx]] = projection
                 break  # found valid gains
     return gains
@@ -350,7 +354,9 @@ def _ambisonic_hulls(hull, N_kernel):
     # add imaginary speaker to hull
     new_ls = np.vstack([ls, imaginary_loudspeaker])
     # This new triangulation is now the rendering setup
-    ambisonics_hull = LoudspeakerSetup(new_ls[:, 0], new_ls[:, 1], new_ls[:, 2])
+    ambisonics_hull = LoudspeakerSetup(new_ls[:, 0],
+                                       new_ls[:, 1],
+                                       new_ls[:, 2])
     # mark imaginary speaker (last one)
     ambisonics_hull.imaginary_speaker = new_ls.shape[0] - 1
     # virtual optimal loudspeaker arrangement
@@ -455,8 +461,8 @@ def ALLRAD(F_nm, hull, N=None):
 
     # virtual Ambisonic decoder
     _t_azi, _t_colat, _t_r = utils.cart2sph(kernel_hull.points[:, 0],
-                                      kernel_hull.points[:, 1],
-                                      kernel_hull.points[:, 2])
+                                            kernel_hull.points[:, 1],
+                                            kernel_hull.points[:, 2])
     Y_td = sph.SH_matrix(N, _t_azi, _t_colat, SH_type='real')
     # ALLRAD Decoder
     D = 4 * np.pi / J * G.T @ Y_td
@@ -470,8 +476,9 @@ def ALLRAD(F_nm, hull, N=None):
 
 
 def characteristic_ambisonic_order(hull):
-    """Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
-    Journal of Audio Engineering Society, Sec. 7."""
+    """Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and
+    Decoding. Journal of Audio Engineering Society, Sec. 7.
+    """
     _hull = copy.copy(hull)
     # projection for loudspeakers not on unit sphere
     _xp, _yp, _zp = sph.project_on_sphere(_hull.points[:, 0],
