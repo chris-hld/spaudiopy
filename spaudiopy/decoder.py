@@ -326,19 +326,19 @@ def vbap(src, hull, valid_simplices=None):
         valid_simplices = hull.valid_simplices
     src = np.atleast_2d(src)
     # TODO: listener position
-    n_src = src.shape[0]
-    n_LS = valid_simplices.max()
+    src_count = src.shape[0]
+    ls_count = valid_simplices.max() + 1
     inverted_ls_triplets = _invert_triplets(valid_simplices, hull.points)
-    gains = np.zeros([n_src, n_LS + 1])
-    for src_i in range(n_src):
-        for face_n, LS_base in enumerate(inverted_ls_triplets):
+    gains = np.zeros([src_count, ls_count])
+    for src_idx in range(src_count):
+        for face_idx, LS_base in enumerate(inverted_ls_triplets):
             # projecting src onto LS base
-            projection = np.dot(LS_base, src[src_i, :])
+            projection = np.dot(LS_base, src[src_idx, :])
             # normalization
             projection /= np.sqrt(np.sum(projection**2))
-            if np.all(projection > -10e-3):
+            if np.all(projection > 0):
                 # print(f"Source {src_i}: Gains {projection}")
-                gains[src_i, valid_simplices[face_n]] = projection
+                gains[src_idx, valid_simplices[face_idx]] = projection
                 break  # found valid gains
     return gains
 
@@ -392,21 +392,24 @@ def ALLRAP(src, hull, N=None):
 
     src = np.atleast_2d(src)
     # TODO: listener position
-    n_src = src.shape[0]
-    n_LS = ambisonics_hull.valid_simplices.max()  # contains also imaginary loudspeakers
+    src_count = src.shape[0]
+    ls_count = ambisonics_hull.valid_simplices.max() + 1  # contains also imaginary loudspeakers
 
-    # virtual speakers expressed as VBAP phantom sources
-    virtual_srcs_gains = vbap(src=kernel_hull.points, hull=ambisonics_hull)
-
+    # virtual t-design loudspeakers
     J = len(kernel_hull.points)
-    gains = np.zeros([n_src, n_LS + 1])
-    for src_i in range(n_src):
+    # virtual speakers expressed as VBAP phantom sources
+    G = vbap(src=kernel_hull.points, hull=ambisonics_hull)
+
+    # SH tapering coefficients
+    a_n = sph.max_rE_weights(N)
+
+    gains = np.zeros([src_count, ls_count])
+    for src_idx in range(src_count):
         # discretize panning function
-        d = utils.angle_between(src[src_i, :], kernel_hull.points)
-        g_l = sph.bandlimited_dirac(N, d, sph.max_rE_weights(N))
-        gains[src_i, :] = 4 * np.pi / J * virtual_srcs_gains.T @ g_l
-    # mute/remove imaginary loudspeakers
-    # mute : gains[:, ambisonics_hull.imaginary_vertices] = 0
+        d = utils.angle_between(src[src_idx, :], kernel_hull.points)
+        g_l = sph.bandlimited_dirac(N, d, a_n)
+        gains[src_idx, :] = 4 * np.pi / J * G.T @ g_l
+    # remove imaginary loudspeakers
     gains = np.delete(gains, ambisonics_hull.imaginary_speaker, axis=1)
     return gains
 
