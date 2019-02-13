@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-@author: chris
-"""
+
 from itertools import repeat
 
 import numpy as np

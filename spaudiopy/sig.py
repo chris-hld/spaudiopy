@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-@author: chris
-
 Avoid code duplications (and errors) by defining a few custom classes here.
 """
 

@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Nov 21 13:34:33 2018
-
-@author: chris
-"""
 
 import os
 import numpy as np
@@ -18,8 +13,9 @@ except ImportError:
 def load_t_design(degree):
     """Return the unit coordinates of minimal T-designs.
     The designs have been copied from:
-        http://neilsloane.com/sphdesigns/
+    http://neilsloane.com/sphdesigns/
     and should be referenced as:
+
         "McLaren's Improved Snub Cube and Other New Spherical Designs in
         Three Dimensions", R. H. Hardin and N. J. A. Sloane, Discrete and
         Computational Geometry, 15 (1996), pp. 429-441.
@@ -52,8 +48,9 @@ def load_t_design(degree):
 def load_Fliege_Maier_nodes(grid_order):
     """Return Fliege-Maier grid nodes with associated weights.
     The designs have been copied from:
-        http://www.personal.soton.ac.uk/jf1w07/nodes/nodes.html
+    http://www.personal.soton.ac.uk/jf1w07/nodes/nodes.html
     and should be referenced as:
+
         "A two-stage approach for computing cubature formulae for the sphere.",
         Jorg Fliege and Ulrike Maier, Mathematik 139T, Universitat Dortmund,
         Fachbereich Mathematik, Universitat Dortmund, 44221. 1996.

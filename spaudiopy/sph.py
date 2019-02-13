@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Nov 21 13:34:33 2018
-
-@author: chris
-"""
 
 import numpy as np
 from scipy import special as scyspecial
@@ -33,9 +28,6 @@ def SH_matrix(N, azi, colat, SH_type='complex', weights=None):
 
         Y_n^m(\theta, \phi) = \sqrt{\frac{2n + 1}{4 \pi} \frac{(n-m)!}{(n+m)!}} P_n^m(\cos \theta) e^{i m \phi}
 
-
-    (Note: :math:`\mathbf{Y}` is interpreted as the inverse transform
-    (or synthesis) matrix in examples and documentation.)
 
     Parameters
     ----------

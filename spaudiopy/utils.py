@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-@author: chris
-
 A few helpers.
 """
 import numpy as np

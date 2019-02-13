@@ -1,0 +1,4 @@
+Decoders
+========
+
+.. automodule:: spaudiopy.decoder
