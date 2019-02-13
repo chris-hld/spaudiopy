@@ -4,7 +4,7 @@ Installation
 
 Requirements
 ------------
-It's easiest to start with something like [Anaconda](https://www.anaconda.com/distribution/) as a Python distribution.
+It's easiest to start with something like `Anaconda <https://www.anaconda.com/distribution/>`_ as a Python distribution.
 You'll need Python >= 3.6 .
 
 1. Create a conda environment:
@@ -18,7 +18,7 @@ When using `pip` to install this package as shown below, all remaining dependenc
 
 Installation
 ------------
-Download this package from [GitHub](https://github.com/chris-hld/spaudiopy) and navigate to there. Then run
+Download this package from `GitHub <https://github.com/chris-hld/spaudiopy>`_ and navigate to there. Then run
 
 `pip install -e .`  .
 
