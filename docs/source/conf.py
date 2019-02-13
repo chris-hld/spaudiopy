@@ -42,8 +42,6 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',  # support for NumPy-style docstrings
-    'sphinx.ext.intersphinx',
-    'matplotlib.sphinxext.plot_directive',
 ]
 
 # autodoc
