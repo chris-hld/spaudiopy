@@ -297,7 +297,30 @@ def check_cond_SHT(N, azi, colat, SH_type, lim=None):
 
 
 def bandlimited_dirac(N, d, a_n=None):
-    """Order N spatially bandlimited Dirac pulse at angular distance d.
+    r"""Order N spatially bandlimited Dirac pulse at angular distance d.
+
+    Parameters
+    ----------
+    N : int
+        SH order.
+    d : (Q,) array_like
+        Angular distance in rad.
+    a_n : (N,) array_like
+        Tapering window w_n.
+
+    Returns
+    -------
+    dirac : (Q,) array_like
+        Amplitude at angular distance d.
+
+    Notes
+    -----
+    Normalize with
+
+    .. math::  \frac{2N + 1}{4 \pi}
+
+    References
+    ----------
     Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
     Journal of Audio Engineering Society, eq. (7).
     """
@@ -307,12 +330,15 @@ def bandlimited_dirac(N, d, a_n=None):
     for n, i in enumerate(range(N + 1)):
         g_n[i, :] = a_n[i] * (2 * n + 1) / (4 * np.pi) * \
                     scyspecial.eval_legendre(n, np.cos(d))
-    s = np.sum(g_n, 0)
-    return s
+    dirac = np.sum(g_n, 0)
+    return dirac
 
 
 def max_rE_weights(N):
     """Return max rE window coefficients for order N.
+
+    References
+    ----------
     Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
     Journal of Audio Engineering Society, eq. (10).
     """
@@ -326,6 +352,23 @@ def max_rE_weights(N):
 def r_E(p, g):
     """r_E vector and magnitude calculated from loudspeaker position vector p
     and their gains g.
+
+    Parameters
+    -----------
+    p : (Q, 3) numpy.ndarray
+        Q loudspeaker position vectors.
+    g : (S, Q) numpy.ndarray
+        Q gain vectors per source S.
+
+    Returns
+    -------
+    rE : (S, 3) numpy.ndarray
+        rE vector.
+    rE_mag : (S,) array_like
+        rE magnitude (radius).
+
+    References
+    ----------
     Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
     Journal of Audio Engineering Society, eq. (16).
     """
@@ -369,3 +412,69 @@ def repeat_order_coeffs(c):
             c_reshaped[idx] = c[n]
             idx += 1
     return c_reshaped
+
+
+def mode_strength(n, kr, sphere_type='rigid'):
+    """Calculate mode strength b_n(kr) for an incident plane wave on sphere.
+
+    Parameters
+    ----------
+    n : int
+        Degree.
+    kr : array_like
+        kr vector, product of wavenumber k and radius r_0.
+
+    Returns
+    -------
+    b_n : array_like
+        Mode strength b_n(kr).
+    """
+    def spherical_h2(n, z):
+        return scyspecial.spherical_jn(n, z) + \
+                    1j * scyspecial.spherical_yn(n, z)
+
+    def spherical_h2_d(n, z):
+        return -spherical_h2(n+1, z) + n/z * spherical_h2(n, z)
+
+    if sphere_type == 'open':
+        b_n = 4*np.pi*1j**n * scyspecial.spherical_jn(n, kr)
+    elif sphere_type == 'rigid':
+        b_n = 4*np.pi*1j**n * (scyspecial.spherical_jn(n, kr) -
+                               (scyspecial.spherical_jn(n, kr, True) /
+                                spherical_h2_d(n, kr)) * spherical_h2(n, kr))
+    else:
+        raise ValueError('sphere_type Not implemented.')
+    return b_n
+
+
+def pressure_on_sphere(N, kr, weights=None):
+    """Calculate the diffuse field pressure frequency response of a spherical
+    scatterer, up to SH order N.
+
+    Parameters
+    ----------
+    N : int
+        SH order.
+    kr : array_like
+        kr vector, product of wavenumber k and radius r_0.
+    weights : (N+1,) array_like
+        SH order weights.
+
+    Returns
+    -------
+    p : array_like
+        Pressure p(kr)|N.
+
+    References
+    ----------
+    Ben-Hur, Z., Brinkmann, F., Sheaffer, J., et.al. (2017).
+    Spectral equalization in binaural signals represented by order-truncated
+    spherical harmonics. The Journal of the Acoustical Society of America,
+    eq. (11).
+    """
+    p_N = np.zeros_like(kr)
+    if weights is None:
+        weights = np.ones(N + 1)
+    for n in range(N + 1):
+        p_N += weights[n] * (2 * n + 1) * np.abs(mode_strength(n, kr))**2
+    return 1 / (4 * np.pi) * np.sqrt(p_N)

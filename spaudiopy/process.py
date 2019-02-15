@@ -136,7 +136,7 @@ def select_hrtf(hrir_l, hrir_r, grid_phi, grid_theta, phi, theta):
     VERBOSE = False
     if VERBOSE:
         with open("selected_hrtf.txt", "a") as f:
-            f.write("index {}, phi: {}, grid_phi: {}, theta: {}, grid_theta: {}".format(
+            f.write("idx {}, phi: {}, gd_phi: {}, th: {}, gd_th: {}".format(
                 d_idx,
                 utils.rad2deg(phi), utils.rad2deg(grid_phi[d_idx]),
                 utils.rad2deg(theta), utils.rad2deg(grid_theta[d_idx])))
@@ -325,6 +325,16 @@ def lagrange_delay(N, delay):
         index = np.where(n != k)
         h[index] = h[index] * (delay - k) / (n[index] - k)
     return h
+
+
+def half_sided_Hann(N):
+    """Design half-sided Hann tapering window of order N."""
+    assert(N >= 3)
+    w_full = scysig.hann(2*((N + 1)//2) + 1)
+    # get half sided window
+    w_taper = np.ones(N + 1)
+    w_taper[-((N-1)//2):] = w_full[-((N + 1)//2):-1]
+    return w_taper
 
 
 # Parallel worker stuff -->
