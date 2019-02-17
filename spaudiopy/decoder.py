@@ -460,7 +460,7 @@ def ALLRAD(F_nm, hull, N=None):
     _t_azi, _t_colat, _t_r = utils.cart2sph(kernel_hull.points[:, 0],
                                             kernel_hull.points[:, 1],
                                             kernel_hull.points[:, 2])
-    Y_td = sph.SH_matrix(N, _t_azi, _t_colat, SH_type='real')
+    Y_td = sph.sh_matrix(N, _t_azi, _t_colat, SH_type='real')
     # ALLRAD Decoder
     D = 4 * np.pi / J * G.T @ Y_td
     # apply tapering to decoder matrix

@@ -44,32 +44,32 @@ colat = t_colat
 # %%
 # First, check condition number to which SH order the SHT is stable
 # Tetraeder is not suited for SHT N>1:
-sph.check_cond_SHT(3, t_az, t_colat, 'real')
+sph.check_cond_sht(3, t_az, t_colat, 'real')
 
 # %% Real and Complex SHs
-Y_nm_c = sph.SH_matrix(N, azi, colat, 'complex')
-Y_nm_r = sph.SH_matrix(N, azi, colat, 'real')
+Y_nm_c = sph.sh_matrix(N, azi, colat, 'complex')
+Y_nm_r = sph.sh_matrix(N, azi, colat, 'real')
 
 # %%
 # Look at some SHTs
 sig = np.array([1, 1, 1, 1])
 sig_t = np.c_[np.eye(4), np.eye(4)]  # second axis s(t)
 sig_B = sph.soundfield_to_B(sig)
-F_nm = sph.SHT(sig, N, azi, colat, SH_type='real')
-F_nm_t = sph.SHT(sig_t, N, azi, colat, SH_type='real')
+F_nm = sph.sht(sig, N, azi, colat, SH_type='real')
+F_nm_t = sph.sht(sig_t, N, azi, colat, SH_type='real')
 
 # %%
-F_nm_c = sph.SHT(sig, N, azi, colat, SH_type='complex')
-F_nm_c_t = sph.SHT(sig_t, N, azi, colat, SH_type='complex')
+F_nm_c = sph.sht(sig, N, azi, colat, SH_type='complex')
+F_nm_c_t = sph.sht(sig_t, N, azi, colat, SH_type='complex')
 
 # %%
-F_nm_lst = sph.SHT_lstsq(sig, N, azi, colat, SH_type='complex')
-F_nm_lst_t = sph.SHT_lstsq(sig_t, N, azi, colat, SH_type='real')
+F_nm_lst = sph.sht_lstsq(sig, N, azi, colat, SH_type='complex')
+F_nm_lst_t = sph.sht_lstsq(sig_t, N, azi, colat, SH_type='real')
 
 # %% inverse SHT
-f = sph.inverseSHT(F_nm, azi, colat, SH_type='real')
-f_c_t = sph.inverseSHT(F_nm_c_t, azi, colat, SH_type='complex')
-f_lst_t = sph.inverseSHT(F_nm_lst_t, azi, colat, SH_type='real')
+f = sph.inverse_sht(F_nm, azi, colat, SH_type='real')
+f_c_t = sph.inverse_sht(F_nm_c_t, azi, colat, SH_type='complex')
+f_lst_t = sph.inverse_sht(F_nm_lst_t, azi, colat, SH_type='real')
 
 # %% Checks
 print("Single dimension signal:")
@@ -82,15 +82,15 @@ utils.test_diff(sig_t, f_lst_t)
 # %%
 # Check B format conversion
 B_sig = np.array([1, 1, 0, 0])  # W, X, Y, Z
-F_B = sph.B_to_SH(B_sig)
-B_sig_re = sph.SH_to_B(F_B)
+F_B = sph.b_to_sh(B_sig)
+B_sig_re = sph.sh_to_b(F_B)
 print("B format to SH conversion:")
 utils.test_diff(B_sig, B_sig_re)
 
 # %%
 # Some plots
 plots.sph_coeffs(F_nm, title="Ambeo: all channels max")
-plots.sph_coeffs(F_B, title="B_to_SH: W+X")
+plots.sph_coeffs(F_B, title="b_to_sh: W+X")
 
 # %%
 plots.subplot_sph_coeffs([np.array([1, 0, 0, 0]),
@@ -107,7 +107,7 @@ plots.sph_coeffs(np.sqrt(2) * np.array([1, 0, 0, 1]), 'complex',
 # Look at simple B format generator
 sig2 = np.ones(8)
 B = sph.src_to_B(sig2, np.pi / 4, np.pi / 4)
-B_nm = sph.B_to_SH(B)
+B_nm = sph.b_to_sh(B)
 plots.sph_coeffs(B_nm[:, 0], title="Sig 2 B")
 
 # %%

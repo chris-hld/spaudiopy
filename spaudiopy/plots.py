@@ -177,7 +177,7 @@ def sph_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None):
                                        np.arange(10e-3, np.pi + el_steps,
                                                  el_steps))
 
-    f_plot = sph.inverseSHT(F_nm, phi_plot.ravel(), theta_plot.ravel(), SH_type)
+    f_plot = sph.inverse_sht(F_nm, phi_plot.ravel(), theta_plot.ravel(), SH_type)
     f_r = np.abs(f_plot)
     f_ang = np.angle(f_plot)
 
@@ -241,7 +241,7 @@ def subplot_sph_coeffs(F_l, SH_type=None, azi_steps=5, el_steps=3, title=None):
         if SH_type is None:
             SH_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
 
-        f_plot = sph.inverseSHT(F_nm, phi_plot.ravel(), theta_plot.ravel(),
+        f_plot = sph.inverse_sht(F_nm, phi_plot.ravel(), theta_plot.ravel(),
                                 SH_type)
         f_r = np.abs(f_plot)
         f_ang = np.angle(f_plot)
@@ -382,7 +382,7 @@ def hull_normals(hull, plot_face_normals=True, plot_vertex_normals=True):
     plt.legend(loc='best')
 
 
-def polar(theta, a, title=None, rlim=[-30, 10]):
+def polar(theta, a, title=None, rlim=[-40, 0]):
     """Polar plot that allows negative values for 'a'."""
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='polar')

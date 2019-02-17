@@ -69,8 +69,8 @@ plt.ylabel('Amplitude')
 plt.title('Left HRTF SH at f={:.3} Hz'.format(f[8]))
 
 # %% Inverse SHT
-HRTF_l = sph.inverseSHT(SH_l, azi, colat, 'complex')
-HRTF_r = sph.inverseSHT(SH_r, azi, colat, 'complex')
+HRTF_l = sph.inverse_sht(SH_l, azi, colat, 'complex')
+HRTF_r = sph.inverse_sht(SH_r, azi, colat, 'complex')
 
 assert HRTF_l.shape == HRTF_r.shape
 print("HRTF shape:", HRTF_l.shape)

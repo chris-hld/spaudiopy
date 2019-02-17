@@ -7,7 +7,7 @@ from scipy.linalg import lstsq
 from . import utils
 
 
-def SH_matrix(N, azi, colat, SH_type='complex', weights=None):
+def sh_matrix(N, azi, colat, SH_type='complex', weights=None):
     r"""Matrix of spherical harmonics up to order N for given angles.
 
     Computes a matrix of spherical harmonics up to order :math:`N`
@@ -82,7 +82,7 @@ def SH_matrix(N, azi, colat, SH_type='complex', weights=None):
     return Ymn
 
 
-def SHT(f, N, azi, colat, SH_type, weights=None, Y_nm=None):
+def sht(f, N, azi, colat, SH_type, weights=None, Y_nm=None):
     """Spherical harmonics transform of f for appropriate point sets.
 
     If f is a QxS matrix then the transform is applied to each column
@@ -111,7 +111,7 @@ def SHT(f, N, azi, colat, SH_type, weights=None, Y_nm=None):
         Matrix of spherical harmonics coefficients of spherical function(S).
     """
     if Y_nm is None:
-        Y_nm = SH_matrix(N, azi, colat, SH_type)
+        Y_nm = sh_matrix(N, azi, colat, SH_type)
     if weights is None:
         Npoints = len(azi)
         Y_nm_transform = (4*np.pi / Npoints) * Y_nm.conj()
@@ -122,7 +122,7 @@ def SHT(f, N, azi, colat, SH_type, weights=None, Y_nm=None):
     return np.matmul(Y_nm_transform.T, f)
 
 
-def SHT_lstsq(f, N, azi, colat, SH_type, Y_nm=None):
+def sht_lstsq(f, N, azi, colat, SH_type, Y_nm=None):
     """Spherical harmonics transform  of f as least-squares solution.
 
     If f is a QxS matrix then the transform is applied to each column
@@ -149,11 +149,11 @@ def SHT_lstsq(f, N, azi, colat, SH_type, Y_nm=None):
         Matrix of spherical harmonics coefficients of spherical function(S).
     """
     if Y_nm is None:
-        Y_nm = SH_matrix(N, azi, colat, SH_type)
+        Y_nm = sh_matrix(N, azi, colat, SH_type)
     return lstsq(Y_nm, f)[0]
 
 
-def inverseSHT(F_nm, azi, colat, SH_type, Y_nm=None):
+def inverse_sht(F_nm, azi, colat, SH_type, Y_nm=None):
     """Perform the inverse spherical harmonics transform.
 
     Parameters
@@ -177,7 +177,7 @@ def inverseSHT(F_nm, azi, colat, SH_type, Y_nm=None):
     """
     if Y_nm is None:
         N = int(np.sqrt(F_nm.shape[0]) - 1)
-        Y_nm = SH_matrix(N, azi, colat, SH_type)
+        Y_nm = sh_matrix(N, azi, colat, SH_type)
     # perform the inverse transform up to degree N
     return np.matmul(Y_nm, F_nm)
 
@@ -192,7 +192,7 @@ def platonic_solid(shape):
     return u
 
 
-def SH_to_B(F_nm, W_weight=None):
+def sh_to_b(F_nm, W_weight=None):
     """Convert first order SH input signals to B-format.
 
     Parameters
@@ -219,7 +219,7 @@ def SH_to_B(F_nm, W_weight=None):
     return np.apply_along_axis(np.dot, 0, F_nm, M.T)
 
 
-def B_to_SH(B, W_weight=None):
+def b_to_sh(B, W_weight=None):
     """Convert B-format input to first order SH signals.
 
     Parameters
@@ -268,8 +268,8 @@ def soundfield_to_B(sig, W_weight=None):
     t = platonic_solid('tetrahedron')
     t_az, t_colat, t_r = utils.cart2sph(t[:, 0], t[:, 1], t[:, 2])
     # SHT of input signal
-    F_nm = SHT(sig, N, azi=t_az, colat=t_colat, SH_type='real')
-    return SH_to_B(F_nm, W_weight)
+    F_nm = sht(sig, N, azi=t_az, colat=t_colat, SH_type='real')
+    return sh_to_b(F_nm, W_weight)
 
 
 def src_to_B(signal, src_azi, src_colat):
@@ -280,9 +280,9 @@ def src_to_B(signal, src_azi, src_colat):
     return np.outer(g, signal)
 
 
-def check_cond_SHT(N, azi, colat, SH_type, lim=None):
+def check_cond_sht(N, azi, colat, SH_type, lim=None):
     """Check if condition number for a least-squares SHT is greater 'lim'."""
-    A = SH_matrix(N, azi, colat, SH_type)
+    A = sh_matrix(N, azi, colat, SH_type)
     c = np.zeros(N + 1)
     for iN in range(N + 1):
         # get coeffs up to iter order iN

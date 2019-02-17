@@ -108,7 +108,7 @@ plots.hull(kernel_hull, title='Kernel hull')
 # ALLRAP
 gains_ALLRAP = decoder.ALLRAP(src, ls_setup, N=N_e)
 # ALLRAD
-input_F_nm = sph.SH_matrix(N_e, src_azi, src_colat, 'real').T  # SH dirac
+input_F_nm = sph.sh_matrix(N_e, src_azi, src_colat, 'real').T  # SH dirac
 out_ALLRAD = decoder.ALLRAD(input_F_nm, ls_setup, N=N_e)
 
 print("ALLRAD and ALLRAP:")
