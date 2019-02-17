@@ -232,13 +232,13 @@ def pseudo_intensity(Ambi_B, MA=False, n_jobs=None):
     else:
         # preparation
         shared_array_shape = np.shape(I_vec)
-        _arr_base = create_shared_array(shared_array_shape)
+        _arr_base = _create_shared_array(shared_array_shape)
         _arg_itr = zip(range(len(Ambi_B)-buf),
                        repeat(W), repeat(X), repeat(Y), repeat(Z),
                        repeat(win))
         # execute
         with multiprocessing.Pool(processes=n_jobs,
-                                  initializer=init_shared_array,
+                                  initializer=_init_shared_array,
                                   initargs=(_arr_base,
                                             shared_array_shape,)) as pool:
             pool.starmap(_intensity_sample, _arg_itr)
@@ -338,7 +338,7 @@ def half_sided_Hann(N):
 
 
 # Parallel worker stuff -->
-def create_shared_array(shared_array_shape):
+def _create_shared_array(shared_array_shape):
     """Allocate ctypes array from shared memory with lock."""
     d_type = 'd'
     shared_array_base = multiprocessing.Array(d_type, shared_array_shape[0] *
@@ -346,7 +346,7 @@ def create_shared_array(shared_array_shape):
     return shared_array_base
 
 
-def init_shared_array(shared_array_base, shared_array_shape):
+def _init_shared_array(shared_array_base, shared_array_shape):
     """Makes 'shared_array' available to child processes."""
     global shared_array
     shared_array = np.frombuffer(shared_array_base.get_obj())
