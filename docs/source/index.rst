@@ -8,9 +8,10 @@ Welcome to spaudiopy's documentation!
 
    installation
    spherical_harmonics
+   signal
    decoder
    processing
-   signal
+   sdm
    helpers
    plotting
 

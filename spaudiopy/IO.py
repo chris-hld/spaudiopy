@@ -33,7 +33,7 @@ def load_hrir(fs, filename=None, dummy=False):
 
     Returns
     -------
-    HRIRs : utils.HRIRs instance
+    HRIRs : sig.HRIRs instance
         left : (g, h) numpy.ndarray
             h(t) for grid position g.
         right : (g, h) numpy.ndarray

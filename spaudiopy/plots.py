@@ -382,10 +382,11 @@ def hull_normals(hull, plot_face_normals=True, plot_vertex_normals=True):
     plt.legend(loc='best')
 
 
-def polar(theta, a, title=None, rlim=[-40, 0]):
+def polar(theta, a, title=None, rlim=[-40, 0], ax=None):
     """Polar plot that allows negative values for 'a'."""
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='polar')
+    if ax is None:
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='polar')
     ax.plot(theta, utils.dB(np.clip(a, 0, None)), label='pos')
     ax.plot(theta, utils.dB(abs(np.clip(a, None, 0))), label='neg')
     ax.set_rmin(rlim[0])

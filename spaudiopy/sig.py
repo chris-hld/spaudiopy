@@ -125,7 +125,7 @@ class HRIRs:
         self.grid_points = len(grid)
 
     def __len__(self):
-        """Override len()."""
+        """Override len() to count of samples per hrir."""
         return self.left.shape[1]
 
     def select_direction(self, phi, theta):

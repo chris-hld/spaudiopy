@@ -60,15 +60,17 @@ class LoudspeakerSetup:
         if blacklist is not None:
             self.valid_simplices = apply_blacklist(self, blacklist)
 
-    def binauralize(self, ls_gains, fs):
+    def binauralize(self, ls_gains, fs, hrirs=None):
         """Create IRs that ls_gains produce on this setup (no delays).
         Provide gain value for every loudspeaker.
         """
+        if hrirs is None:
+            hrirs = IO.load_hrir(fs)
+        assert(hrirs.fs == fs)
         ls_gains = np.atleast_2d(ls_gains)
         assert(ls_gains.shape[1] == len(self.points)), \
             'Provide gain per speaker!'
-        hrirs = IO.load_hrir(fs)
-        l_ir = np.zeros(hrirs.select_direction(0, np.pi / 2)[0].shape[0])
+        l_ir = np.zeros(len(hrirs))
         r_ir = np.zeros_like(l_ir)
 
         for src_gains in ls_gains:
