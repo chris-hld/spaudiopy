@@ -38,7 +38,6 @@ def cart2sph(x, y, z):
     z = asarray_1d(z)
     r = np.sqrt(x**2 + y**2 + z**2)
     azi = np.arctan2(y, x)
-    azi = azi % (2 * np.pi)  # [0, 2pi)
     colat = np.arccos(z / r)
     return azi, colat, r
 
@@ -63,10 +62,12 @@ def matlab_sph2cart(az, elev, r):
     return x, y, z
 
 
-def vecs2dirs(vecs):
-    """Helper to convert [x, y, z] to [phi ,theta]."""
-    phi, theta, _ = cart2sph(vecs[:, 0], vecs[:, 1], vecs[:, 2])
-    return np.c_[phi, theta]
+def vecs2dirs(vecs, positive_azi=True):
+    """Helper to convert [x, y, z] to [azi, colat]."""
+    azi, colat, _ = cart2sph(vecs[:, 0], vecs[:, 1], vecs[:, 2])
+    if positive_azi:
+        azi = azi % (2 * np.pi)  # [-pi, pi] -> [0, 2pi)
+    return np.c_[azi, colat]
 
 
 def angle_between(v1, v2, vi=None):
