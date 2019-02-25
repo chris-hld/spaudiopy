@@ -19,6 +19,7 @@ setuptools.setup(name='spaudiopy',
                                    'matplotlib',
                                    'plotly',
                                    'soundfile',
+                                   'sounddevice',
                                    'resampy',
                                    'h5py',
                                    'quadpy'
