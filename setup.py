@@ -21,6 +21,7 @@ setuptools.setup(name='spaudiopy',
                                    'soundfile',
                                    'resampy',
                                    'h5py',
+                                   'quadpy'
                                    ],
                  platforms='any',
                  python_requires='>=3.6',

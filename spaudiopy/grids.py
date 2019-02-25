@@ -203,7 +203,7 @@ def lebedev(n):
                          "(requested: {})".format(n))
 
     # this needs https://pypi.python.org/pypi/quadpy
-    q = quadpy.sphere.Lebedev(degree=available_quadrature(2*n))
+    q = quadpy.sphere.Lebedev(str(available_quadrature(2*n)))
     if np.any(q.weights < 0):
         warn("Lebedev grid of order {} has negative weights.".format(n))
     azi = q.azimuthal_polar[:, 0]
