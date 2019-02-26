@@ -100,33 +100,45 @@ def load_sdm(filename):
     return h, sdm_phi, sdm_theta, fs
 
 
-def load_audio(*filenames):
+def load_audio(filenames, fs=None):
     """
-    Convenience function to load multichannel audio from files.
+    Convenience function to load mono and multichannel audio from files.
 
     Parameters
     ----------
-    *filename : string, list of strings
+    filenames : string or list of strings
         Audio files
 
     Returns
     -------
-    MultiSignal : utils.MultiSignal instance
+    sig :  sig.MonoSignal or sig.MultiSignal
+        Audio signal.
     """
     loaded_data = []
     loaded_fs = []
+    # pack in list if only a single string
+    if not isinstance(filenames, (list, tuple)):
+        filenames = [filenames]
     for file in filenames:
-        data, fs = sf.read(file)
+        data, fs_file = sf.read(file)
         if data.ndim != 1:
             # detect and split interleaved wav
             for c in data.T:
                 loaded_data.append(c)
         else:
             loaded_data.append(data)
-        loaded_fs.append(fs)
+        loaded_fs.append(fs_file)
     # Assert same sample rate for all channels
     assert all(x == loaded_fs[0] for x in loaded_fs)
-    return sig.MultiSignal(*loaded_data, fs=fs)
+    # Check against provided samplerate
+    if fs is not None:
+        if fs != loaded_fs[0]:
+            raise ValueError("File: Found different fs:" + str(loaded_fs[0]))
+    # MonoSignal or MultiSignal
+    if len(loaded_data) == 1:
+        return sig.MonoSignal(loaded_data, fs=fs)
+    else:
+        return sig.MultiSignal(*loaded_data, fs=fs)
 
 
 def load_SOFA_data(filename):

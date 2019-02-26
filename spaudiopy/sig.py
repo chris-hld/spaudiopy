@@ -36,7 +36,7 @@ class MonoSignal:
         sig, fs_file = sf.read(filename)
         if fs is not None:
             if fs != fs_file:
-                raise ValueError("File: Found different fs.")
+                raise ValueError("File: Found different fs:" + str(fs_file))
         else:
             fs = fs_file
         if sig.ndim != 1:
@@ -84,9 +84,11 @@ class MultiSignal(MonoSignal):
         sig, fs_file = sf.read(filename)
         if fs is not None:
             if fs != fs_file:
-                raise ValueError("File: Found different fs.")
+                raise ValueError("File: Found different fs:" + str(fs_file))
         else:
             fs = fs_file
+        if np.ndim(sig) == 1:
+            raise ValueError("Only one channel. Try MonoSignal.")
         return cls(*sig.T, fs=fs)
 
     def get_signals(self):
@@ -137,7 +139,6 @@ class HRIRs:
         return h_l, h_r
 
 
-# METHODS
 def trim_audio(A, start, stop):
     """Trim copy of MultiSignal audio to start and stop in seconds."""
     B = copy.deepcopy(A)
