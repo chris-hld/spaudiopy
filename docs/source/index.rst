@@ -7,8 +7,9 @@ Welcome to spaudiopy's documentation!
    :caption: Contents:
 
    installation
-   spherical_harmonics
+   IO
    signal
+   spherical_harmonics
    decoder
    processing
    sdm
