@@ -19,6 +19,8 @@ cachedir = './__cache_dir'
 memory = Memory(cachedir)
 
 
+
+
 @memory.cache
 def resample_HRIRs(hrir_l, hrir_r, fs_hrir, fs_target, n_jobs=None):
     """
@@ -102,50 +104,6 @@ def haversine_dist(azi1, colat1, azi2, colat2):
 
     c = 2 * np.arcsin(np.sqrt(haversin_alpha))
     return c
-
-
-def select_hrtf(hrir_l, hrir_r, grid_phi, grid_theta, phi, theta):
-    """
-    For a point on the sphere, select closest hrir defined on grid.
-
-    Parameters
-    ----------
-    hrir_l : (g, h) numpy.ndarray
-        h(t) for grid position g.
-    hrir_r : (g, h) numpy.ndarray
-        h(t) for grid position g.
-    grid_phi : (g,) numpy.array
-        azimuth for hrirs.
-    grid_theta : (g,) numpy.array
-        colatitude for hrirs.
-    phi : float
-        Azimuth.
-    theta : float
-        Elevation (colat).
-
-    Returns
-    -------
-    h_l : (n,) array_like
-        h(t) closest to [phi, theta].
-    h_r : (n,) array_like
-        h(t) closest to [phi, theta].
-    """
-    # search closest gridpoint
-    d = haversine_dist(grid_phi, grid_theta, phi, theta)
-    d_idx = np.argmin(d)
-    VERBOSE = False
-    if VERBOSE:
-        with open("selected_hrtf.txt", "a") as f:
-            f.write("idx {}, phi: {}, gd_phi: {}, th: {}, gd_th: {}".format(
-                d_idx,
-                utils.rad2deg(phi), utils.rad2deg(grid_phi[d_idx]),
-                utils.rad2deg(theta), utils.rad2deg(grid_theta[d_idx])))
-            f.write('\n')
-
-    # get hrirs to that angle
-    h_l = np.squeeze(hrir_l[d_idx, :])
-    h_r = np.squeeze(hrir_r[d_idx, :])
-    return h_l, h_r
 
 
 def match_loudness(sig_in, sig_target):
