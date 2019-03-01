@@ -75,8 +75,8 @@ HRTF_r = sph.inverse_sht(SH_r, azi, colat, 'complex')
 assert HRTF_l.shape == HRTF_r.shape
 print("HRTF shape:", HRTF_l.shape)
 plt_idx = int(HRTF_l.shape[0] / 2)
-plots.fresp(f, [utils.dB(HRTF_l[plt_idx, :]),
-                utils.dB(HRTF_r[plt_idx, :])],
+plots.f_amp(f, [HRTF_l[plt_idx, :],
+                HRTF_r[plt_idx, :]],
             title=r"HRTF for $\phi={:.2}, \theta={:.2}$".format(
                 azi[plt_idx], colat[plt_idx]),
             labels=['left', 'right'])
@@ -94,8 +94,8 @@ hrir_r = np.fft.irfft(HRTF_r)  # creates 256 samples(t)
 assert hrir_l.shape == hrir_r.shape
 print("hrir shape:", hrir_l.shape)
 plt.figure()
-plt.plot(20 * np.log10(np.abs(hrir_l[plt_idx, :])), label='left')
-plt.plot(20 * np.log10(np.abs(hrir_r[plt_idx, :])), label='right')
+plt.plot(utils.dB(hrir_l[plt_idx, :]), label='left')
+plt.plot(utils.dB(hrir_r[plt_idx, :]), label='right')
 plt.legend()
 plt.grid()
 plt.xlabel('t in samples')
@@ -108,8 +108,8 @@ h_headphone = sofa_data['Data.IR']
 h_samplerate = sofa_data['Data.SamplingRate']
 
 assert SamplingRate == h_samplerate
-plots.fresp(np.fft.rfftfreq(len(h_headphone), 1 / h_samplerate),
-            utils.dB(np.fft.rfft(h_headphone, axis=0)),
+plots.f_amp(np.fft.rfftfreq(len(h_headphone), 1 / h_samplerate),
+            np.fft.rfft(h_headphone, axis=0),
             labels=['HP Filter'], title='Headphone compensation')
 
 hrir_l_hp = np.apply_along_axis(lambda m:
@@ -122,8 +122,8 @@ hrir_r_hp = np.apply_along_axis(lambda m:
 print("Compensated HRIR:", hrir_l_hp.shape)
 
 freq = np.fft.rfftfreq(hrir_l_hp.shape[1], d=1. / SamplingRate)
-plots.fresp(freq, [utils.dB(np.fft.rfft(hrir_l_hp[plt_idx, :])),
-                   utils.dB(np.fft.rfft(hrir_r_hp[plt_idx, :]))],
+plots.f_amp(freq, [np.fft.rfft(hrir_l_hp[plt_idx, :]),
+                   np.fft.rfft(hrir_r_hp[plt_idx, :])],
             labels=['HRTF left', 'HRTF right'],
             title='Compensated HRTF')
 
@@ -134,8 +134,8 @@ hrir_l_hp48k, hrir_r_hp48k, _ = process.resample_HRIRs(hrir_l_hp, hrir_r_hp,
                                                        fs_target)
 print("Resampled HRIR:", hrir_l_hp48k.shape)
 freq = np.fft.rfftfreq(hrir_l_hp48k.shape[1], d=1. / SamplingRate)
-plots.fresp(freq, [utils.dB(np.fft.rfft(hrir_l_hp48k[plt_idx, :])),
-                   utils.dB(np.fft.rfft(hrir_r_hp48k[plt_idx, :]))],
+plots.f_amp(freq, [np.fft.rfft(hrir_l_hp48k[plt_idx, :]),
+                   np.fft.rfft(hrir_r_hp48k[plt_idx, :])],
             labels=['HRTF left', 'HRTF right'],
             title='Resampled HRTF')
 

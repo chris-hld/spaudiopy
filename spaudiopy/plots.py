@@ -15,7 +15,33 @@ from . import sph
 from . import decoder
 
 
-def fresp(f, amp, title=None, labels=None,
+def spectrum(x, fs, **kwargs):
+    """Positive (single sided) spectrum of time signal x.
+    kwargs are forwarded to plots.f_amp().
+
+    Parameters
+    ----------
+    x : array_like
+        Time domain signal.
+    fs : int
+        Sampling frequency.
+    """
+    bins = len(x)
+    freq = np.fft.rfftfreq(bins, d=1. / fs)
+    # rfft returns half sided spectrum
+    spec = np.fft.rfft(x)
+    # Scale the amplitude (factor two for mirrored frequencies)
+    spec = spec / len(x)
+    if len(x) % 2:
+        # odd
+        spec[1:] *= 2.
+    else:
+        # even
+        spec[1:-1] *= 2.
+    f_amp(freq, spec, **kwargs)
+
+
+def f_amp(f, amp, to_dB=True, title=None, labels=None,
           xlim=[10, 25000], ylim=[-30, 20]):
     """
     Plot amplitude frequency response over time frequency f.
@@ -29,6 +55,10 @@ def fresp(f, amp, title=None, labels=None,
     fig = plt.figure()
     if not isinstance(amp, (list, tuple)):
         amp = [amp]
+    if to_dB:
+        # Avoid zeros in spec for dB
+        amp = [utils.dB(a + 10e-15) for a in amp]
+
     [plt.semilogx(f, a) for a in amp]
 
     if title is not None:
@@ -43,10 +73,11 @@ def fresp(f, amp, title=None, labels=None,
     fig.tight_layout()
 
 
-def H(f, H, title=None, xlim=[10, 25000]):
-    """Plot transfer function H (amplitude and phase) over time frequency f."""
+def transfer_function(f, H, title=None, xlim=[10, 25000]):
+    """Plot transfer function H (magnitude and phase) over time frequency f."""
     fig, ax1 = plt.subplots()
-    ax1.semilogx(f, 20 * np.log10(np.abs(H)),
+    H += 10e-15
+    ax1.semilogx(f, utils.dB(H),
                  color=plt.rcParams['axes.prop_cycle'].by_key()['color'][0],
                  label='Amplitude')
     ax1.set_xlabel('Frequency in Hz')
@@ -57,9 +88,8 @@ def H(f, H, title=None, xlim=[10, 25000]):
     ax2 = ax1.twinx()
     ax2.semilogx(f, np.unwrap(np.angle(H)),
                  color=plt.rcParams['axes.prop_cycle'].by_key()['color'][1],
-                 label='Phase')
+                 label='Phase', zorder=0)
     ax2.set_ylabel('Phase in rad')
-
     lines1, labels1 = ax1.get_legend_handles_labels()
     lines2, labels2 = ax2.get_legend_handles_labels()
     ax2.legend(lines1 + lines2, labels1 + labels2, loc=0)
