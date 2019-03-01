@@ -49,9 +49,8 @@ def render_stereoSDM(sdm_p, sdm_phi, sdm_theta):
     return ir_l, ir_r
 
 
-def _render_BSDM_sample(i, p, phi, theta, hrir_l, hrir_r, grid_phi, grid_theta):
-    h_l, h_r = pcs.select_hrtf(hrir_l, hrir_r, grid_phi, grid_theta,
-                               phi, theta)
+def _render_BSDM_sample(i, p, phi, theta, hrirs):
+    h_l, h_r = hrirs[hrirs.nearest(phi, theta)]
     # global shared_array
     shared_array[i:i + len(h_l), 0] += p * h_l
     shared_array[i:i + len(h_l), 1] += p * h_r
@@ -85,18 +84,12 @@ def render_BSDM(sdm_p, sdm_phi, sdm_theta, hrirs, jobs_count=None):
     if jobs_count is None:
         jobs_count = multiprocessing.cpu_count()
 
-    hrir_l = hrirs.left
-    hrir_r = hrirs.right
-    grid = hrirs.grid
-    bsdm_l = np.zeros(len(sdm_p) + hrir_l.shape[1] - 1)
+    bsdm_l = np.zeros(len(sdm_p) + len(hrirs) - 1)
     bsdm_r = np.zeros_like(bsdm_l)
-    grid_phi = np.array(grid['az'])
-    grid_theta = np.array(grid['el'])
 
     if jobs_count == 1:
         for i, (p, phi, theta) in enumerate(zip(sdm_p, sdm_phi, sdm_theta)):
-            h_l, h_r = pcs.select_hrtf(hrir_l, hrir_r, grid_phi, grid_theta,
-                                       phi, theta)
+            h_l, h_r = hrirs[hrirs.nearest(phi, theta)]
             # convolve
             bsdm_l[i:i + len(h_l)] += p * h_l
             bsdm_r[i:i + len(h_r)] += p * h_r
@@ -105,8 +98,7 @@ def render_BSDM(sdm_p, sdm_phi, sdm_theta, hrirs, jobs_count=None):
         _shared_array_shape = np.shape(np.c_[bsdm_l, bsdm_r])
         _arr_base = _create_shared_array(_shared_array_shape)
         _arg_itr = zip(range(len(sdm_p)), sdm_p, sdm_phi, sdm_theta,
-                       repeat(hrir_l), repeat(hrir_r),
-                       repeat(grid_phi), repeat(grid_theta))
+                       repeat(hrirs))
         # execute
         with multiprocessing.Pool(processes=jobs_count,
                                   initializer=_init_shared_array,

@@ -10,7 +10,7 @@ from scipy import signal as scysig
 import soundfile as sf
 
 from . import utils
-from . import process
+from . import process as pcs
 
 
 # CLASSES
@@ -130,13 +130,62 @@ class HRIRs:
         """Override len() to count of samples per hrir."""
         return self.left.shape[1]
 
-    def select_direction(self, phi, theta):
-        """Return HRIRs for given direction."""
-        grid_phi = np.array(self.grid['az'])
-        grid_theta = np.array(self.grid['el'])
-        h_l, h_r = process.select_hrtf(self.left, self.right,
-                                       grid_phi, grid_theta, phi, theta)
-        return h_l, h_r
+    def __getitem__(self, key):
+        """Enable [] operator, returns hrirs."""
+        return self.left[key, :], self.right[key, :]
+
+    def nearest_hrirs(self, phi, theta):
+        """
+        For a point on the sphere, select closest hrir defined on grid,
+        based on the haversine distance.
+
+        Parameters
+        ----------
+        phi : float
+            Azimuth.
+        theta : float
+            Elevation (colat).
+
+        Returns
+        -------
+        h_l : (n,) array_like
+            h(t) closest to [phi, theta].
+        h_r : (n,) array_like
+            h(t) closest to [phi, theta].
+        """
+        grid_phi = self.grid['azi'].values
+        grid_theta = self.grid['colat'].values
+        # search closest gridpoint
+        d_idx = np.argmin(pcs.haversine_dist(grid_phi, grid_theta, phi, theta))
+        VERBOSE = False
+        if VERBOSE:
+            with open("selected_hrtf.txt", "a") as f:
+                f.write("idx {}, phi: {}, g_phi: {}, th: {}, g_th: {}".format(
+                    d_idx,
+                    utils.rad2deg(phi), utils.rad2deg(grid_phi[d_idx]),
+                    utils.rad2deg(theta), utils.rad2deg(grid_theta[d_idx])))
+                f.write('\n')
+        # get hrirs to that angle
+        return self[d_idx]
+
+    def nearest(self, phi, theta):
+        """
+        Index of nearest hrir grid point based on haversine distance.
+
+        Parameters
+        ----------
+        phi : float
+            Azimuth.
+        theta : float
+            Colaitude.
+        Returns
+        -------
+        idx : int
+            Index.
+        """
+        grid_phi = self.grid['azi'].values
+        grid_theta = self.grid['colat'].values
+        return np.argmin(pcs.haversine_dist(grid_phi, grid_theta, phi, theta))
 
 
 def trim_audio(A, start, stop):
