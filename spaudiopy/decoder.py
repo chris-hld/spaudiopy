@@ -3,6 +3,7 @@
 import copy
 import numpy as np
 import scipy.spatial as scyspat
+from scipy import signal
 
 from spaudiopy import utils, sph, IO, plots, grids
 
@@ -60,32 +61,6 @@ class LoudspeakerSetup:
         if blacklist is not None:
             self.valid_simplices = apply_blacklist(self, blacklist)
 
-    def binauralize(self, ls_gains, fs, hrirs=None):
-        """Create IRs that ls_gains produce on this setup (no delays).
-        Provide gain value for every loudspeaker.
-        """
-        if hrirs is None:
-            hrirs = IO.load_hrir(fs)
-        assert(hrirs.fs == fs)
-        ls_gains = np.atleast_2d(ls_gains)
-        assert(ls_gains.shape[1] == len(self.points)), \
-            'Provide gain per speaker!'
-        l_ir = np.zeros(len(hrirs))
-        r_ir = np.zeros_like(l_ir)
-
-        for src_gains in ls_gains:
-            for ch, ls_gain in enumerate(src_gains):
-                if abs(ls_gain) > 10e-6:  # Gate at -100dB
-                    # extract LS position
-                    relative_position = self.points[ch, :] - \
-                                        self.listener_position
-                    ls_azi, ls_colat, ls_r = utils.cart2sph(*relative_position)
-                    hrir_l, hrir_r = hrirs.select_direction(ls_azi, ls_colat)
-                    # sum all LS
-                    l_ir += ls_gain * (hrir_l / ls_r ** 2)
-                    r_ir += ls_gain * (hrir_r / ls_r ** 2)
-        return l_ir, r_ir
-
     def get_characteristic_order(self):
         N_e = characteristic_ambisonic_order(self)
         if N_e < 1:
@@ -96,6 +71,63 @@ class LoudspeakerSetup:
         self.characteristic_order = self.get_characteristic_order()
         self.ambisonics_hull, self.kernel_hull = _ambisonic_hulls(self,
                                                                   N_kernel)
+
+    def binauralize(self, ls_gains, fs, sig_in=None, hrirs=None):
+        """Create IRs that ls_gains produce on this setup (no delays).
+        Provide gain value for every loudspeaker.
+        """
+        if hrirs is None:
+            hrirs = IO.load_hrir(fs)
+
+        assert(hrirs.fs == fs)
+        ls_gains = np.atleast_2d(ls_gains)
+        assert(ls_gains.shape[1] == len(self.points)), \
+            'Provide gain per speaker!'
+        src_count = ls_gains.shape[0]
+        if sig_in is None:
+            # dirac
+            sig_in = np.ones([src_count, 1])
+        sig_in = np.atleast_2d(sig_in)
+        assert sig_in.shape[0] == src_count, \
+            'Provide gains per source!'
+        # obtain loudspeaker signals
+        ls_sigs = self.loudspeaker_signals(sig_in, ls_gains)
+        # distance attenuation
+        relative_position = self.points - \
+                            self.listener_position
+        ls_azi, ls_colat, ls_r = utils.cart2sph(*relative_position.T)
+        ls_sigs = np.diag(1 / ls_r ** 2) @ ls_sigs
+        # convolve with hrir
+        l_sig = np.zeros(sig_in.shape[1] + len(hrirs) - 1)
+        r_sig = np.zeros_like(l_sig)
+        for ch, ls_sig in enumerate(ls_sigs):
+            if any(abs(ls_sig) > 10e-6):  # Gate at -100dB
+                hrir_l, hrir_r = hrirs.nearest_hrirs(ls_azi[ch],
+                                                     ls_colat[ch])
+                # sum all loudspeakers
+                l_sig += signal.convolve(ls_sig, hrir_l)
+                r_sig += signal.convolve(ls_sig, hrir_r)
+        return l_sig, r_sig
+
+    def loudspeaker_signals(self, sig_in, ls_gains):
+        """
+        Render loudspeaker signals.
+        Parameters
+        ----------
+        sig_in : (n, s)
+        ls_gains : (n, l)
+
+        Returns
+        -------
+        sig_out : (l, s)
+        """
+        ls_gains = np.atleast_2d(ls_gains)
+        assert(ls_gains.shape[1] == len(self.points)), \
+            'Provide gain per speaker!'
+        sig_in = np.atleast_2d(sig_in)
+        # Apply gains
+        sig_out = ls_gains.T @ sig_in
+        return sig_out
 
     def show(self):
         plots.hull(self, title='Loudspeaker Setup')
@@ -327,7 +359,6 @@ def vbap(src, hull, valid_simplices=None):
         valid_simplices = hull.valid_simplices
     src = np.atleast_2d(src)
     assert(src.shape[1] == 3)
-    # TODO: listener position
     src_count = src.shape[0]
     ls_count = valid_simplices.max() + 1
     inverted_ls_triplets = _invert_triplets(valid_simplices, hull.points)
@@ -396,7 +427,6 @@ def ALLRAP(src, hull, N=None):
         N = hull.characteristic_order
 
     src = np.atleast_2d(src)
-    # TODO: listener position
     src_count = src.shape[0]
     # includes imaginary loudspeakers
     ls_count = ambisonics_hull.valid_simplices.max() + 1
@@ -497,3 +527,29 @@ def characteristic_ambisonic_order(hull):
     N_e = 2 * 137.9 / np.average(spread) - 1.51
     # ceil might be optimistic
     return int(np.ceil(N_e))
+
+
+def nearest_loudspeaker(src, hull):
+    """Loudspeaker gains for nearest loudspeaker decoding, based on euclidean
+    distance.
+
+    Parameters
+    ----------
+    src : (n, 3)
+        Cartesian coordinates of n sources to be rendered.
+    hull : LoudspeakerSetup
+
+    Returns
+    -------
+    gains : (n, L) numpy.ndarray
+        Panning gains for L loudspeakers to render n sources.
+    """
+    src = np.atleast_2d(src)
+    src_count = src.shape[0]
+    gains = np.zeros([src_count, hull.npoints])
+
+    p = np.inner(src, hull.points)
+    idx = np.argmax(p, axis=1)
+    for g, i in zip(gains, idx):
+        g[i] = 1.0
+    return gains
