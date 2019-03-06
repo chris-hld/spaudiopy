@@ -19,8 +19,6 @@ cachedir = './__cache_dir'
 memory = Memory(cachedir)
 
 
-
-
 @memory.cache
 def resample_HRIRs(hrir_l, hrir_r, fs_hrir, fs_target, n_jobs=None):
     """

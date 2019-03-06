@@ -36,7 +36,7 @@ setupname = "graz"
 NONUNIFORM = False
 LISTEN = False
 
-if setupname is "aalto_full":
+if setupname == "aalto_full":
     ls_dirs = np.array([[-18, -54, -90, -126, -162, -198, -234, -270, -306,
                          -342, 0, -72, -144, -216, -288, -45, -135, -225,
                          -315, 0],
@@ -47,7 +47,7 @@ if setupname is "aalto_full":
     aperture_limit = 90
     opening_limit = 150
     blacklist = None
-elif setupname is "aalto_partial":
+elif setupname == "aalto_partial":
     ls_dirs = np.array([[-80, -45, 0, 45, 80, -60, -30, 30, 60],
                         [0, 0, 0, 0, 0, 60, 60, 60, 60]])
     ls_dirs[1, :] = 90 - ls_dirs[1, :]
@@ -55,7 +55,7 @@ elif setupname is "aalto_partial":
     aperture_limit = 90
     opening_limit = 150
     blacklist = None
-elif setupname is "graz":
+elif setupname == "graz":
     ls_dirs = np.array([[0, 23.7, 48.2, 72.6, 103.1, -100.9, -69.8, -44.8, -21.4,
                          22.7, 67.9, 114.2, -113.3, -65.4, -22.7,
                          46.8, 133.4, -133.4, -43.4],
@@ -88,7 +88,7 @@ ls_setup.show()
 plots.hull_normals(ls_setup)
 
 # Test source location
-src = np.array([1, 0, 0])
+src = np.array([1, 1, 0.5])
 src_azi, src_colat, _ = utils.cart2sph(*src.tolist())
 
 # %% VBAP
@@ -128,9 +128,11 @@ plots.decoder_performance(ls_setup, 'ALLRAP')
 fs = 44100
 hrirs = IO.load_hrir(fs)
 
-l_vbap_IR, r_vbap_IR = ls_setup.binauralize(gains_VBAP, fs)
+l_vbap_IR, r_vbap_IR = ls_setup.binauralize(ls_setup.loudspeaker_signals(
+                                            gains_VBAP), fs)
 
-l_allrap_IR, r_allrap_IR = ls_setup.binauralize(gains_ALLRAP, fs)
+l_allrap_IR, r_allrap_IR = ls_setup.binauralize(ls_setup.loudspeaker_signals(
+                                                gains_ALLRAP), fs)
 
 
 # %%
