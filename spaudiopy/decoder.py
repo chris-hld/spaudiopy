@@ -72,35 +72,25 @@ class LoudspeakerSetup:
         self.ambisonics_hull, self.kernel_hull = _ambisonic_hulls(self,
                                                                   N_kernel)
 
-    def binauralize(self, ls_gains, fs, sig_in=None, hrirs=None):
-        """Create IRs that ls_gains produce on this setup (no delays).
-        Provide gain value for every loudspeaker.
+    def binauralize(self, ls_signals, fs, hrirs=None):
+        """Create binaural signals that the loudspeaker signals produce on this
+        setup (no delays).
         """
         if hrirs is None:
             hrirs = IO.load_hrir(fs)
-
         assert(hrirs.fs == fs)
-        ls_gains = np.atleast_2d(ls_gains)
-        assert(ls_gains.shape[1] == len(self.points)), \
-            'Provide gain per speaker!'
-        src_count = ls_gains.shape[0]
-        if sig_in is None:
-            # dirac
-            sig_in = np.ones([src_count, 1])
-        sig_in = np.atleast_2d(sig_in)
-        assert sig_in.shape[0] == src_count, \
-            'Provide gains per source!'
-        # obtain loudspeaker signals
-        ls_sigs = self.loudspeaker_signals(sig_in, ls_gains)
+        ls_signals = np.atleast_2d(ls_signals)
+        assert ls_signals.shape[0] == self.npoints, \
+            'Provide signal per loudspeaker!'
         # distance attenuation
         relative_position = self.points - \
                             self.listener_position
         ls_azi, ls_colat, ls_r = utils.cart2sph(*relative_position.T)
-        ls_sigs = np.diag(1 / ls_r ** 2) @ ls_sigs
+        ls_signals = np.diag(1 / ls_r ** 2) @ ls_signals
         # convolve with hrir
-        l_sig = np.zeros(sig_in.shape[1] + len(hrirs) - 1)
+        l_sig = np.zeros(ls_signals.shape[1] + len(hrirs) - 1)
         r_sig = np.zeros_like(l_sig)
-        for ch, ls_sig in enumerate(ls_sigs):
+        for ch, ls_sig in enumerate(ls_signals):
             if any(abs(ls_sig) > 10e-6):  # Gate at -100dB
                 hrir_l, hrir_r = hrirs.nearest_hrirs(ls_azi[ch],
                                                      ls_colat[ch])
@@ -109,25 +99,23 @@ class LoudspeakerSetup:
                 r_sig += signal.convolve(ls_sig, hrir_r)
         return l_sig, r_sig
 
-    def loudspeaker_signals(self, sig_in, ls_gains):
-        """
-        Render loudspeaker signals.
+    def loudspeaker_signals(self, ls_gains, sig_in=1.):
+        """Render loudspeaker signals.
+
         Parameters
         ----------
-        sig_in : (n, s)
-        ls_gains : (n, l)
+        ls_gains : (l,) array_like
+        sig_in : (s,) array like
 
         Returns
         -------
         sig_out : (l, s)
         """
-        ls_gains = np.atleast_2d(ls_gains)
-        assert(ls_gains.shape[1] == len(self.points)), \
+        ls_gains = utils.asarray_1d(ls_gains)
+        sig_in = utils.asarray_1d(sig_in)
+        assert(len(ls_gains) == len(self.points)), \
             'Provide gain per speaker!'
-        sig_in = np.atleast_2d(sig_in)
-        # Apply gains
-        sig_out = ls_gains.T @ sig_in
-        return sig_out
+        return np.outer(ls_gains, sig_in)
 
     def show(self):
         plots.hull(self, title='Loudspeaker Setup')
@@ -364,9 +352,9 @@ def vbap(src, hull, valid_simplices=None):
     inverted_ls_triplets = _invert_triplets(valid_simplices, hull.points)
     gains = np.zeros([src_count, ls_count])
     for src_idx in range(src_count):
-        for face_idx, LS_base in enumerate(inverted_ls_triplets):
-            # projecting src onto LS base
-            projection = np.dot(LS_base, src[src_idx, :])
+        for face_idx, ls_base in enumerate(inverted_ls_triplets):
+            # projecting src onto loudspeakers
+            projection = np.dot(ls_base, src[src_idx, :])
             # normalization
             projection /= np.sqrt(np.sum(projection**2))
             if np.all(projection > -10e-6):

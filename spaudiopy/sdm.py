@@ -114,15 +114,7 @@ def render_BSDM(sdm_p, sdm_phi, sdm_theta, hrirs, jobs_count=None):
     return bsdm_l, bsdm_r
 
 
-def _render_loudspeaker_sdm_sample(idx, p, g, ls_setup, hrirs):
-    h_l, h_r = ls_setup.binauralize(g, hrirs.fs, hrirs=hrirs)
-    # global shared_array
-    shared_array[idx:idx + len(h_l), 0] += p * h_l
-    shared_array[idx:idx + len(h_l), 1] += p * h_r
-
-
-@memory.cache
-def render_loudspeaker_sdm(sdm_p, ls_gains, ls_setup, hrirs, jobs_count=None):
+def render_loudspeaker_sdm(sdm_p, ls_gains, ls_setup, hrirs):
     """
     Render sdm signal on loudspeaker setup as binaural synthesis.
 
@@ -134,8 +126,6 @@ def render_loudspeaker_sdm(sdm_p, ls_gains, ls_setup, hrirs, jobs_count=None):
         Loudspeaker (l) gains.
     ls_setup : decoder.LoudspeakerSetup
     hrirs : sig.HRIRs
-    jobs_count : int
-        Parallel jobs, switches implementation if > 1.
 
     Returns
     -------
@@ -144,36 +134,13 @@ def render_loudspeaker_sdm(sdm_p, ls_gains, ls_setup, hrirs, jobs_count=None):
     ir_r : array_like
         Right impulse response.
     """
-    if jobs_count is None:
-        jobs_count = multiprocessing.cpu_count()
+    n = len(sdm_p)
+    ls_gains = np.atleast_2d(ls_gains)
+    assert(n == ls_gains.shape[0])
 
-    ir_l = np.zeros(len(sdm_p) + len(hrirs) - 1)
-    ir_r = np.zeros_like(ir_l)
-
-    if jobs_count == 1:
-        for idx, (p, g) in enumerate(zip(sdm_p, ls_gains)):
-            h_l, h_r = ls_setup.binauralize(g, hrirs.fs)
-            # convolve
-            ir_l[idx:idx + len(h_l)] += p * h_l
-            ir_r[idx:idx + len(h_r)] += p * h_r
-
-    else:
-        _shared_array_shape = np.shape(np.c_[ir_l, ir_r])
-        _arr_base = _create_shared_array(_shared_array_shape)
-        _arg_itr = zip(range(len(sdm_p)), sdm_p, ls_gains,
-                       repeat(ls_setup), repeat(hrirs))
-        # execute
-        with multiprocessing.Pool(processes=jobs_count,
-                                  initializer=_init_shared_array,
-                                  initargs=(_arr_base,
-                                            _shared_array_shape,)) as pool:
-            pool.starmap(_render_loudspeaker_sdm_sample, _arg_itr)
-        # reshape
-        _result = np.frombuffer(_arr_base.get_obj()).reshape(
-                                _shared_array_shape)
-        ir_l = _result[:, 0]
-        ir_r = _result[:, 1]
-
+    # render loudspeaker signals
+    ls_sigs = sdm_p * ls_gains.T
+    ir_l, ir_r = ls_setup.binauralize(ls_sigs, hrirs.fs, hrirs)
     return ir_l, ir_r
 
 
