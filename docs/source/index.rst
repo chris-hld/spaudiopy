@@ -7,15 +7,7 @@ Welcome to spaudiopy's documentation!
    :caption: Contents:
 
    installation
-   IO
-   signal
-   spherical_harmonics
-   decoder
-   processing
-   sdm
-   helpers
-   plotting
-
+   api
 
 
 Indices and tables

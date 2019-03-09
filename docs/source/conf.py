@@ -39,6 +39,7 @@ needs_sphinx = '1.3' # for sphinx.ext.napoleon
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',  # support for NumPy-style docstrings
@@ -50,6 +51,9 @@ autodoc_member_order = 'bysource'
 autodoc_default_flags = ['members', 'undoc-members']
 # Mock import soundfile, because it  depends on external C lib
 autodoc_mock_imports = ['soundfile']
+
+# autosummary
+autosummary_generate = ['api']
 
 # napoleon
 napoleon_google_docstring = False

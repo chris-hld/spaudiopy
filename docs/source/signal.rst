@@ -1,4 +1,0 @@
-Signals
-=======
-
-.. automodule:: spaudiopy.sig

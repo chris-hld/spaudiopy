@@ -1,4 +1,0 @@
-Processing
-==========
-
-.. automodule:: spaudiopy.process
