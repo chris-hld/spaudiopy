@@ -49,9 +49,13 @@ extensions = [
 ]
 
 # autodoc
-#autoclass_content = 'init'
-#autodoc_member_order = 'bysource'
-#autodoc_default_flags = ['members', 'undoc-members']
+autodoc_default_options = {
+    'members' : None,
+    'undoc-members': None,
+    'member-order': 'bysource',
+    'special-members': '__init__',
+    'exclude-members': '__weakref__'
+}
 # Mock import soundfile, because it  depends on external C lib
 autodoc_mock_imports = ['soundfile']
 

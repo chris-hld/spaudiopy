@@ -1,8 +1,8 @@
-# -*- coding: utf-8 -*-
-"""
+""" spaudiopy
+
 .. rubric:: Submodules
 
-.. autosummary::
+.. automodule::
     :toctree:
 
     IO
