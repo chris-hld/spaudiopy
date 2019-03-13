@@ -5,10 +5,14 @@
 .. autosummary::
    :toctree:
 
+   IO
+   sig
+   sph
    decoder
+   process
    utils
-
-
+   grids
+   sdm
 
 """
 
