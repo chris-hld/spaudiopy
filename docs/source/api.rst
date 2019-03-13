@@ -4,7 +4,6 @@ API Documentation
 .. currentmodule:: spaudiopy
 
 .. autosummary::
-    :toctree: _autosummary
 
     IO
     sig
