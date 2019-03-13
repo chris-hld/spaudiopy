@@ -248,7 +248,7 @@ def b_to_sh(B, W_weight=None):
     return np.apply_along_axis(np.dot, 0, B, M_inv.T)
 
 
-def soundfield_to_B(sig, W_weight=None):
+def soundfield_to_b(sig, W_weight=None):
     """Convert soundfield tetraeder mic input signals to B-format by SHT.
 
     Parameters

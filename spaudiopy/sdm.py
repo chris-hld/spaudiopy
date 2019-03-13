@@ -18,7 +18,7 @@ cachedir = './__cache_dir'
 memory = Memory(cachedir)
 
 
-def render_stereoSDM(sdm_p, sdm_phi, sdm_theta):
+def render_stereo_sdm(sdm_p, sdm_phi, sdm_theta):
     """Stereophonic SDM Render IR.
 
     Parameters
@@ -49,7 +49,7 @@ def render_stereoSDM(sdm_p, sdm_phi, sdm_theta):
     return ir_l, ir_r
 
 
-def _render_BSDM_sample(i, p, phi, theta, hrirs):
+def _render_bsdm_sample(i, p, phi, theta, hrirs):
     h_l, h_r = hrirs[hrirs.nearest(phi, theta)]
     # global shared_array
     shared_array[i:i + len(h_l), 0] += p * h_l
@@ -57,7 +57,7 @@ def _render_BSDM_sample(i, p, phi, theta, hrirs):
 
 
 @memory.cache
-def render_BSDM(sdm_p, sdm_phi, sdm_theta, hrirs, jobs_count=None):
+def render_bsdm(sdm_p, sdm_phi, sdm_theta, hrirs, jobs_count=None):
     """
     Binaural SDM Render.
 
@@ -104,7 +104,7 @@ def render_BSDM(sdm_p, sdm_phi, sdm_theta, hrirs, jobs_count=None):
                                   initializer=_init_shared_array,
                                   initargs=(_arr_base,
                                             _shared_array_shape,)) as pool:
-            pool.starmap(_render_BSDM_sample, _arg_itr)
+            pool.starmap(_render_bsdm_sample, _arg_itr)
         # reshape
         _result = np.frombuffer(_arr_base.get_obj()).reshape(
                                 _shared_array_shape)

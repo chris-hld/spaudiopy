@@ -94,7 +94,11 @@ def load_hrir(fs, filename=None, dummy=False):
         current_file_dir = os.path.dirname(__file__)
         filename = os.path.join(current_file_dir, default_file)
 
-    mat = loadmat(filename)
+    try:
+        mat = loadmat(filename)
+    except FileNotFoundError:
+        raise ValueError("No default hrirs. Try running HRIRs_from_SH.py")
+
     hrir_l = np.array(np.squeeze(mat['hrir_l']), dtype=float)
     hrir_r = np.array(np.squeeze(mat['hrir_r']), dtype=float)
     hrir_fs = int(mat['SamplingRate'])
@@ -141,7 +145,7 @@ def load_sdm(filename):
     return h, sdm_phi, sdm_theta, fs
 
 
-def load_SOFA_data(filename):
+def load_sofa_data(filename):
     """Load .sofa file into python dictionary that contains the data in
     numpy arrays."""
     with h5py.File(filename, 'r') as f:

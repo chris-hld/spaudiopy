@@ -385,7 +385,7 @@ def _ambisonic_hulls(hull, N_kernel):
     return ambisonics_hull, kernel_hull
 
 
-def ALLRAP(src, hull, N=None):
+def allrap(src, hull, N=None):
     """Loudspeaker gains for All-Round Ambisonic Panning.
     Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
     Journal of Audio Engineering Society, Sec. 4.
@@ -438,7 +438,7 @@ def ALLRAP(src, hull, N=None):
     return gains
 
 
-def ALLRAD(F_nm, hull, N=None):
+def allrad(F_nm, hull, N=None):
     """Loudspeaker gains for All-Round Ambisonic Panning.
     Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
     Journal of Audio Engineering Society, Sec. 6.

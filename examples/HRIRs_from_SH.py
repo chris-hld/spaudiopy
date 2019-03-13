@@ -94,8 +94,8 @@ hrir_r = np.fft.irfft(HRTF_r)  # creates 256 samples(t)
 assert hrir_l.shape == hrir_r.shape
 print("hrir shape:", hrir_l.shape)
 plt.figure()
-plt.plot(utils.dB(hrir_l[plt_idx, :]), label='left')
-plt.plot(utils.dB(hrir_r[plt_idx, :]), label='right')
+plt.plot(utils.db(hrir_l[plt_idx, :]), label='left')
+plt.plot(utils.db(hrir_r[plt_idx, :]), label='right')
 plt.legend()
 plt.grid()
 plt.xlabel('t in samples')
@@ -103,7 +103,7 @@ plt.ylabel('A in dB')
 plt.title('HRIR ETC')
 
 # %% Headphone compensation / applying inverse common transfer function
-sofa_data = IO.load_SOFA_data('../data//FABIAN_HRTF_DATABASE_V2/1 HRIRs/SOFA/FABIAN_CTF_measured_inverted_smoothed.sofa')
+sofa_data = IO.load_sofa_data('../data//FABIAN_HRTF_DATABASE_V2/1 HRIRs/SOFA/FABIAN_CTF_measured_inverted_smoothed.sofa')
 h_headphone = sofa_data['Data.IR']
 h_samplerate = sofa_data['Data.SamplingRate']
 
@@ -129,7 +129,7 @@ plots.f_amp(freq, [np.fft.rfft(hrir_l_hp[plt_idx, :]),
 
 # %% Resample to 48k
 fs_target = 48000
-hrir_l_hp48k, hrir_r_hp48k, _ = process.resample_HRIRs(hrir_l_hp, hrir_r_hp,
+hrir_l_hp48k, hrir_r_hp48k, _ = process.resample_hrirs(hrir_l_hp, hrir_r_hp,
                                                        SamplingRate,
                                                        fs_target)
 print("Resampled HRIR:", hrir_l_hp48k.shape)

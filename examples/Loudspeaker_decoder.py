@@ -106,10 +106,10 @@ plots.hull(ambisonics_hull, title='Ambisonic hull')
 plots.hull(kernel_hull, title='Kernel hull')
 
 # ALLRAP
-gains_ALLRAP = decoder.ALLRAP(src, ls_setup, N=N_e)
+gains_ALLRAP = decoder.allrap(src, ls_setup, N=N_e)
 # ALLRAD
 input_F_nm = sph.sh_matrix(N_e, src_azi, src_colat, 'real').T  # SH dirac
-out_ALLRAD = decoder.ALLRAD(input_F_nm, ls_setup, N=N_e)
+out_ALLRAD = decoder.allrad(input_F_nm, ls_setup, N=N_e)
 
 print("ALLRAD and ALLRAP:")
 utils.test_diff(gains_ALLRAP, out_ALLRAD)
@@ -118,7 +118,7 @@ utils.test_diff(gains_ALLRAP, out_ALLRAD)
 # %% test multiple sources
 _grid, _weights = grids.load_Fliege_Maier_nodes(10)
 G_vbap = decoder.vbap(_grid, ls_setup)
-G_allrap = decoder.ALLRAP(_grid, ls_setup)
+G_allrap = decoder.allrap(_grid, ls_setup)
 
 # %% Look at some measures
 plots.decoder_performance(ls_setup, 'VBAP')

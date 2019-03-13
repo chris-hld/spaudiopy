@@ -41,7 +41,7 @@ def spectrum(x, fs, **kwargs):
     f_amp(freq, spec, **kwargs)
 
 
-def f_amp(f, amp, to_dB=True, title=None, labels=None,
+def f_amp(f, amp, to_db=True, title=None, labels=None,
           xlim=[10, 25000], ylim=[-30, 20]):
     """
     Plot amplitude frequency response over time frequency f.
@@ -55,9 +55,9 @@ def f_amp(f, amp, to_dB=True, title=None, labels=None,
     fig = plt.figure()
     if not isinstance(amp, (list, tuple)):
         amp = [amp]
-    if to_dB:
+    if to_db:
         # Avoid zeros in spec for dB
-        amp = [utils.dB(a + 10e-15) for a in amp]
+        amp = [utils.db(a + 10e-15) for a in amp]
 
     [plt.semilogx(f, a) for a in amp]
 
@@ -77,7 +77,7 @@ def transfer_function(f, H, title=None, xlim=[10, 25000]):
     """Plot transfer function H (magnitude and phase) over time frequency f."""
     fig, ax1 = plt.subplots()
     H += 10e-15
-    ax1.semilogx(f, utils.dB(H),
+    ax1.semilogx(f, utils.db(H),
                  color=plt.rcParams['axes.prop_cycle'].by_key()['color'][0],
                  label='Amplitude')
     ax1.set_xlabel('Frequency in Hz')
@@ -417,8 +417,8 @@ def polar(theta, a, title=None, rlim=[-40, 0], ax=None):
     if ax is None:
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='polar')
-    ax.plot(theta, utils.dB(np.clip(a, 0, None)), label='pos')
-    ax.plot(theta, utils.dB(abs(np.clip(a, None, 0))), label='neg')
+    ax.plot(theta, utils.db(np.clip(a, 0, None)), label='pos')
+    ax.plot(theta, utils.db(abs(np.clip(a, None, 0))), label='neg')
     ax.set_rmin(rlim[0])
     ax.set_rmax(rlim[1])
     plt.legend(loc='upper left')
@@ -441,7 +441,7 @@ def decoder_performance(hull, renderer_type, azi_steps=5, el_steps=3, N=None):
     if renderer_type.lower() == 'vbap':
         G = decoder.vbap(np.c_[_grid_x, _grid_y, grid_z], hull)
     if renderer_type.lower() == 'allrap':
-        G = decoder.ALLRAP(np.c_[_grid_x, _grid_y, grid_z], hull, N)
+        G = decoder.allrap(np.c_[_grid_x, _grid_y, grid_z], hull, N)
 
     # Measures
     E = np.sum(G**2, axis=1)  # * (4 * np.pi / G.shape[1])  # (eq. 15)

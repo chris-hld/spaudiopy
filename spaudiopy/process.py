@@ -20,7 +20,7 @@ memory = Memory(cachedir)
 
 
 @memory.cache
-def resample_HRIRs(hrir_l, hrir_r, fs_hrir, fs_target, n_jobs=None):
+def resample_hrirs(hrir_l, hrir_r, fs_hrir, fs_target, n_jobs=None):
     """
     Resample HRIRs to new SamplingRate(t), using multiprocessing.
 
@@ -214,7 +214,7 @@ def pseudo_intensity(Ambi_B, MA=False, n_jobs=None):
     return utils.cart2sph(I_vec[:, 0], I_vec[:, 1], I_vec[:, 2])
 
 
-def Ambeo_A2B(Ambi_A, filter_coeffs=None):
+def ambeo_a2b(Ambi_A, filter_coeffs=None):
     """Convert A 'MultiSignal' (type I: FLU, FRD, BLD, BRU) to B AmbiBSignal.
 
     Parameters
@@ -229,7 +229,7 @@ def Ambeo_A2B(Ambi_A, filter_coeffs=None):
     Ambi_B : sig.AmbiBSignal
         B-format output signal.
     """
-    _B = sph.soundfield_to_B(Ambi_A.get_signals())
+    _B = sph.soundfield_to_b(Ambi_A.get_signals())
     Ambi_B = sig.AmbiBSignal(_B[0, :], _B[1, :], _B[2, :], _B[3, :],
                              fs=Ambi_A.fs)
     if filter_coeffs is not None:
@@ -241,7 +241,7 @@ def Ambeo_A2B(Ambi_A, filter_coeffs=None):
     return Ambi_B
 
 
-def B_to_stereo(Ambi_B):
+def b_to_stereo(Ambi_B):
     """Downmix B format first order Ambisonics to Stereo.
 
     Parameters

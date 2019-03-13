@@ -87,27 +87,18 @@ def area_triangle(p1, p2, p3):
     return 0.5 * np.linalg.norm(np.cross((p2 - p1), (p3 - p1)))
 
 
-def dB(data, power=False):
-    """Calculate the 20*log10(abs(x)).
-
+def db(x, power=False):
+    """Convert *x* to decibel.
     Parameters
     ----------
-    data : array_like
-       signals to be converted to db
-    power : boolean
-       data is a power signal and only needs factor 10
-
-    Returns
-    -------
-    db : array_like
-       (20 or 10) * log10(abs(data))
-
+    x : array_like
+        Input data.  Values of 0 lead to negative infinity.
+    power : bool, optional
+        If ``power=False`` (the default), *x* is squared before
+        conversion.
     """
-    if power:
-        factor = 10
-    else:
-        factor = 20
-    return factor * np.log10(np.abs(data))
+    with np.errstate(divide='ignore'):
+        return (10 if power else 20) * np.log10(np.abs(x))
 
 
 def stack(vector_1, vector_2):
