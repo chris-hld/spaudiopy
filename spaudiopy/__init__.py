@@ -2,13 +2,13 @@
 
 .. rubric:: Submodules
 
-.. currentmodule:: spaudiopy
-
 .. autosummary::
    :toctree:
 
    decoder
    utils
+
+
 
 """
 

@@ -17,6 +17,7 @@ import sys
 
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.append(os.path.abspath('../../'))
+sys.path.append(os.path.abspath('./'))
 # sys.path.append(os.path.abspath('../../spaudiopy'))
 print('\n'.join(sys.path))
 
@@ -60,7 +61,7 @@ autodoc_default_options = {
 autodoc_mock_imports = ['soundfile']
 
 # autosummary
-autosummary_generate = ['api']
+autosummary_generate = True
 
 # napoleon
 napoleon_google_docstring = False
