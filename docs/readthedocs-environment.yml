@@ -8,6 +8,5 @@ dependencies:
   - scipy
   - matplotlib>=1.5
   - joblib
-  - plotly
   - pip:
     - nbsphinx
