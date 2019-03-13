@@ -1,6 +1,19 @@
 # -*- coding: utf-8 -*-
 """
-@author: chris
+.. rubric:: Submodules
+.. autosummary::
+    :toctree:
+
+    IO
+    sig
+    sph
+    decoder
+    process
+    sdm
+    grids
+    utils
+    plots
+
 """
 
 from . import decoder
