@@ -2,16 +2,11 @@
 
 .. rubric:: Submodules
 
-.. automodule::
-    IO
-    sig
-    sph
-    decoder
-    process
-    sdm
-    grids
-    utils
-    plots
+
+.. autosummary::
+
+   decoder
+   utils
 
 """
 
@@ -24,3 +19,4 @@ from . import sdm
 from . import sph
 from . import sig
 from . import utils
+
