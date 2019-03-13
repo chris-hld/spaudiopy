@@ -3,8 +3,6 @@
 .. rubric:: Submodules
 
 .. automodule::
-    :toctree:
-
     IO
     sig
     sph
