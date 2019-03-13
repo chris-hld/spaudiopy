@@ -1,4 +1,0 @@
-conda:
-    file: docs/readthedocs-environment.yml
-python:
-    pip_install: true
