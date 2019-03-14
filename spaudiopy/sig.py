@@ -18,7 +18,14 @@ class MonoSignal:
     """Signal class for a MONO channel audio signal."""
 
     def __init__(self, signal, fs):
-        """Constructor."""
+        """Constructor
+
+        Parameters
+        ----------
+        signal : array_like
+        fs : int
+
+        """
         self.signal = utils.asarray_1d(signal)
         self.fs = fs
 
@@ -61,15 +68,21 @@ class MonoSignal:
 class MultiSignal(MonoSignal):
     """Signal class for a MULTI channel audio signal."""
 
-    def __init__(self, *signals, fs=None):
-        """Constructor."""
+    def __init__(self, signals, fs=None):
+        """Constructor
+
+        Parameters
+        ----------
+        signals : list of array_like
+        fs : int
+
+        """
+        assert isinstance(signals, (list, tuple))
         self.channel = []
         if fs is None:
             raise ValueError("Provide fs (as kwarg).")
         else:
             self.fs = fs
-        if isinstance(signals[0], list):
-            signals = signals[0]  # unpack tuṕle if list was given
         for s in signals:
             self.channel.append(MonoSignal(s, fs))
         self.channel_count = len(self.channel)
@@ -77,6 +90,10 @@ class MultiSignal(MonoSignal):
     def __len__(self):
         """Override len()."""
         return len(self.channel[0])
+
+    def __getitem__(self, key):
+        """Override [] operator, returns signal channel."""
+        return self.channel[key]
 
     @classmethod
     def from_file(cls, filename, fs=None):
@@ -104,8 +121,8 @@ class MultiSignal(MonoSignal):
 
 class AmbiBSignal(MultiSignal):
     """Signal class for first order Ambisonics B-format signals."""
-    def __init__(self, *signals, fs=None):
-        MultiSignal.__init__(self, *signals, fs=fs)
+    def __init__(self, signals, fs=None):
+        MultiSignal.__init__(self, signals, fs=fs)
         assert self.channel_count == 4, "Provide four channels!"
         self.W = self.channel[0].signal
         self.X = self.channel[1].signal

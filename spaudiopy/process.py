@@ -230,7 +230,7 @@ def ambeo_a2b(Ambi_A, filter_coeffs=None):
         B-format output signal.
     """
     _B = sph.soundfield_to_b(Ambi_A.get_signals())
-    Ambi_B = sig.AmbiBSignal(_B[0, :], _B[1, :], _B[2, :], _B[3, :],
+    Ambi_B = sig.AmbiBSignal([_B[0, :], _B[1, :], _B[2, :], _B[3, :]],
                              fs=Ambi_A.fs)
     if filter_coeffs is not None:
         b0_d, a0_d, b1_d, a1_d = pickle.load(open(filter_coeffs, "rb"))

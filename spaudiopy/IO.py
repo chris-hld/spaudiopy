@@ -52,11 +52,13 @@ def load_audio(filenames, fs=None):
     if fs is not None:
         if fs != loaded_fs[0]:
             raise ValueError("File: Found different fs:" + str(loaded_fs[0]))
+    else:
+        fs = loaded_fs[0]
     # MonoSignal or MultiSignal
     if len(loaded_data) == 1:
         return sig.MonoSignal(loaded_data, fs=fs)
     else:
-        return sig.MultiSignal(*loaded_data, fs=fs)
+        return sig.MultiSignal([*loaded_data], fs=fs)
 
 
 def load_hrirs(fs, filename=None, dummy=False):
