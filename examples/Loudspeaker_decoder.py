@@ -34,7 +34,7 @@ from spaudiopy import utils, IO, sig, decoder, sph, plots, grids
 # %% User setup
 setupname = "graz"
 NONUNIFORM = False
-LISTEN = False
+LISTEN = True
 
 if setupname == "aalto_full":
     ls_dirs = np.array([[-18, -54, -90, -126, -162, -198, -234, -270, -306,
@@ -126,7 +126,7 @@ plots.decoder_performance(ls_setup, 'ALLRAP')
 
 # %% Binauralize
 fs = 44100
-hrirs = IO.load_hrir(fs)
+hrirs = IO.load_hrirs(fs)
 
 l_vbap_IR, r_vbap_IR = ls_setup.binauralize(ls_setup.loudspeaker_signals(
                                             gains_VBAP), fs)

@@ -77,7 +77,7 @@ class LoudspeakerSetup:
         setup (no delays).
         """
         if hrirs is None:
-            hrirs = IO.load_hrir(fs)
+            hrirs = IO.load_hrirs(fs)
         assert(hrirs.fs == fs)
         ls_signals = np.atleast_2d(ls_signals)
         assert ls_signals.shape[0] == self.npoints, \

@@ -59,7 +59,7 @@ def load_audio(filenames, fs=None):
         return sig.MultiSignal(*loaded_data, fs=fs)
 
 
-def load_hrir(fs, filename=None, dummy=False):
+def load_hrirs(fs, filename=None, dummy=False):
     """
     Convenience function to load HRTF.mat.
 
