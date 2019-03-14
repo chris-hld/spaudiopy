@@ -10,56 +10,65 @@ from plotly import offline as pltlyof
 import plotly.graph_objs as pltlygo
 
 from . import utils
-from . import sig
 from . import sph
 from . import decoder
 
 
-def spectrum(x, fs, **kwargs):
-    """Positive (single sided) spectrum of time signal x.
-    kwargs are forwarded to plots.f_amp().
+def spectrum(x, fs, ylim=None,  **kwargs):
+    """Positive (single sided) amplitude spectrum of time signal x.
+    kwargs are forwarded to plots.freq_resp().
 
     Parameters
     ----------
-    x : array_like
+    x : np.array, list of np.array
         Time domain signal.
     fs : int
         Sampling frequency.
     """
-    bins = len(x)
+    if not isinstance(x, (list, tuple)):
+        x = [x]
+    bins = len(x[0])
     freq = np.fft.rfftfreq(bins, d=1. / fs)
-    # rfft returns half sided spectrum
-    spec = np.fft.rfft(x)
-    # Scale the amplitude (factor two for mirrored frequencies)
-    spec = spec / len(x)
-    if len(x) % 2:
-        # odd
-        spec[1:] *= 2.
-    else:
-        # even
-        spec[1:-1] *= 2.
-    f_amp(freq, spec, **kwargs)
+
+    specs = []
+    for s in x:
+        # rfft returns half sided spectrum
+        mag = np.abs(np.fft.rfft(s))
+        # Scale the amplitude (factor two for mirrored frequencies)
+        mag = mag / len(s)
+        assert(mag.ndim == 1)
+        if bins % 2:
+            # odd
+            mag[1:] *= 2.
+        else:
+            # even
+            # should be spec[1:-1] *= 2., but this looks "correct" for plotting
+            mag[1:] *= 2.
+        specs.append(mag)
+    freq_resp(freq, specs, ylim=ylim, **kwargs)
 
 
-def f_amp(f, amp, to_db=True, title=None, labels=None,
-          xlim=[10, 25000], ylim=[-30, 20]):
-    """
-    Plot amplitude frequency response over time frequency f.
+def freq_resp(f, amp, to_db=True, title=None, labels=None,
+              xlim=[10, 25000], ylim=[-30, 20]):
+    """ Plot amplitude of frequency response over time frequency f.
 
     Parameters
     ----------
     f : frequency array
-    *amp : array_like, list of array_like
+    amp : array_like, list of array_like
 
     """
-    fig = plt.figure()
     if not isinstance(amp, (list, tuple)):
         amp = [amp]
+    if labels is not None:
+        if not isinstance(labels, (list, tuple)):
+            labels = [labels]
     if to_db:
         # Avoid zeros in spec for dB
         amp = [utils.db(a + 10e-15) for a in amp]
 
-    [plt.semilogx(f, a) for a in amp]
+    fig = plt.figure()
+    [plt.semilogx(f, a.flat) for a in amp]
 
     if title is not None:
         plt.title(title)
