@@ -283,6 +283,118 @@ def lagrange_delay(N, delay):
     return h
 
 
+def frac_octave_filterbank(n, N, fs, f_low, f_high=None, overlap=0.5, l=3):
+    """ Fractional octave band filterbank.
+    Design of digital fractional-octave-band filters with energy conservation
+    and perfect reconstruction.
+
+    Parameters
+    ----------
+    n : int
+        Octave fraction, e.g. n=3 third-octave bands.
+    N : int
+        Number of frequency bins.
+    fs : int
+        Sampling frequency in Hz.
+    f_low : int
+        Center frequency of first full band in Hz.
+    f_high : int
+        Cutoff frequency in Hz, above which no further bands are generated.
+    overlap : float
+        Band overlap, should be between [0, 0.5].
+    l : int
+        Band transition slope, implemented as recursion order `l`.
+
+    Returns
+    -------
+    g : (b, N//2 + 1) np.ndarray
+        Band gains for non-negative frequency bins.
+
+    Notes
+    -----
+    Antoni, J. (2010). Orthogonal-like fractional-octave-band filters.
+    The Journal of the Acoustical Society of America, 127(2), 884–895.
+
+    Examples
+    --------
+    >>> fs = 44100
+    >>> N = 2**16
+    >>> gs = frac_octave_filterbank(n=1, N=N, fs=fs, f_low=100, f_high=8000)
+    >>> f = np.linspace(0, fs//2, N//2 + 1)
+    >>> fig, ax = plt.subplots(2, 1)
+    >>> ax[0].semilogx(f, gs.T)
+    >>> ax[0].set_title('Band gains')
+    >>> ax[1].semilogx(f, np.sum(np.abs(gs)**2, axis=0))
+    >>> ax[1].set_title('$\sum |g| ^ 2$')
+    >>> for a_i in ax:
+    >>>     a_i.grid(True)
+    >>>     a_i.set_xlim([20, fs//2])
+    >>>     a_i.set_xlabel('f in Hz')
+    >>>     a_i.set_ylabel('Amplitude')
+    """
+    f = np.linspace(0, fs//2, N//2 + 1)
+    f_alias = fs // 2
+    if f_high is None:
+        f_high = f_alias
+    else:
+        f_high = np.min([f_high, f_alias])
+    assert(overlap <= 0.5)
+    # center frequencies
+    f_c = []
+    # first is f_low
+    f_c.append(f_low)
+    while f_c[-1] / (2**(1/(2*n))) < f_high:
+        f_c.append(2**(1/n) * f_c[-1])
+    f_c = np.array(f_c)
+
+    # cut-off freqs
+    f_lo = f_c / (2**(1/(2*n)))
+    f_hi = f_c * (2**(1/(2*n)))
+
+    # don't count highest and lowest open band
+    bands_count = len(f_lo) - 2
+
+    # convert
+    w_s = 2 * np.pi * fs
+    # w_m
+    w_c = 2 * np.pi * f_c
+    # w_1
+    w_lo = 2 * np.pi * f_lo
+    # w_1+1
+    w_hi = 2 * np.pi * f_hi
+
+    # DFT line that corresponds to the lower bandedge frequency
+    k_i = np.floor(N * w_lo / w_s).astype(int)
+    # DFT bins in the frequency band
+    N_i = np.diff(k_i)
+    # band overlap (twice)
+    P = np.round(overlap * (N * (w_c - w_lo) / w_s)).astype(int)
+
+    g = np.ones([bands_count + 2 , len(f)])
+    for b_idx in range(bands_count + 1):
+        p = np.arange(-P[b_idx], P[b_idx] + 1)
+
+        # phi within [-1, 1]
+        phi = (p / P[b_idx])
+        phi[np.isnan(phi)] = 1.
+        # recursion eq. 20
+        for l_i in range(l):
+            phi = np.sin(np.pi / 2 * phi)
+        # shift phi to [0, 1]
+        phi = 0.5 * (phi + 1)
+        a = np.sin(np.pi / 2 * phi)
+        b = np.cos(np.pi / 2 * phi)
+
+        # Hi
+        g[b_idx, k_i[b_idx] - P[b_idx] : k_i[b_idx] + P[b_idx] + 1] = b
+        g[b_idx, k_i[b_idx] + P[b_idx]:] = 0.
+        # Lo
+        g[b_idx + 1, k_i[b_idx] - P[b_idx] : k_i[b_idx] + P[b_idx] + 1] = a
+        g[b_idx + 1, : k_i[b_idx] - P[b_idx]] = 0.
+
+    return g
+
+
 def half_sided_Hann(N):
     """Design half-sided Hann tapering window of order N."""
     assert(N >= 3)
