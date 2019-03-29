@@ -19,17 +19,16 @@ from . import decoder
 
 
 def load_audio(filenames, fs=None):
-    """
-    Convenience function to load mono and multichannel audio from files.
+    """Load mono and multichannel audio from files.
 
     Parameters
     ----------
     filenames : string or list of strings
-        Audio files
+        Audio files.
 
     Returns
     -------
-    sig :  sig.MonoSignal or sig.MultiSignal
+    sig : sig.MonoSignal or sig.MultiSignal
         Audio signal.
     """
     loaded_data = []
@@ -61,9 +60,38 @@ def load_audio(filenames, fs=None):
         return sig.MultiSignal([*loaded_data], fs=fs)
 
 
-def load_hrirs(fs, filename=None, dummy=False):
+def save_audio(signal, filename, fs=None):
+    """Save signal to audio file.
+
+    Parameters
+    ----------
+    signal : sig. MonoSignal, sig.MultiSignal or np.ndarray
+        Audio Signal, forwarded to sf.write()/
+    filename : string
+        Audio file name.
+    fs : int
+        fs(t).
     """
-    Convenience function to load HRTF.mat.
+    # assert(isinstance(signal, (sig.MonoSignal, sig.MultiSignal)))
+    if isinstance(sig, sig.MonoSignal):
+        if fs is not None:
+            assert(signal.fs == fs)
+
+    if type(signal) == sig.MonoSignal:
+        data = signal.signal
+        data_fs = signal.fs
+    elif type(signal) == sig.MultiSignal:
+        data = signal.get_signals().T
+        data_fs = signal.fs
+    else:
+        data = signal
+        data_fs = fs
+
+    sf.write(filename, data, data_fs)
+
+
+def load_hrirs(fs, filename=None, dummy=False):
+    """Convenience function to load HRTF.mat.
 
     Parameters
     ----------
@@ -120,8 +148,7 @@ def load_hrirs(fs, filename=None, dummy=False):
 
 
 def load_sdm(filename):
-    """
-    Convenience function to load SDM.mat.
+    """Convenience function to load SDM.mat.
 
     Parameters
     ----------

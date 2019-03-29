@@ -9,7 +9,7 @@ import numpy as np
 from scipy import signal as scysig
 import soundfile as sf
 
-from . import utils
+from . import utils, IO
 from . import process as pcs
 
 
@@ -49,6 +49,9 @@ class MonoSignal:
         if sig.ndim != 1:
             raise ValueError("Signal must be mono. Try MultiSignal.")
         return cls(sig, fs)
+
+    def save(self, filename):
+        IO.save_audio(self, filename)
 
     def trim(self, start, stop):
         """Trim audio to start and stop in seconds."""
@@ -109,7 +112,7 @@ class MultiSignal(MonoSignal):
         return cls(*sig.T, fs=fs)
 
     def get_signals(self):
-        """Return ndarray of signals, stacked along first dimension."""
+        """Return ndarray of signals, stacked along rows."""
         return np.asarray([x.signal for x in self.channel])
 
     def trim(self, start, stop):

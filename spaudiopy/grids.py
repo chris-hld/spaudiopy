@@ -12,6 +12,7 @@ except (ImportError, IOError):
 
 def load_t_design(degree):
     """Return the unit coordinates of minimal T-designs.
+
     The designs have been copied from:
     http://neilsloane.com/sphdesigns/
     and should be referenced as:
@@ -47,6 +48,7 @@ def load_t_design(degree):
 
 def load_Fliege_Maier_nodes(grid_order):
     """Return Fliege-Maier grid nodes with associated weights.
+
     The designs have been copied from:
     http://www.personal.soton.ac.uk/jf1w07/nodes/nodes.html
     and should be referenced as:
@@ -118,7 +120,7 @@ def equal_angle(n):
 
 
 def gauss(n):
-    """ Gauss-Legendre sampling points on sphere.
+    """Gauss-Legendre sampling points on sphere.
 
     According to (cf. Rafaely book, sec.3.3)
 
