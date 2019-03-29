@@ -75,6 +75,17 @@ class LoudspeakerSetup:
     def binauralize(self, ls_signals, fs, hrirs=None):
         """Create binaural signals that the loudspeaker signals produce on this
         setup (no delays).
+
+        Parameters
+        ----------
+        ls_signals : (L, S) np.ndarray
+        fs : int
+
+        Returns
+        -------
+        l_sig : array_like
+        r_sig : array_like
+
         """
         if hrirs is None:
             hrirs = IO.load_hrirs(fs)
@@ -99,23 +110,26 @@ class LoudspeakerSetup:
                 r_sig += signal.convolve(ls_sig, hrir_r)
         return l_sig, r_sig
 
-    def loudspeaker_signals(self, ls_gains, sig_in=1.):
+    def loudspeaker_signals(self, ls_gains, sig_in=None):
         """Render loudspeaker signals.
 
         Parameters
         ----------
-        ls_gains : (l,) array_like
-        sig_in : (s,) array like
+        ls_gains : (S, L) np.ndarray
+        sig_in : (S,) array like, optional
 
         Returns
         -------
-        sig_out : (l, s)
+        sig_out : (L, S) np.ndarray
+
         """
-        ls_gains = utils.asarray_1d(ls_gains)
+        ls_gains = np.atleast_2d(ls_gains)
+        if sig_in is None:
+            sig_in = np.ones(ls_gains.shape[0])
         sig_in = utils.asarray_1d(sig_in)
-        assert(len(ls_gains) == len(self.points)), \
+        assert(ls_gains.shape[1] == len(self.points)), \
             'Provide gain per speaker!'
-        return np.outer(ls_gains, sig_in)
+        return (sig_in[:, np.newaxis] * ls_gains).T
 
     def show(self):
         plots.hull(self, title='Loudspeaker Setup')
