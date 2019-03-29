@@ -77,9 +77,9 @@ def render_bsdm(sdm_p, sdm_phi, sdm_theta, hrirs, jobs_count=None):
     Returns
     -------
     bsdm_l : array_like
-        Left impulse response.
+        Left binaural impulse response.
     bsdm_r : array_like
-        Right impulse response.
+        Right binaural impulse response.
     """
     if jobs_count is None:
         jobs_count = multiprocessing.cpu_count()
@@ -130,9 +130,9 @@ def render_loudspeaker_sdm(sdm_p, ls_gains, ls_setup, hrirs):
     Returns
     -------
     ir_l : array_like
-        Left impulse response.
+        Left binaural impulse response.
     ir_r : array_like
-        Right impulse response.
+        Right binaural impulse response.
     """
     n = len(sdm_p)
     ls_gains = np.atleast_2d(ls_gains)
