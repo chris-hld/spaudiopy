@@ -118,6 +118,14 @@ class MultiSignal(MonoSignal):
         for c in self.channel:
             c.signal = c.signal[int(start * c.fs): int(stop * c.fs)]
 
+    def apply(self, func, *args, **kwargs):
+        """Apply function 'func' to all signals, arguments are forwarded."""
+        for c in self.channel:
+            c.signal = func(*args, **kwargs)
+
+    def filter(self, h, **kwargs):
+        raise NotImplementedError
+
 
 class AmbiBSignal(MultiSignal):
     """Signal class for first order Ambisonics B-format signals."""
