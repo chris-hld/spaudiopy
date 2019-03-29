@@ -8,6 +8,7 @@ import numpy as np
 from joblib import Memory
 import multiprocessing
 
+from scipy import signal
 from . import utils
 from . import sig
 from . import process as pcs
@@ -142,6 +143,134 @@ def render_loudspeaker_sdm(sdm_p, ls_gains, ls_setup, hrirs):
     ls_sigs = sdm_p * ls_gains.T
     ir_l, ir_r = ls_setup.binauralize(ls_sigs, hrirs.fs, hrirs)
     return ir_l, ir_r
+
+
+def post_equalization(ls_sigs, sdm_p, fs, blocksize=4096):
+    """Post equalization to compensate spectral whitening.
+
+    Parameters
+    ----------
+    ls_sigs : (L, S) np.ndarray
+        Input loudspeaker signals.
+    sdm_p : array_like
+        Reference (sdm) pressure signal.
+    fs : int
+    blocksize : int
+
+    Returns
+    -------
+    ls_sigs_compensated : (L, S) np.ndarray
+        Compensated loudspeaker signals.
+
+    References
+    ----------
+    TERVO, S., et. al. (2015).
+    Spatial Analysis and Synthesis of Car Audio System and Car Cabin Acoustics
+    with a Compact Microphone Array. Journal of the Audio Engineering Society
+    (Vol. 63).
+    """
+    CHECK_SANITY = False
+
+    hopsize = blocksize // 2
+    win = np.hanning(blocksize + 1)[0: -1]
+
+    # prepare Input
+    pad = np.zeros([ls_sigs.shape[0], blocksize])
+    x_padded = np.hstack([pad, ls_sigs, pad])
+    p_padded = np.hstack([np.zeros(blocksize), sdm_p, np.zeros(blocksize)])
+    ls_sigs_compensated = np.hstack([pad, np.zeros_like(x_padded), pad])
+    assert(len(p_padded) == x_padded.shape[1])
+
+    # prepare filterbank
+    filter_gs, ff = pcs.frac_octave_filterbank(n=3, N_out=blocksize//2 + 1,
+                                               fs=fs, f_low=100, f_high=12000)
+    ntaps = 4096+1
+    assert(ntaps % 2), "N does not produce uneven number of filter taps."
+    irs = np.zeros([filter_gs.shape[0], ntaps])
+    for ir_idx, g_b in enumerate(filter_gs):
+        irs[ir_idx, :] = signal.firwin2(ntaps, np.linspace(0, 1, len(g_b)), g_b)
+
+    band_gains_list = []
+    start_idx = 0
+    while (start_idx + blocksize) <= x_padded.shape[1]:
+        if CHECK_SANITY:
+            dirac = np.zeros_like(irs)
+            dirac[:, blocksize//2] = np.sqrt(1/(irs.shape[0]))
+
+        # blocks
+        block_p = win * p_padded[start_idx: start_idx + blocksize]
+        block_sdm = win[np.newaxis, :] * x_padded[:, start_idx:
+                                                     start_idx + blocksize]
+
+        # block mags
+        p_mag = np.sqrt(np.abs(np.fft.rfft(block_p))**2)
+        sdm_mag = np.sqrt(np.sum(np.abs(np.fft.rfft(block_sdm, axis=1))**2,
+                                 axis=0))
+        assert(len(p_mag) == len(sdm_mag))
+
+        # get gains
+        L_p = pcs.subband_levels(filter_gs * p_mag, ff[:, 2] - ff[:, 0], fs)
+        L_sdm = pcs.subband_levels(filter_gs * sdm_mag, ff[:, 2] - ff[:, 0], fs)
+
+        with np.errstate(divide='ignore', invalid='ignore'):
+            band_gains = L_p / L_sdm
+        band_gains[np.isnan(band_gains)] = 1
+        # clip low shelf to 0
+        band_gains[0] = 1 if band_gains[0] > 1 else band_gains[0]
+        # gain smoothing
+        if not band_gains_list:
+            band_gains = band_gains
+        else:
+            band_gains = 0.5 * (band_gains_list[-1] + band_gains)
+        band_gains_list.append(band_gains)
+
+        for ls_idx in range(ls_sigs.shape[0]):
+            # prepare output
+            X = np.zeros([irs.shape[0], blocksize + 2 * (irs.shape[1] - 1)])
+            # Transform
+            for band_idx in range(irs.shape[0]):
+                if not CHECK_SANITY:
+                    X[band_idx, :blocksize + irs.shape[1] - 1] = \
+                        signal.convolve(block_sdm[ls_idx, :], irs[band_idx, :])
+                else:
+                    X[band_idx, :blocksize + irs.shape[1] - 1] = \
+                        signal.convolve(block_sdm[ls_idx, :],
+                                        dirac[band_idx, :])
+            # Apply gains
+            if not CHECK_SANITY:
+                X = band_gains[:, np.newaxis] * X
+            else:
+                X = X
+
+            # Inverse, with zero phase
+            for band_idx in range(irs.shape[0]):
+                if not CHECK_SANITY:
+                    X[band_idx, :] = np.flip(signal.convolve(
+                        np.flip(X[band_idx, :blocksize + irs.shape[1] - 1]),
+                        irs[band_idx, :]))
+                else:
+                    X[band_idx, :] = np.flip(signal.convolve(
+                        np.flip(X[band_idx, :blocksize + irs.shape[1] - 1]),
+                        dirac[band_idx, :]))
+
+            # overlap add
+            ls_sigs_compensated[ls_idx,
+                                start_idx + blocksize - (irs.shape[1] - 1):
+                                start_idx + 2 * blocksize +
+                                (irs.shape[1] - 1)] += np.sum(X, axis=0)
+
+        # increase pointer
+        start_idx += hopsize
+
+
+    # restore shape
+    if (np.sum(np.abs(ls_sigs_compensated[:, :2 * blocksize])) +
+            np.sum(np.abs(ls_sigs_compensated[:, -(2 * blocksize)]))) > 10e-3:
+        raise UserWarning('Truncated valid signal, consider more zero padding.')
+
+    ls_sigs_compensated = ls_sigs_compensated[:,
+                                              2 * blocksize: -(2 * blocksize)]
+    return ls_sigs_compensated
 
 
 # Parallel worker stuff -->

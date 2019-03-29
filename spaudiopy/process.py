@@ -405,6 +405,19 @@ def frac_octave_filterbank(n, N_out, fs, f_low, f_high=None, overlap=0.5, l=3):
     return g, ff
 
 
+def subband_levels(x, width, fs, power=False, axis=-1):
+    """Computes the level/power in each subband of subband signals."""
+    N = x.shape[1]
+
+    if power is False:
+        # normalization wrt bandwidth/sampling interval
+        L = np.sqrt(1/width * fs/2 * np.sum(np.abs(x)**2, axis=axis))
+    else:
+        L = 1/N * 1/width * fs/2 * np.sum(np.abs(x)**2, axis=axis)
+
+    return L
+
+
 def half_sided_Hann(N):
     """Design half-sided Hann tapering window of order N."""
     assert(N >= 3)
