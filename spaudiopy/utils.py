@@ -101,6 +101,19 @@ def db(x, power=False):
         return (10 if power else 20) * np.log10(np.abs(x))
 
 
+def rms(x, axis=-1):
+    """RMS (root-mean-squared) along given axis.
+
+    Parameters
+    ----------
+    x : array_like
+        Input data.
+    axis : int, optional
+        Axis along which RMS is calculated
+    """
+    return np.sqrt(np.mean(x * np.conj(x), axis=axis))
+
+
 def stack(vector_1, vector_2):
     """Stack two 2D vectors along the same-sized or the smaller dimension."""
     vector_1, vector_2 = np.atleast_2d(vector_1, vector_2)
