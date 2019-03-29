@@ -116,12 +116,14 @@ def stack(vector_1, vector_2):
     return np.squeeze(out)
 
 
-def test_diff(v1, v2, VERBOSE=True):
+def test_diff(v1, v2, msg=None, VERBOSE=True):
     """Test if the cumulative element-wise difference between v1 and v2
     is greater 10-e8.
     """
     d = np.sum(np.abs(v1.ravel() - v2.ravel()))
     if VERBOSE:
+        if msg is not None:
+            print(msg, '--', end=' ')
         if np.any(d > 10e-8):
             print('Diff: ', d)
         else:
