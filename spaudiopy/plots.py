@@ -24,6 +24,7 @@ def spectrum(x, fs, ylim=None,  **kwargs):
         Time domain signal.
     fs : int
         Sampling frequency.
+
     """
     if not isinstance(x, (list, tuple)):
         x = [x]
@@ -48,7 +49,7 @@ def spectrum(x, fs, ylim=None,  **kwargs):
     freq_resp(freq, specs, ylim=ylim, **kwargs)
 
 
-def freq_resp(f, amp, to_db=True, title=None, labels=None,
+def freq_resp(freq, amp, to_db=True, smoothing_n = None, title=None, labels=None,
               xlim=[10, 25000], ylim=[-30, 20]):
     """ Plot amplitude of frequency response over time frequency f.
 
@@ -63,12 +64,27 @@ def freq_resp(f, amp, to_db=True, title=None, labels=None,
     if labels is not None:
         if not isinstance(labels, (list, tuple)):
             labels = [labels]
+
+    assert(all(len(a) == len(freq) for a in amp))
+
     if to_db:
         # Avoid zeros in spec for dB
         amp = [utils.db(a + 10e-15) for a in amp]
 
+    if smoothing_n is not None:
+        smoothed = []
+        for a in amp:
+            smooth = np.zeros_like(a)
+            for idx in range(len(a)):
+                k_lo = idx / (2**(1/(2*smoothing_n)))
+                k_hi = idx * (2**(1/(2*smoothing_n)))
+                smooth[idx] = np.mean(a[np.floor(k_lo).astype(int):
+                                        np.ceil(k_hi).astype(int) + 1])
+            smoothed.append(smooth)
+        amp = smoothed
+
     fig = plt.figure()
-    [plt.semilogx(f, a.flat) for a in amp]
+    [plt.semilogx(freq, a.flat) for a in amp]
 
     if title is not None:
         plt.title(title)
@@ -82,11 +98,11 @@ def freq_resp(f, amp, to_db=True, title=None, labels=None,
     fig.tight_layout()
 
 
-def transfer_function(f, H, title=None, xlim=[10, 25000]):
+def transfer_function(freq, H, title=None, xlim=[10, 25000]):
     """Plot transfer function H (magnitude and phase) over time frequency f."""
     fig, ax1 = plt.subplots()
     H += 10e-15
-    ax1.semilogx(f, utils.db(H),
+    ax1.semilogx(freq, utils.db(H),
                  color=plt.rcParams['axes.prop_cycle'].by_key()['color'][0],
                  label='Amplitude')
     ax1.set_xlabel('Frequency in Hz')
@@ -95,7 +111,7 @@ def transfer_function(f, H, title=None, xlim=[10, 25000]):
     ax1.grid(True)
 
     ax2 = ax1.twinx()
-    ax2.semilogx(f, np.unwrap(np.angle(H)),
+    ax2.semilogx(freq, np.unwrap(np.angle(H)),
                  color=plt.rcParams['axes.prop_cycle'].by_key()['color'][1],
                  label='Phase', zorder=0)
     ax2.set_ylabel('Phase in rad')
