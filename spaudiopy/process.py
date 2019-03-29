@@ -283,7 +283,7 @@ def lagrange_delay(N, delay):
     return h
 
 
-def frac_octave_filterbank(n, N, fs, f_low, f_high=None, overlap=0.5, l=3):
+def frac_octave_filterbank(n, N_out, fs, f_low, f_high=None, overlap=0.5, l=3):
     """ Fractional octave band filterbank.
     Design of digital fractional-octave-band filters with energy conservation
     and perfect reconstruction.
@@ -292,8 +292,8 @@ def frac_octave_filterbank(n, N, fs, f_low, f_high=None, overlap=0.5, l=3):
     ----------
     n : int
         Octave fraction, e.g. n=3 third-octave bands.
-    N : int
-        Number of frequency bins.
+    N_out : int
+        Number of non-negative frequency bins [0, fs/2].
     fs : int
         Sampling frequency in Hz.
     f_low : int
@@ -307,8 +307,10 @@ def frac_octave_filterbank(n, N, fs, f_low, f_high=None, overlap=0.5, l=3):
 
     Returns
     -------
-    g : (b, N//2 + 1) np.ndarray
+    g : (b, N) np.ndarray
         Band gains for non-negative frequency bins.
+    ff : (b, 3) np.ndarray
+        Filter frequencies as [f_lo, f_c, f_hi].
 
     Notes
     -----
@@ -319,8 +321,8 @@ def frac_octave_filterbank(n, N, fs, f_low, f_high=None, overlap=0.5, l=3):
     --------
     >>> fs = 44100
     >>> N = 2**16
-    >>> gs = frac_octave_filterbank(n=1, N=N, fs=fs, f_low=100, f_high=8000)
-    >>> f = np.linspace(0, fs//2, N//2 + 1)
+    >>> gs, ff = frac_octave_filterbank(n=1, N_out=N, fs=fs, f_low=100, f_high=8000)
+    >>> f = np.linspace(0, fs//2, N)
     >>> fig, ax = plt.subplots(2, 1)
     >>> ax[0].semilogx(f, gs.T)
     >>> ax[0].set_title('Band gains')
@@ -332,7 +334,10 @@ def frac_octave_filterbank(n, N, fs, f_low, f_high=None, overlap=0.5, l=3):
     >>>     a_i.set_xlabel('f in Hz')
     >>>     a_i.set_ylabel('Amplitude')
     """
-    f = np.linspace(0, fs//2, N//2 + 1)
+    # fft bins
+    N = (N_out - 1) * 2
+    # frequency axis
+    freq = np.fft.rfftfreq(N, d=1. / fs)
     f_alias = fs // 2
     if f_high is None:
         f_high = f_alias
@@ -343,16 +348,14 @@ def frac_octave_filterbank(n, N, fs, f_low, f_high=None, overlap=0.5, l=3):
     f_c = []
     # first is f_low
     f_c.append(f_low)
-    while f_c[-1] / (2**(1/(2*n))) < f_high:
+    # check next cutoff frequency
+    while (f_c[-1] * (2**(1/(2*n)))) < f_high:
         f_c.append(2**(1/n) * f_c[-1])
     f_c = np.array(f_c)
 
     # cut-off freqs
     f_lo = f_c / (2**(1/(2*n)))
     f_hi = f_c * (2**(1/(2*n)))
-
-    # don't count highest and lowest open band
-    bands_count = len(f_lo) - 2
 
     # convert
     w_s = 2 * np.pi * fs
@@ -370,8 +373,8 @@ def frac_octave_filterbank(n, N, fs, f_low, f_high=None, overlap=0.5, l=3):
     # band overlap (twice)
     P = np.round(overlap * (N * (w_c - w_lo) / w_s)).astype(int)
 
-    g = np.ones([bands_count + 2 , len(f)])
-    for b_idx in range(bands_count + 1):
+    g = np.ones([len(f_c) + 1, len(freq)])
+    for b_idx in range(len(f_c)):
         p = np.arange(-P[b_idx], P[b_idx] + 1)
 
         # phi within [-1, 1]
@@ -386,13 +389,20 @@ def frac_octave_filterbank(n, N, fs, f_low, f_high=None, overlap=0.5, l=3):
         b = np.cos(np.pi / 2 * phi)
 
         # Hi
-        g[b_idx, k_i[b_idx] - P[b_idx] : k_i[b_idx] + P[b_idx] + 1] = b
+        g[b_idx, k_i[b_idx] - P[b_idx]: k_i[b_idx] + P[b_idx] + 1] = b
         g[b_idx, k_i[b_idx] + P[b_idx]:] = 0.
         # Lo
-        g[b_idx + 1, k_i[b_idx] - P[b_idx] : k_i[b_idx] + P[b_idx] + 1] = a
+        g[b_idx + 1, k_i[b_idx] - P[b_idx]: k_i[b_idx] + P[b_idx] + 1] = a
         g[b_idx + 1, : k_i[b_idx] - P[b_idx]] = 0.
 
-    return g
+    # Corresponding frequency limits
+    ff = np.c_[f_lo, f_c, f_hi]
+    # last band
+    ff[-1, -1] = fs / 2
+    ff[-1, 1] = np.sqrt(ff[-1, 0] * ff[-1, -1])
+    # first band
+    ff = np.vstack([np.array([0,  np.sqrt(1 * ff[0, 0]), ff[0, 0]]), ff])
+    return g, ff
 
 
 def half_sided_Hann(N):
