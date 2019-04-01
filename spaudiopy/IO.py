@@ -147,13 +147,15 @@ def load_hrirs(fs, filename=None, dummy=False):
     return HRIRs
 
 
-def load_sdm(filename):
+def load_sdm(filename, init_nan=True):
     """Convenience function to load SDM.mat.
 
     Parameters
     ----------
     filename : string
         SDM.mat file
+    init_nan : bool, optional
+        Initialize nan to [0, pi/2].
 
     Returns
     -------
@@ -170,6 +172,9 @@ def load_sdm(filename):
     h = np.array(np.squeeze(mat['h_ref']), dtype=float)
     sdm_phi = np.array(np.squeeze(mat['sdm_phi']), dtype=float)
     sdm_theta = np.array(np.squeeze(mat['sdm_theta']), dtype=float)
+    if init_nan:
+        sdm_phi[np.isnan(sdm_phi)] = 0.
+        sdm_theta[np.isnan(sdm_theta)] = np.pi / 2
     fs = int(mat['fs'])
     return h, sdm_phi, sdm_theta, fs
 

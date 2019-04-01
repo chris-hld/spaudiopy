@@ -217,11 +217,14 @@ def post_equalization(ls_sigs, sdm_p, fs, blocksize=4096):
         band_gains[np.isnan(band_gains)] = 1
         # clip low shelf to 0
         band_gains[0] = 1 if band_gains[0] > 1 else band_gains[0]
-        # gain smoothing
-        if not band_gains_list:
+        # gain smoothing over 4 blocks
+        if len(band_gains_list) < 4:
             band_gains = band_gains
         else:
-            band_gains = 0.5 * (band_gains_list[-1] + band_gains)
+            band_gains = 1/4 * (band_gains_list[-3] +
+                                band_gains_list[-2] +
+                                band_gains_list[-1] +
+                                band_gains)
         band_gains_list.append(band_gains)
 
         for ls_idx in range(ls_sigs.shape[0]):
@@ -270,7 +273,7 @@ def post_equalization(ls_sigs, sdm_p, fs, blocksize=4096):
 
     ls_sigs_compensated = ls_sigs_compensated[:,
                                               2 * blocksize: -(2 * blocksize)]
-    return ls_sigs_compensated
+    return ls_sigs_compensated, band_gains_list
 
 
 # Parallel worker stuff -->
