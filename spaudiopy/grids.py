@@ -7,7 +7,7 @@ from scipy.io import loadmat
 try:
     import quadpy  # only for grid_lebedev()
 except (ImportError, IOError):
-    raise UserWarning("Lebedev grid not available.")
+    warn("Lebedev grid not available.")
 
 
 def load_t_design(degree):
