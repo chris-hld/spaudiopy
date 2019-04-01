@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import copy
+import multiprocessing
+from itertools import repeat
+
 import numpy as np
 import scipy.spatial as scyspat
 from scipy import signal
@@ -365,7 +368,21 @@ def _invert_triplets(simplices, points):
     return inverted_ls_triplets
 
 
-def vbap(src, hull, valid_simplices=None, retain_outside=False):
+def _vbap_gains_single_source(src_idx, src, inverted_ls_triplets,
+                              valid_simplices):
+    for face_idx, ls_base in enumerate(inverted_ls_triplets):
+        # projecting src onto loudspeakers
+        projection = np.dot(ls_base, src[src_idx, :])
+        # normalization
+        projection /= np.sqrt(np.sum(projection**2))
+        if np.all(projection > -10e-6):
+            assert(np.count_nonzero(projection) <= 3)
+            # print(f"Source {src_idx}: Gains {projection}")
+            shared_array[src_idx, valid_simplices[face_idx]] = projection
+            break  # found valid gains
+
+
+def vbap(src, hull, valid_simplices=None, retain_outside=False, jobs_count=None):
     """Loudspeaker gains for Vector Base Amplitude Panning decoding.
     Pulkki, V. (1997). Virtual Sound Source Positioning Using Vector Base
     Amplitude Panning. AES, 144(5), 357–360.
@@ -383,6 +400,8 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False):
     gains : (n, L) numpy.ndarray
         Panning gains for L loudspeakers to render n sources.
     """
+    if jobs_count is None:
+        jobs_count = multiprocessing.cpu_count()
     if retain_outside:
         assert(valid_simplices is None)
         hull = hull.ambisonics_hull
@@ -398,17 +417,35 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False):
     inverted_ls_triplets = _invert_triplets(valid_simplices, hull.points)
 
     gains = np.zeros([src_count, ls_count])
-    for src_idx in range(src_count):
-        for face_idx, ls_base in enumerate(inverted_ls_triplets):
-            # projecting src onto loudspeakers
-            projection = np.dot(ls_base, src[src_idx, :])
-            # normalization
-            projection /= np.sqrt(np.sum(projection**2))
-            if np.all(projection > -10e-6):
-                assert(np.count_nonzero(projection) <= 3)
-                # print(f"Source {src_idx}: Gains {projection}")
-                gains[src_idx, valid_simplices[face_idx]] = projection
-                break  # found valid gains
+
+    if (jobs_count == 1) or (src_count < 10):
+        for src_idx in range(src_count):
+            for face_idx, ls_base in enumerate(inverted_ls_triplets):
+                # projecting src onto loudspeakers
+                projection = np.dot(ls_base, src[src_idx, :])
+                # normalization
+                projection /= np.sqrt(np.sum(projection**2))
+                if np.all(projection > -10e-6):
+                    assert(np.count_nonzero(projection) <= 3)
+                    # print(f"Source {src_idx}: Gains {projection}")
+                    gains[src_idx, valid_simplices[face_idx]] = projection
+                    break  # found valid gains
+    else:
+        # preparation
+        shared_array_shape = np.shape(gains)
+        _arr_base = _create_shared_array(shared_array_shape)
+        _arg_itr = zip(range(src_count),
+                       repeat(src), repeat(inverted_ls_triplets),
+                       repeat(valid_simplices))
+        # execute
+        with multiprocessing.Pool(processes=jobs_count,
+                                  initializer=_init_shared_array,
+                                  initargs=(_arr_base,
+                                            shared_array_shape,)) as pool:
+            pool.starmap(_vbap_gains_single_source, _arg_itr)
+        # reshape
+        gains = np.frombuffer(_arr_base.get_obj()).reshape(
+                                shared_array_shape)
 
     if retain_outside:
         # remove imaginary loudspeaker
@@ -572,3 +609,20 @@ def nearest_loudspeaker(src, hull):
     for g, i in zip(gains, idx):
         g[i] = 1.0
     return gains
+
+
+# Parallel worker stuff -->
+def _create_shared_array(shared_array_shape):
+    """Allocate ctypes array from shared memory with lock."""
+    d_type = 'd'
+    shared_array_base = multiprocessing.Array(d_type, shared_array_shape[0] *
+                                              shared_array_shape[1])
+    return shared_array_base
+
+
+def _init_shared_array(shared_array_base, shared_array_shape):
+    """Makes 'shared_array' available to child processes."""
+    global shared_array
+    shared_array = np.frombuffer(shared_array_base.get_obj())
+    shared_array = shared_array.reshape(shared_array_shape)
+# < --Parallel worker stuff

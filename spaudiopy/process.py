@@ -20,7 +20,7 @@ memory = Memory(cachedir)
 
 
 @memory.cache
-def resample_hrirs(hrir_l, hrir_r, fs_hrir, fs_target, n_jobs=None):
+def resample_hrirs(hrir_l, hrir_r, fs_hrir, fs_target, jobs_count=None):
     """
     Resample HRIRs to new SamplingRate(t), using multiprocessing.
 
@@ -34,7 +34,7 @@ def resample_hrirs(hrir_l, hrir_r, fs_hrir, fs_target, n_jobs=None):
         Current fs(t) of hrirs.
     fs_target : int
         Target fs(t) of hrirs.
-    n_jobs : int, optional
+    jobs_count : int, optional
         [CPU Cores], Number of Processes, switches implementation for n > 1.
 
     Returns
@@ -46,20 +46,20 @@ def resample_hrirs(hrir_l, hrir_r, fs_hrir, fs_target, n_jobs=None):
     fs_hrir : int
         New fs(t) of hrirs.
     """
-    if n_jobs is None:
-        n_jobs = multiprocessing.cpu_count()
+    if jobs_count is None:
+        jobs_count = multiprocessing.cpu_count()
     print('Resample HRTFs')
     hrir_l_resampled = np.zeros([hrir_l.shape[0],
                                  int(hrir_l.shape[1] * fs_target/fs_hrir)])
     hrir_r_resampled = np.zeros_like(hrir_l_resampled)
 
-    if n_jobs == 1:
+    if jobs_count == 1:
         for i, (l, r) in enumerate(zip(hrir_l, hrir_r)):
             hrir_l_resampled[i, :] = resampy.resample(l, fs_hrir, fs_target)
             hrir_r_resampled[i, :] = resampy.resample(r, fs_hrir, fs_target)
-    elif n_jobs > 1:
-        print("Using %i processes..." % n_jobs)
-        with multiprocessing.Pool(processes=n_jobs) as pool:
+    elif jobs_count > 1:
+        print("Using %i processes..." % jobs_count)
+        with multiprocessing.Pool(processes=jobs_count) as pool:
             results = pool.starmap(resampy.resample,
                                    map(lambda x: (x, fs_hrir, fs_target),
                                        hrir_l))
@@ -140,7 +140,7 @@ def _intensity_sample(i, W, X, Y, Z, win):
 
 
 @memory.cache
-def pseudo_intensity(Ambi_B, MA=False, n_jobs=None):
+def pseudo_intensity(Ambi_B, MA=False, jobs_count=None):
     """DOA prototyping.
 
     Parameters
@@ -149,7 +149,7 @@ def pseudo_intensity(Ambi_B, MA=False, n_jobs=None):
         Input signal.
     MA : bool
         Apply moving average filter MA(5) to output.
-    n_jobs : int, optional
+    jobs_count : int, optional
         [CPU Cores], Number of Processes, switches implementation for n > 1.
 
     Returns
@@ -158,8 +158,8 @@ def pseudo_intensity(Ambi_B, MA=False, n_jobs=None):
         Pseudo intensity vector.
     """
     # WIP
-    if n_jobs is None:
-        n_jobs = multiprocessing.cpu_count()
+    if jobs_count is None:
+        jobs_count = multiprocessing.cpu_count()
 
     buf = 33
     win = np.hanning(buf)
@@ -178,7 +178,7 @@ def pseudo_intensity(Ambi_B, MA=False, n_jobs=None):
     I_vec = np.c_[np.zeros(len(Ambi_B)),
                   np.zeros(len(Ambi_B)), np.zeros(len(Ambi_B))]
 
-    if n_jobs == 1:
+    if jobs_count == 1:
         # I = p*v for each sample
         for i in range(len(Ambi_B)-buf):
             I_vec[int(i+buf/2), :] = np.asarray(
@@ -193,7 +193,7 @@ def pseudo_intensity(Ambi_B, MA=False, n_jobs=None):
                        repeat(W), repeat(X), repeat(Y), repeat(Z),
                        repeat(win))
         # execute
-        with multiprocessing.Pool(processes=n_jobs,
+        with multiprocessing.Pool(processes=jobs_count,
                                   initializer=_init_shared_array,
                                   initargs=(_arr_base,
                                             shared_array_shape,)) as pool:
