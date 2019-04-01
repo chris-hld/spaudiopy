@@ -3,6 +3,7 @@
 @author: chris
 """
 from itertools import repeat
+from warnings import warn
 
 import numpy as np
 from joblib import Memory
@@ -145,7 +146,7 @@ def render_loudspeaker_sdm(sdm_p, ls_gains, ls_setup, hrirs):
     return ir_l, ir_r
 
 
-def post_equalization(ls_sigs, sdm_p, fs, blocksize=4096):
+def post_equalization(ls_sigs, sdm_p, fs, blocksize=4096, smoothing_order=5):
     """Post equalization to compensate spectral whitening.
 
     Parameters
@@ -156,6 +157,8 @@ def post_equalization(ls_sigs, sdm_p, fs, blocksize=4096):
         Reference (sdm) pressure signal.
     fs : int
     blocksize : int
+    smoothing_order : int
+        Block smoothing, increasing Hanning window up to this order.
 
     Returns
     -------
@@ -182,9 +185,9 @@ def post_equalization(ls_sigs, sdm_p, fs, blocksize=4096):
     assert(len(p_padded) == x_padded.shape[1])
 
     # prepare filterbank
-    filter_gs, ff = pcs.frac_octave_filterbank(n=3, N_out=blocksize//2 + 1,
-                                               fs=fs, f_low=100, f_high=12000)
-    ntaps = 4096+1
+    filter_gs, ff = pcs.frac_octave_filterbank(n=1, N_out=blocksize//2 + 1,
+                                               fs=fs, f_low=62.5, f_high=12000)
+    ntaps = blocksize+1
     assert(ntaps % 2), "N does not produce uneven number of filter taps."
     irs = np.zeros([filter_gs.shape[0], ntaps])
     for ir_idx, g_b in enumerate(filter_gs):
@@ -215,17 +218,24 @@ def post_equalization(ls_sigs, sdm_p, fs, blocksize=4096):
         with np.errstate(divide='ignore', invalid='ignore'):
             band_gains = L_p / L_sdm
         band_gains[np.isnan(band_gains)] = 1
-        # clip low shelf to 0
-        band_gains[0] = 1 if band_gains[0] > 1 else band_gains[0]
-        # gain smoothing over 4 blocks
-        if len(band_gains_list) < 4:
-            band_gains = band_gains
+        # clip low shelf
+        lo_clip = 2
+        band_gains[0] = lo_clip if band_gains[0] > lo_clip else band_gains[0]
+        # gain smoothing over blocks
+        if len(band_gains_list) > 0:
+            # half-sided window, increasing in size
+            current_order = min(smoothing_order, len(band_gains_list))
+            w = np.hanning(current_order * 2 + 1)[-(current_order + 1): -1]
+            # normalize
+            w = w / w.sum()
+            band_gains_smoothed = w[0] * band_gains  # current
+            for order_idx in range(1, current_order):
+                band_gains_smoothed += w[order_idx] * \
+                                       band_gains_list[-order_idx]
         else:
-            band_gains = 1/4 * (band_gains_list[-3] +
-                                band_gains_list[-2] +
-                                band_gains_list[-1] +
-                                band_gains)
-        band_gains_list.append(band_gains)
+            band_gains_smoothed = band_gains
+
+        band_gains_list.append(band_gains_smoothed)
 
         for ls_idx in range(ls_sigs.shape[0]):
             # prepare output
@@ -269,7 +279,7 @@ def post_equalization(ls_sigs, sdm_p, fs, blocksize=4096):
     # restore shape
     if (np.sum(np.abs(ls_sigs_compensated[:, :2 * blocksize])) +
             np.sum(np.abs(ls_sigs_compensated[:, -(2 * blocksize)]))) > 10e-3:
-        raise UserWarning('Truncated valid signal, consider more zero padding.')
+        warn('Truncated valid signal, consider more zero padding.')
 
     ls_sigs_compensated = ls_sigs_compensated[:,
                                               2 * blocksize: -(2 * blocksize)]
