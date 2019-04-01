@@ -67,10 +67,36 @@ class LoudspeakerSetup:
             raise ValueError
         return N_e
 
-    def setup_for_ambisonic(self, N_kernel):
+    def setup_for_ambisonic(self, N_kernel=None):
+        """Prepare loudspeaker hull for ambisonic rendering."""
         self.characteristic_order = self.get_characteristic_order()
-        self.ambisonics_hull, self.kernel_hull = _ambisonic_hulls(self,
-                                                                  N_kernel)
+        if N_kernel is None:
+            print('Setting Ambisonics order =', self.characteristic_order)
+            N_kernel = self.characteristic_order
+
+        ls = self.points
+        imaginary_loudspeaker_coordinates = find_imaginary_loudspeaker(self)
+        # add imaginary speaker to hull
+        new_ls = np.vstack([ls, imaginary_loudspeaker_coordinates])
+        # This new triangulation is now the rendering setup
+        ambisonics_hull = LoudspeakerSetup(new_ls[:, 0],
+                                           new_ls[:, 1],
+                                           new_ls[:, 2])
+        # mark imaginary speaker (last one)
+        ambisonics_hull.imaginary_speaker = new_ls.shape[0] - 1
+        # virtual optimal loudspeaker arrangement
+        virtual_speakers = grids.load_t_design(2 * N_kernel + 1)
+        kernel_hull = LoudspeakerSetup(virtual_speakers[:, 0],
+                                       virtual_speakers[:, 1],
+                                       virtual_speakers[:, 2])
+
+        del ambisonics_hull.ambisonics_hull
+        del ambisonics_hull.kernel_hull
+        self.ambisonics_hull = ambisonics_hull
+        del kernel_hull.ambisonics_hull
+        del kernel_hull.kernel_hull
+        self.kernel_hull = kernel_hull
+
 
     def binauralize(self, ls_signals, fs, hrirs=None):
         """Create binaural signals that the loudspeaker signals produce on this
@@ -293,7 +319,7 @@ def sort_vertices(simplices):
 
 
 def find_imaginary_loudspeaker(hull):
-    """Find imaginary loudspeaker according to
+    """Find imaginary loudspeaker coordinates according to
     Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
     Journal of Audio Engineering Society, Sec. 1.1.
     """
@@ -324,8 +350,8 @@ def find_imaginary_loudspeaker(hull):
         # find valid face in all faces
         mask = np.isin(hull.simplices, face).sum(axis=-1) == 3
         av_valid_n += hull.face_areas[mask] * hull.face_normals[mask]
-    imaginary_loudspeaker = -av_valid_n
-    return imaginary_loudspeaker
+    imaginary_loudspeaker_coordinates = -av_valid_n
+    return imaginary_loudspeaker_coordinates
 
 
 def _invert_triplets(simplices, points):
@@ -339,7 +365,7 @@ def _invert_triplets(simplices, points):
     return inverted_ls_triplets
 
 
-def vbap(src, hull, valid_simplices=None):
+def vbap(src, hull, valid_simplices=None, retain_outside=False):
     """Loudspeaker gains for Vector Base Amplitude Panning decoding.
     Pulkki, V. (1997). Virtual Sound Source Positioning Using Vector Base
     Amplitude Panning. AES, 144(5), 357–360.
@@ -357,13 +383,20 @@ def vbap(src, hull, valid_simplices=None):
     gains : (n, L) numpy.ndarray
         Panning gains for L loudspeakers to render n sources.
     """
+    if retain_outside:
+        assert(valid_simplices is None)
+        hull = hull.ambisonics_hull
     if valid_simplices is None:
         valid_simplices = hull.valid_simplices
+
     src = np.atleast_2d(src)
     assert(src.shape[1] == 3)
     src_count = src.shape[0]
-    ls_count = valid_simplices.max() + 1
+
+    ls_count = valid_simplices.max() + 1  # includes zero
+    # Base
     inverted_ls_triplets = _invert_triplets(valid_simplices, hull.points)
+
     gains = np.zeros([src_count, ls_count])
     for src_idx in range(src_count):
         for face_idx, ls_base in enumerate(inverted_ls_triplets):
@@ -376,27 +409,36 @@ def vbap(src, hull, valid_simplices=None):
                 # print(f"Source {src_idx}: Gains {projection}")
                 gains[src_idx, valid_simplices[face_idx]] = projection
                 break  # found valid gains
+
+    if retain_outside:
+        # remove imaginary loudspeaker
+        gains = np.delete(gains, hull.imaginary_speaker, axis=1)
     return gains
 
 
-def _ambisonic_hulls(hull, N_kernel):
-    """Prepare loudspeaker hull for ambisonic rendering."""
-    ls = hull.points
-    imaginary_loudspeaker = find_imaginary_loudspeaker(hull)
-    # add imaginary speaker to hull
-    new_ls = np.vstack([ls, imaginary_loudspeaker])
-    # This new triangulation is now the rendering setup
-    ambisonics_hull = LoudspeakerSetup(new_ls[:, 0],
-                                       new_ls[:, 1],
-                                       new_ls[:, 2])
-    # mark imaginary speaker (last one)
-    ambisonics_hull.imaginary_speaker = new_ls.shape[0] - 1
-    # virtual optimal loudspeaker arrangement
-    virtual_speakers = grids.load_t_design(2 * N_kernel + 1)
-    kernel_hull = LoudspeakerSetup(virtual_speakers[:, 0],
-                                   virtual_speakers[:, 1],
-                                   virtual_speakers[:, 2])
-    return ambisonics_hull, kernel_hull
+def characteristic_ambisonic_order(hull):
+    """Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and
+    Decoding. Journal of Audio Engineering Society, Sec. 7.
+    """
+    _hull = copy.copy(hull)
+    # projection for loudspeakers not on unit sphere
+    _xp, _yp, _zp = sph.project_on_sphere(_hull.points[:, 0],
+                                          _hull.points[:, 1],
+                                          _hull.points[:, 2],)
+    _hull.points = np.c_[_xp, _yp, _zp]
+    # project centroids (for non-uniform setups)
+    src = np.asarray(sph.project_on_sphere(hull.centroids[:, 0],
+                                           hull.centroids[:, 1],
+                                           hull.centroids[:, 2])).T
+    # all loudspeaker triplets enclosing listener
+    gains = vbap(src, _hull, valid_simplices=_hull._encloses_listener)
+    # Energy vector of each center
+    rE, rE_mag = sph.r_E(_hull.points, gains)
+    # eq. (16)
+    spread = 2 * np.arccos(rE_mag) * (180 / np.pi)
+    N_e = 2 * 137.9 / np.average(spread) - 1.51
+    # ceil might be optimistic
+    return int(np.ceil(N_e))
 
 
 def allrap(src, hull, N=None):
@@ -447,7 +489,7 @@ def allrap(src, hull, N=None):
         d = utils.angle_between(src[src_idx, :], kernel_hull.points)
         g_l = sph.bandlimited_dirac(N, d, a_n)
         gains[src_idx, :] = 4 * np.pi / J * G.T @ g_l
-    # remove imaginary loudspeakers
+    # remove imaginary loudspeaker
     gains = np.delete(gains, ambisonics_hull.imaginary_speaker, axis=1)
     return gains
 
@@ -504,31 +546,6 @@ def allrad(F_nm, hull, N=None):
     # remove imaginary loudspeakers
     ls_sig = np.delete(ls_sig, ambisonics_hull.imaginary_speaker, axis=0)
     return ls_sig
-
-
-def characteristic_ambisonic_order(hull):
-    """Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and
-    Decoding. Journal of Audio Engineering Society, Sec. 7.
-    """
-    _hull = copy.copy(hull)
-    # projection for loudspeakers not on unit sphere
-    _xp, _yp, _zp = sph.project_on_sphere(_hull.points[:, 0],
-                                          _hull.points[:, 1],
-                                          _hull.points[:, 2],)
-    _hull.points = np.c_[_xp, _yp, _zp]
-    # project centroids (for non-uniform setups)
-    src = np.asarray(sph.project_on_sphere(hull.centroids[:, 0],
-                                           hull.centroids[:, 1],
-                                           hull.centroids[:, 2])).T
-    # all loudspeaker triplets enclosing listener
-    gains = vbap(src, _hull, valid_simplices=_hull._encloses_listener)
-    # Energy of each center
-    rE, rE_mag = sph.r_E(_hull.points, gains)
-    # eq. (16)
-    spread = 2 * np.arccos(rE_mag) * (180 / np.pi)
-    N_e = 2 * 137.9 / np.average(spread) - 1.51
-    # ceil might be optimistic
-    return int(np.ceil(N_e))
 
 
 def nearest_loudspeaker(src, hull):

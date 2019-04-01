@@ -14,7 +14,7 @@ from . import sph
 from . import decoder
 
 
-def spectrum(x, fs, ylim=None,  **kwargs):
+def spectrum(x, fs, ylim=None, **kwargs):
     """Positive (single sided) amplitude spectrum of time signal x.
     kwargs are forwarded to plots.freq_resp().
 
@@ -451,7 +451,8 @@ def polar(theta, a, title=None, rlim=[-40, 0], ax=None):
         plt.title(title)
 
 
-def decoder_performance(hull, renderer_type, azi_steps=5, el_steps=3, N=None):
+def decoder_performance(hull, renderer_type, azi_steps=5, el_steps=3, N=None,
+                        **kwargs):
     """Currently rE_mag, E and spread for renderer_type='VBAP' or 'ALLRAP'."""
     azi_steps = np.deg2rad(azi_steps)
     el_steps = np.deg2rad(el_steps)
@@ -464,9 +465,9 @@ def decoder_performance(hull, renderer_type, azi_steps=5, el_steps=3, N=None):
 
     # Switch renderer
     if renderer_type.lower() == 'vbap':
-        G = decoder.vbap(np.c_[_grid_x, _grid_y, grid_z], hull)
+        G = decoder.vbap(np.c_[_grid_x, _grid_y, grid_z], hull, **kwargs)
     if renderer_type.lower() == 'allrap':
-        G = decoder.allrap(np.c_[_grid_x, _grid_y, grid_z], hull, N)
+        G = decoder.allrap(np.c_[_grid_x, _grid_y, grid_z], hull, N, **kwargs)
 
     # Measures
     E = np.sum(G**2, axis=1)  # * (4 * np.pi / G.shape[1])  # (eq. 15)

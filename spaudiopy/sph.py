@@ -376,7 +376,8 @@ def r_E(p, g):
     g = np.atleast_2d(g)
     assert(p.shape[0] == g.shape[1]), 'Provide gain per speaker!'
     E = np.sum(g**2, axis=1)
-    rE = np.diag(1 / E) @ (g**2 @ p)
+    with np.errstate(divide='ignore'):
+        rE = np.diag(1 / E) @ (g**2 @ p)
     rE_mag = np.sqrt(np.sum(rE**2, axis=1))
     # catch division by zero NaN
     rE_mag = np.nan_to_num(rE_mag)

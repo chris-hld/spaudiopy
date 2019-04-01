@@ -101,9 +101,8 @@ N_e = ls_setup.get_characteristic_order()
 ls_setup.setup_for_ambisonic(N_kernel=9)
 
 # Show ALLRAP hulls
-ambisonics_hull, kernel_hull = decoder._ambisonic_hulls(ls_setup, N_kernel=9)
-plots.hull(ambisonics_hull, title='Ambisonic hull')
-plots.hull(kernel_hull, title='Kernel hull')
+plots.hull(ls_setup.ambisonics_hull, title='Ambisonic hull')
+plots.hull(ls_setup.kernel_hull, title='Kernel hull')
 
 # ALLRAP
 gains_ALLRAP = decoder.allrap(src, ls_setup, N=N_e)
@@ -111,8 +110,7 @@ gains_ALLRAP = decoder.allrap(src, ls_setup, N=N_e)
 input_F_nm = sph.sh_matrix(N_e, src_azi, src_colat, 'real').T  # SH dirac
 out_ALLRAD = decoder.allrad(input_F_nm, ls_setup, N=N_e)
 
-print("ALLRAD and ALLRAP:")
-utils.test_diff(gains_ALLRAP, out_ALLRAD)
+utils.test_diff(gains_ALLRAP, out_ALLRAD, msg="ALLRAD and ALLRAP:")
 
 
 # %% test multiple sources
@@ -122,6 +120,8 @@ G_allrap = decoder.allrap(_grid, ls_setup)
 
 # %% Look at some measures
 plots.decoder_performance(ls_setup, 'VBAP')
+plots.decoder_performance(ls_setup, 'VBAP', retain_outside=True)
+plt.suptitle('VBAP with imaginary loudspeaker')
 plots.decoder_performance(ls_setup, 'ALLRAP')
 
 # %% Binauralize
