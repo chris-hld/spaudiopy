@@ -142,3 +142,23 @@ def test_diff(v1, v2, msg=None, VERBOSE=True):
         else:
             print('Close enough')
     return d
+
+
+def interleave_channels(left_channel, right_channel, style=None):
+    """Interleave left and right channels (Nchannel x Nsamples).
+    Style = 'SSR' checks if we total 360 channels.
+
+    """
+    if not left_channel.shape == right_channel.shape:
+        raise ValueError('left_channel and right_channel '
+                         'have to be of same dimensions!')
+
+    if style == 'SSR':
+        if not (left_channel.shape[0] == 360):
+            raise ValueError('Provided arrays to have 360 channels '
+                             '(Nchannel x Nsamples).')
+
+    output_data = np.repeat(left_channel, 2, axis=0)
+    output_data[1::2, :] = right_channel
+
+    return output_data

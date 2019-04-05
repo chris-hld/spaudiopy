@@ -50,7 +50,7 @@ def spectrum(x, fs, ylim=None, **kwargs):
 
 
 def freq_resp(freq, amp, to_db=True, smoothing_n = None, title=None, labels=None,
-              xlim=[10, 25000], ylim=[-30, 20]):
+              xlim=(10, 25000), ylim=(-30, 20)):
     """ Plot amplitude of frequency response over time frequency f.
 
     Parameters
@@ -98,7 +98,7 @@ def freq_resp(freq, amp, to_db=True, smoothing_n = None, title=None, labels=None
     fig.tight_layout()
 
 
-def transfer_function(freq, H, title=None, xlim=[10, 25000]):
+def transfer_function(freq, H, title=None, xlim=(10, 25000)):
     """Plot transfer function H (magnitude and phase) over time frequency f."""
     fig, ax1 = plt.subplots()
     H += 10e-15
@@ -437,7 +437,7 @@ def hull_normals(hull, plot_face_normals=True, plot_vertex_normals=True):
     plt.legend(loc='best')
 
 
-def polar(theta, a, title=None, rlim=[-40, 0], ax=None):
+def polar(theta, a, title=None, rlim=(-40, 0), ax=None):
     """Polar plot that allows negative values for 'a'."""
     if ax is None:
         fig = plt.figure()
@@ -453,7 +453,9 @@ def polar(theta, a, title=None, rlim=[-40, 0], ax=None):
 
 def decoder_performance(hull, renderer_type, azi_steps=5, el_steps=3, N=None,
                         **kwargs):
-    """Currently rE_mag, E and spread for renderer_type='VBAP' or 'ALLRAP'."""
+    """Currently rE_mag, E and spread measures.
+    For renderer_type='VBAP', 'ALLRAP' or 'NLS.
+    """
     azi_steps = np.deg2rad(azi_steps)
     el_steps = np.deg2rad(el_steps)
     phi_plot, theta_plot = np.meshgrid(np.arange(0., 2 * np.pi + azi_steps,
@@ -468,22 +470,33 @@ def decoder_performance(hull, renderer_type, azi_steps=5, el_steps=3, N=None,
         G = decoder.vbap(np.c_[_grid_x, _grid_y, grid_z], hull, **kwargs)
     if renderer_type.lower() == 'allrap':
         G = decoder.allrap(np.c_[_grid_x, _grid_y, grid_z], hull, N, **kwargs)
+    if renderer_type.lower() == 'nls':
+        G = decoder.nearest_loudspeaker(np.c_[_grid_x, _grid_y, grid_z], hull,
+                                        **kwargs)
 
     # Measures
     E = np.sum(G**2, axis=1)  # * (4 * np.pi / G.shape[1])  # (eq. 15)
-    rE, rE_mag = sph.r_E(hull.points, G)
+    # project points onto unit sphere
+    ls_points = hull.points / hull.d[:, np.newaxis]
+    rE, rE_mag = sph.r_E(ls_points, G)
     # TODO remove np.clip and handle non-uniform
     spread = 2 * np.arccos(np.clip(rE_mag, 0, 1)) * 180 / np.pi  # (eq. 16)
+    # angular error
+    col_dot = np.einsum('ij,ij->i', np.array([_grid_x, _grid_y, grid_z]).T,
+                        (rE / (rE_mag[:, np.newaxis] + 10e-15)))
+    ang_error = np.rad2deg(np.arccos(np.clip(col_dot, -1.0, 1.0)))
+
 
     # Show them
-    fig, axes = plt.subplots(3, 1, sharex='all', figsize=plt.figaspect(2))
-    for ip, var_str in enumerate(['rE_mag', 'E', 'spread']):
+    fig, axes = plt.subplots(4, 1, sharex='all', figsize=plt.figaspect(3))
+    for ip, var_str in enumerate(['rE_mag', 'E', 'spread', 'ang_error']):
         _data = eval(var_str)
         _data = _data.reshape(phi_plot.shape)
         # shift 0 azi to middle
         _data = np.roll(_data, - int(_data.shape[1]/2), axis=1)
         ax = axes[ip]
-        p = ax.imshow(_data, vmin=0, vmax=180 if var_str is "spread" else
+        p = ax.imshow(_data, vmin=0, vmax=180 if var_str is 'spread' or
+                                                 var_str is 'ang_error' else
                       np.max([1.0, np.max(_data)]))
         ax.set_xticks(np.linspace(0, _data.shape[1] - 1, 5))
         ax.set_xticklabels(['$-\pi$', '$-\pi/2$', '$0$', '$\pi/2$', '$\pi$'])

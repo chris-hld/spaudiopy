@@ -4,18 +4,16 @@
 """
 
 import os
+from warnings import warn
 
 import numpy as np
 import pandas as pd
-from scipy.io import loadmat
+from scipy.io import loadmat, wavfile
 import h5py
 
 import soundfile as sf
 
-from . import utils
-from . import sig
-from . import sph
-from . import decoder
+from . import utils, sig, decoder, sdm
 
 
 def load_audio(filenames, fs=None):
@@ -187,3 +185,91 @@ def load_sofa_data(filename):
         for key, value in f.items():
             out_dict[key] = np.squeeze(value)
     return out_dict
+
+
+def write_ssr_brirs_loudspeaker(filename, ls_irs, hull, fs, hrirs=None):
+    """Write binaural room impulse responses (BRIRs) and save as wav file.
+
+    The azimuth resolution is one degree. The channels are interleaved and
+    directly compatible to the SoundScape Renderer (SSR) ssr-brs.
+
+    Parameters
+    ----------
+    filename : string
+    ls_irs : (L, S) np.ndarray
+        Impulse responses of L loudspeakers,
+        e.g. by hull.loudspeaker_signals().
+    hull : decoder.LoudspeakerSetup
+    fs : int
+    hrirs : sig.HRIRs, optional
+
+    """
+    if hrirs is None:
+        hrirs = load_hrirs(fs=fs)
+    assert(hrirs.fs == fs)
+
+    if not filename[-4:] == '.wav':
+        filename = filename + '.wav'
+
+    ssr_brirs = np.zeros((720, ls_irs.shape[1] + len(hrirs) - 1))
+    for angle in range(0, 360):
+        ir_l, ir_r = hull.binauralize(ls_irs, fs,
+                                      orientation=(np.deg2rad(angle), 0),
+                                      hrirs=hrirs)
+        # left
+        ssr_brirs[2 * angle, :] = ir_l
+        # right
+        ssr_brirs[2 * angle + 1, :] = ir_r
+
+    # normalize
+    if np.max(np.abs(ssr_brirs)) > 1:
+        warn('Normalizing BRIRs')
+        ssr_brirs = ssr_brirs / np.max(np.abs(ssr_brirs))
+
+    # write to file
+    wavfile.write(filename, fs, ssr_brirs.astype(np.float32).T)
+
+
+def write_ssr_brirs_sdm(filename, sdm_p, sdm_phi, sdm_theta, fs, hrirs=None):
+    """Write binaural room impulse responses (BRIRs) and save as wav file.
+
+    The azimuth resolution is one degree. The channels are interleaved and
+    directly compatible to the SoundScape Renderer (SSR) ssr-brs.
+
+    Parameters
+    ----------
+    filename : string
+    sdm_p : (n,) array_like
+        Pressure p(t).
+    sdm_phi : (n,) array_like
+        Azimuth phi(t).
+    sdm_theta : (n,) array_like
+        Colatitude theta(t).
+    fs : int
+    hrirs : sig.HRIRs, optional
+
+    """
+    if hrirs is None:
+        hrirs = load_hrirs(fs=fs)
+    assert(hrirs.fs == fs)
+
+    if not filename[-4:] == '.wav':
+        filename = filename + '.wav'
+
+    ssr_brirs = np.zeros((720, len(sdm_p) + len(hrirs) - 1))
+    for angle in range(0, 360):
+        sdm_phi_rot = sdm_phi - np.deg2rad(angle)
+        ir_l, ir_r = sdm.render_bsdm(sdm_p, sdm_phi_rot, sdm_theta,
+                                     hrirs=hrirs)
+        # left
+        ssr_brirs[2 * angle, :] = ir_l
+        # right
+        ssr_brirs[2 * angle + 1, :] = ir_r
+
+    # normalize
+    if np.max(np.abs(ssr_brirs)) > 1:
+        warn('Normalizing BRIRs')
+        ssr_brirs = ssr_brirs / np.max(np.abs(ssr_brirs))
+
+    # write to file
+    wavfile.write(filename, fs, ssr_brirs.astype(np.float32).T)

@@ -73,9 +73,9 @@ else:
 x, y, z = utils.sph2cart(utils.deg2rad(ls_dirs[0, :]),
                          utils.deg2rad(ls_dirs[1, :]))
 if NONUNIFORM:
-    x = np.r_[x, 1.5]
-    y = np.r_[y, 1.5]
-    z = np.r_[z, 1.5]
+    x = np.r_[x, 1]
+    y = np.r_[y, 1]
+    z = np.r_[z, 1]
 
 listener_position = [0, 0, 0]
 
@@ -92,7 +92,7 @@ src = np.array([1, 1, 0.5])
 src_azi, src_colat, _ = utils.cart2sph(*src.tolist())
 
 # %% VBAP
-gains_VBAP = decoder.vbap(src, ls_setup)
+gains_vbap = decoder.vbap(src, ls_setup)
 
 
 # %% Ambisonic decoding
@@ -105,13 +105,15 @@ plots.hull(ls_setup.ambisonics_hull, title='Ambisonic hull')
 plots.hull(ls_setup.kernel_hull, title='Kernel hull')
 
 # ALLRAP
-gains_ALLRAP = decoder.allrap(src, ls_setup, N=N_e)
+gains_allrap = decoder.allrap(src, ls_setup, N=N_e)
 # ALLRAD
 input_F_nm = sph.sh_matrix(N_e, src_azi, src_colat, 'real').T  # SH dirac
-out_ALLRAD = decoder.allrad(input_F_nm, ls_setup, N=N_e)
+out_allrad = decoder.allrad(input_F_nm, ls_setup, N=N_e)
 
-utils.test_diff(gains_ALLRAP, out_ALLRAD, msg="ALLRAD and ALLRAP:")
+utils.test_diff(gains_allrap, out_allrad, msg="ALLRAD and ALLRAP:")
 
+# Nearest Loudspeaker
+gains_nls = decoder.nearest_loudspeaker(src, ls_setup)
 
 # %% test multiple sources
 _grid, _weights = grids.load_Fliege_Maier_nodes(10)
@@ -119,6 +121,7 @@ G_vbap = decoder.vbap(_grid, ls_setup)
 G_allrap = decoder.allrap(_grid, ls_setup)
 
 # %% Look at some measures
+plots.decoder_performance(ls_setup, 'NLS')
 plots.decoder_performance(ls_setup, 'VBAP')
 plots.decoder_performance(ls_setup, 'VBAP', retain_outside=True)
 plt.suptitle('VBAP with imaginary loudspeaker')
@@ -128,41 +131,43 @@ plots.decoder_performance(ls_setup, 'ALLRAP')
 fs = 44100
 hrirs = IO.load_hrirs(fs)
 
-l_vbap_IR, r_vbap_IR = ls_setup.binauralize(ls_setup.loudspeaker_signals(
-                                            gains_VBAP), fs)
+l_vbap_ir, r_vbap_ir = ls_setup.binauralize(ls_setup.loudspeaker_signals(
+                                            gains_vbap), fs)
 
-l_allrap_IR, r_allrap_IR = ls_setup.binauralize(ls_setup.loudspeaker_signals(
-                                                gains_ALLRAP), fs)
+l_allrap_ir, r_allrap_ir = ls_setup.binauralize(ls_setup.loudspeaker_signals(
+                                                gains_allrap), fs)
+
+l_nls_ir, r_nls_ir = ls_setup.binauralize(ls_setup.loudspeaker_signals(
+                                          gains_nls), fs)
 
 
 # %%
-fig = plt.figure()
-fig.add_subplot(3, 1, 1)
-plt.plot(hrirs.nearest_hrirs(src_azi, src_colat)[0])
-plt.plot(hrirs.nearest_hrirs(src_azi, src_colat)[1])
-plt.grid(True)
-plt.title("hrir")
-fig.add_subplot(3, 1, 2)
-plt.plot(l_vbap_IR)
-plt.plot(r_vbap_IR)
-plt.grid(True)
-plt.title("binaural VBAP")
-fig.add_subplot(3, 1, 3)
-plt.plot(l_allrap_IR)
-plt.plot(r_allrap_IR)
-plt.grid(True)
-plt.title("binaural ALLRAP")
+fig, axs = plt.subplots(4, 1)
+axs[0].plot(hrirs.nearest_hrirs(src_azi, src_colat)[0])
+axs[0].plot(hrirs.nearest_hrirs(src_azi, src_colat)[1])
+axs[0].set_title("hrir")
+axs[1].plot(l_vbap_ir)
+axs[1].plot(r_vbap_ir)
+axs[1].set_title("binaural VBAP")
+axs[2].plot(l_allrap_ir)
+axs[2].plot(r_allrap_ir)
+axs[2].set_title("binaural ALLRAP")
+axs[3].plot(l_nls_ir)
+axs[3].plot(r_nls_ir)
+axs[3].set_title("binaural NLS")
+for ax in axs:
+    ax.grid(True)
 plt.tight_layout()
 
 # Listen to some
 s_in = sig.MonoSignal.from_file('../data/piano_mono.flac', fs)
 s_in.trim(2.6, 6)
 
-s_out_vbap = sig.MultiSignal([s_in.filter(l_vbap_IR),
-                              s_in.filter(r_vbap_IR)],
+s_out_vbap = sig.MultiSignal([s_in.filter(l_vbap_ir),
+                              s_in.filter(r_vbap_ir)],
                              fs=fs)
-s_out_allrap = sig.MultiSignal([s_in.filter(l_allrap_IR),
-                                s_in.filter(r_allrap_IR)],
+s_out_allrap = sig.MultiSignal([s_in.filter(l_allrap_ir),
+                                s_in.filter(r_allrap_ir)],
                                fs=fs)
 s_out_hrir = sig.MultiSignal([s_in.filter(
                                   hrirs.nearest_hrirs(src_azi, src_colat)[0]),
@@ -205,5 +210,9 @@ if LISTEN:
     plt.grid(True)
     plt.title("binaural ALLRAP")
     plt.tight_layout()
+
+# Auralize with SSR-BRS renderer
+IO.write_ssr_brirs('allrap_brirs.wav',
+                   ls_setup.loudspeaker_signals(gains_allrap), ls_setup, fs)
 
 plt.show()

@@ -72,7 +72,6 @@ def render_bsdm(sdm_p, sdm_phi, sdm_theta, hrirs, jobs_count=None):
     sdm_theta : (n,) array_like
         Colatitude theta(t).
     hrirs : sig.HRIRs
-        'None' selects default hrir set.
     jobs_count : int
         Parallel jobs, switches implementation if > 1.
 
@@ -116,7 +115,8 @@ def render_bsdm(sdm_p, sdm_phi, sdm_theta, hrirs, jobs_count=None):
     return bsdm_l, bsdm_r
 
 
-def render_loudspeaker_sdm(sdm_p, ls_gains, ls_setup, hrirs):
+def render_loudspeaker_sdm(sdm_p, ls_gains, ls_setup, hrirs,
+                           orientation=(0, 0)):
     """
     Render sdm signal on loudspeaker setup as binaural synthesis.
 
@@ -128,6 +128,8 @@ def render_loudspeaker_sdm(sdm_p, ls_gains, ls_setup, hrirs):
         Loudspeaker (l) gains.
     ls_setup : decoder.LoudspeakerSetup
     hrirs : sig.HRIRs
+    orientation : (azi, colat) tuple, optional
+        Listener orientation offset (azimuth, colatitude) in rad.
 
     Returns
     -------
@@ -142,7 +144,8 @@ def render_loudspeaker_sdm(sdm_p, ls_gains, ls_setup, hrirs):
 
     # render loudspeaker signals
     ls_sigs = sdm_p * ls_gains.T
-    ir_l, ir_r = ls_setup.binauralize(ls_sigs, hrirs.fs, hrirs)
+    ir_l, ir_r = ls_setup.binauralize(ls_sigs, hrirs.fs,
+                                      orientation=orientation, hrirs=hrirs)
     return ir_l, ir_r
 
 
@@ -207,6 +210,7 @@ def post_equalization(ls_sigs, sdm_p, fs, blocksize=4096, smoothing_order=5):
 
         # block mags
         p_mag = np.sqrt(np.abs(np.fft.rfft(block_p))**2)
+        # TODO: Handle non-uniform
         sdm_mag = np.sqrt(np.sum(np.abs(np.fft.rfft(block_sdm, axis=1))**2,
                                  axis=0))
         assert(len(p_mag) == len(sdm_mag))
@@ -219,8 +223,9 @@ def post_equalization(ls_sigs, sdm_p, fs, blocksize=4096, smoothing_order=5):
             band_gains = L_p / L_sdm
         band_gains[np.isnan(band_gains)] = 1
         # clip low shelf
-        lo_clip = 2
-        band_gains[0] = lo_clip if band_gains[0] > lo_clip else band_gains[0]
+        gain_clip = 1
+        band_gains = np.clip(band_gains, None, gain_clip)
+
         # gain smoothing over blocks
         if len(band_gains_list) > 0:
             # half-sided window, increasing in size

@@ -20,6 +20,9 @@ class LoudspeakerSetup:
         if listener_position is None:
             listener_position = [0, 0, 0]
         self.listener_position = np.asarray(listener_position)
+        _, _, self.d = utils.cart2sph(self.x - self.listener_position[0],
+                                      self.y - self.listener_position[1],
+                                      self.z - self.listener_position[2])
 
         # Triangulation of points
         hull = get_hull(self.x, self.y, self.z)
@@ -100,15 +103,18 @@ class LoudspeakerSetup:
         del kernel_hull.kernel_hull
         self.kernel_hull = kernel_hull
 
-
-    def binauralize(self, ls_signals, fs, hrirs=None):
+    def binauralize(self, ls_signals, fs, orientation=(0, 0), hrirs=None):
         """Create binaural signals that the loudspeaker signals produce on this
         setup (no delays).
 
         Parameters
         ----------
         ls_signals : (L, S) np.ndarray
+            Loudspeaker signals.
         fs : int
+        orientation : (azi, colat) tuple, optional
+            Listener orientation offset (azimuth, colatitude) in rad.
+        hrirs : sig.HRIRs, optional
 
         Returns
         -------
@@ -132,8 +138,10 @@ class LoudspeakerSetup:
         r_sig = np.zeros_like(l_sig)
         for ch, ls_sig in enumerate(ls_signals):
             if any(abs(ls_sig) > 10e-6):  # Gate at -100dB
-                hrir_l, hrir_r = hrirs.nearest_hrirs(ls_azi[ch],
-                                                     ls_colat[ch])
+                hrir_l, hrir_r = hrirs.nearest_hrirs(ls_azi[ch] -
+                                                     orientation[0],
+                                                     ls_colat[ch] -
+                                                     orientation[1])
                 # sum all loudspeakers
                 l_sig += signal.convolve(ls_sig, hrir_l)
                 r_sig += signal.convolve(ls_sig, hrir_r)
@@ -382,7 +390,8 @@ def _vbap_gains_single_source(src_idx, src, inverted_ls_triplets,
             break  # found valid gains
 
 
-def vbap(src, hull, valid_simplices=None, retain_outside=False, jobs_count=None):
+def vbap(src, hull, valid_simplices=None, retain_outside=False,
+         jobs_count=None):
     """Loudspeaker gains for Vector Base Amplitude Panning decoding.
     Pulkki, V. (1997). Virtual Sound Source Positioning Using Vector Base
     Amplitude Panning. AES, 144(5), 357–360.
@@ -404,7 +413,11 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False, jobs_count=None)
         jobs_count = multiprocessing.cpu_count()
     if retain_outside:
         assert(valid_simplices is None)
-        hull = hull.ambisonics_hull
+        if hull.ambisonics_hull:
+            hull = hull.ambisonics_hull
+        else:
+            raise ValueError('Run hull.setup_for_ambisonic() first!')
+
     if valid_simplices is None:
         valid_simplices = hull.valid_simplices
 
@@ -447,6 +460,8 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False, jobs_count=None)
         gains = np.frombuffer(_arr_base.get_obj()).reshape(
                                 shared_array_shape)
 
+    # Distance compensation
+    gains = (hull.d[np.newaxis, :] ** 2) * gains
     if retain_outside:
         # remove imaginary loudspeaker
         gains = np.delete(gains, hull.imaginary_speaker, axis=1)
@@ -604,10 +619,12 @@ def nearest_loudspeaker(src, hull):
     src_count = src.shape[0]
     gains = np.zeros([src_count, hull.npoints])
 
-    p = np.inner(src, hull.points)
+    # Loudspeakers projected on unit sphere
+    ls_points = hull.points / hull.d[:, np.newaxis]
+    p = np.inner(src, ls_points)
     idx = np.argmax(p, axis=1)
     for g, i in zip(gains, idx):
-        g[i] = 1.0
+        g[i] = 1.0 * (hull.d[i] ** 2)
     return gains
 
 
