@@ -194,7 +194,8 @@ def post_equalization(ls_sigs, sdm_p, fs, blocksize=4096, smoothing_order=5):
     assert(ntaps % 2), "N does not produce uneven number of filter taps."
     irs = np.zeros([filter_gs.shape[0], ntaps])
     for ir_idx, g_b in enumerate(filter_gs):
-        irs[ir_idx, :] = signal.firwin2(ntaps, np.linspace(0, 1, len(g_b)), g_b)
+        irs[ir_idx, :] = signal.firwin2(ntaps, np.linspace(0, 1, len(g_b)),
+                                        g_b)
 
     band_gains_list = []
     start_idx = 0
@@ -206,7 +207,7 @@ def post_equalization(ls_sigs, sdm_p, fs, blocksize=4096, smoothing_order=5):
         # blocks
         block_p = win * p_padded[start_idx: start_idx + blocksize]
         block_sdm = win[np.newaxis, :] * x_padded[:, start_idx:
-                                                     start_idx + blocksize]
+                                                  start_idx + blocksize]
 
         # block mags
         p_mag = np.sqrt(np.abs(np.fft.rfft(block_p))**2)
@@ -217,14 +218,18 @@ def post_equalization(ls_sigs, sdm_p, fs, blocksize=4096, smoothing_order=5):
 
         # get gains
         L_p = pcs.subband_levels(filter_gs * p_mag, ff[:, 2] - ff[:, 0], fs)
-        L_sdm = pcs.subband_levels(filter_gs * sdm_mag, ff[:, 2] - ff[:, 0], fs)
+        L_sdm = pcs.subband_levels(filter_gs * sdm_mag, ff[:, 2] - ff[:, 0],
+                                   fs)
 
         with np.errstate(divide='ignore', invalid='ignore'):
             band_gains = L_p / L_sdm
         band_gains[np.isnan(band_gains)] = 1
-        # clip low shelf
+        # clip gains
         gain_clip = 1
         band_gains = np.clip(band_gains, None, gain_clip)
+        # attenuate lows (coherent)
+        band_gains[0] *= 1/np.sqrt(2)
+        band_gains[1] *= np.sqrt((1/np.sqrt(2)))
 
         # gain smoothing over blocks
         if len(band_gains_list) > 0:
@@ -279,7 +284,6 @@ def post_equalization(ls_sigs, sdm_p, fs, blocksize=4096, smoothing_order=5):
 
         # increase pointer
         start_idx += hopsize
-
 
     # restore shape
     if (np.sum(np.abs(ls_sigs_compensated[:, :2 * blocksize])) +
