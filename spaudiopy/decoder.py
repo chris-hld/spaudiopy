@@ -20,9 +20,14 @@ class LoudspeakerSetup:
         if listener_position is None:
             listener_position = [0, 0, 0]
         self.listener_position = np.asarray(listener_position)
-        _, _, self.d = utils.cart2sph(self.x - self.listener_position[0],
-                                      self.y - self.listener_position[1],
-                                      self.z - self.listener_position[2])
+
+        # Listener position as origin
+        self.x -= listener_position[0]
+        self.y -= listener_position[1]
+        self.z -= listener_position[2]
+        # TODO: Better handling of this:
+        self.listener_position -= self.listener_position
+        _, _, self.d = utils.cart2sph(self.x, self.y, self.z)
 
         # Triangulation of points
         hull = get_hull(self.x, self.y, self.z)
@@ -361,7 +366,8 @@ def find_imaginary_loudspeaker(hull):
         # find valid face in all faces
         mask = np.isin(hull.simplices, face).sum(axis=-1) == 3
         av_valid_n += hull.face_areas[mask] * hull.face_normals[mask]
-    imaginary_loudspeaker_coordinates = -av_valid_n
+    # r**3 seems necessary
+    imaginary_loudspeaker_coordinates = -av_valid_n / np.mean(hull.d)**3
     return imaginary_loudspeaker_coordinates
 
 
