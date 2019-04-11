@@ -149,7 +149,8 @@ def render_loudspeaker_sdm(sdm_p, ls_gains, ls_setup, hrirs,
     return ir_l, ir_r
 
 
-def post_equalization(ls_sigs, sdm_p, fs, blocksize=4096, smoothing_order=5):
+def post_equalization(ls_sigs, sdm_p, fs, ls_distance=None,
+                      blocksize=4096, smoothing_order=5):
     """Post equalization to compensate spectral whitening.
 
     Parameters
@@ -159,6 +160,8 @@ def post_equalization(ls_sigs, sdm_p, fs, blocksize=4096, smoothing_order=5):
     sdm_p : array_like
         Reference (sdm) pressure signal.
     fs : int
+    ls_distance : (L,) array_like, optional
+        Loudspeaker distances in m.
     blocksize : int
     smoothing_order : int
         Block smoothing, increasing Hanning window up to this order.
@@ -175,6 +178,9 @@ def post_equalization(ls_sigs, sdm_p, fs, blocksize=4096, smoothing_order=5):
     with a Compact Microphone Array. Journal of the Audio Engineering Society
     (Vol. 63).
     """
+    if ls_distance is None:
+        ls_distance = np.ones(ls_sigs.shape[0])
+
     CHECK_SANITY = False
 
     hopsize = blocksize // 2
@@ -211,25 +217,34 @@ def post_equalization(ls_sigs, sdm_p, fs, blocksize=4096, smoothing_order=5):
 
         # block mags
         p_mag = np.sqrt(np.abs(np.fft.rfft(block_p))**2)
-        # TODO: Handle non-uniform
-        sdm_mag = np.sqrt(np.sum(np.abs(np.fft.rfft(block_sdm, axis=1))**2,
-                                 axis=0))
-        assert(len(p_mag) == len(sdm_mag))
+        sdm_H = np.diag(1 / ls_distance**2) @ np.fft.rfft(block_sdm, axis=1)
+        sdm_mag_incoherent = np.sqrt(np.sum(np.abs(sdm_H)**2, axis=0))
+        sdm_mag_coherent = np.sum(np.abs(sdm_H), axis=0)
+        assert(len(p_mag) == len(sdm_mag_incoherent) == len(sdm_mag_coherent))
 
         # get gains
         L_p = pcs.subband_levels(filter_gs * p_mag, ff[:, 2] - ff[:, 0], fs)
-        L_sdm = pcs.subband_levels(filter_gs * sdm_mag, ff[:, 2] - ff[:, 0],
-                                   fs)
-
+        L_sdm_incoherent = pcs.subband_levels(filter_gs * sdm_mag_incoherent,
+                                              ff[:, 2] - ff[:, 0], fs)
+        L_sdm_coherent = pcs.subband_levels(filter_gs * sdm_mag_coherent,
+                                            ff[:, 2] - ff[:, 0], fs)
         with np.errstate(divide='ignore', invalid='ignore'):
-            band_gains = L_p / L_sdm
-        band_gains[np.isnan(band_gains)] = 1
+            band_gains_incoherent = L_p / L_sdm_incoherent
+            band_gains_coherent = L_p / L_sdm_coherent
+
+        band_gains_incoherent[np.isnan(band_gains_incoherent)] = 1
+        band_gains_coherent[np.isnan(band_gains_coherent)] = 1
         # clip gains
         gain_clip = 1
-        band_gains = np.clip(band_gains, None, gain_clip)
+        band_gains_incoherent = np.clip(band_gains_incoherent, None, gain_clip)
+        band_gains_coherent = np.clip(band_gains_coherent, None, gain_clip)
+
         # attenuate lows (coherent)
-        band_gains[0] *= 1/np.sqrt(2)
-        band_gains[1] *= np.sqrt((1/np.sqrt(2)))
+        band_gains = np.zeros_like(band_gains_coherent)
+        band_gains[0] = band_gains_coherent[0]
+        band_gains[1] = np.mean([band_gains_coherent[1],
+                                band_gains_incoherent[1]])
+        band_gains[2:] = band_gains_incoherent[2:]
 
         # gain smoothing over blocks
         if len(band_gains_list) > 0:

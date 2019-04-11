@@ -13,7 +13,6 @@ from . import utils
 from . import sph
 from . import sig
 
-
 # Prepare Caching
 cachedir = './__cache_dir'
 memory = Memory(cachedir)
@@ -50,7 +49,7 @@ def resample_hrirs(hrir_l, hrir_r, fs_hrir, fs_target, jobs_count=None):
         jobs_count = multiprocessing.cpu_count()
     print('Resample HRTFs')
     hrir_l_resampled = np.zeros([hrir_l.shape[0],
-                                 int(hrir_l.shape[1] * fs_target/fs_hrir)])
+                                 int(hrir_l.shape[1] * fs_target / fs_hrir)])
     hrir_r_resampled = np.zeros_like(hrir_l_resampled)
 
     if jobs_count == 1:
@@ -89,8 +88,8 @@ def haversine_dist(azi1, colat1, azi2, colat2):
     c : (n,) array_like
         Haversine distance between pairs of points.
     """
-    lat1 = np.pi/2 - colat1
-    lat2 = np.pi/2 - colat2
+    lat1 = np.pi / 2 - colat1
+    lat2 = np.pi / 2 - colat2
 
     dlon = azi2 - azi1
     dlat = lat2 - lat1
@@ -133,10 +132,10 @@ def match_loudness(sig_in, sig_target):
 def _intensity_sample(i, W, X, Y, Z, win):
     buf = len(win)
     # global shared_array
-    shared_array[int(i+buf/2), :] = np.asarray(
-                                    [np.trapz(win * W[i:i+buf] * X[i:i+buf]),
-                                     np.trapz(win * W[i:i+buf] * Y[i:i+buf]),
-                                     np.trapz(win * W[i:i+buf] * Z[i:i+buf])])
+    shared_array[int(i + buf / 2), :] = np.asarray(
+        [np.trapz(win * W[i:i + buf] * X[i:i + buf]),
+         np.trapz(win * W[i:i + buf] * Y[i:i + buf]),
+         np.trapz(win * W[i:i + buf] * Z[i:i + buf])])
 
 
 @memory.cache
@@ -180,16 +179,16 @@ def pseudo_intensity(Ambi_B, MA=False, jobs_count=None):
 
     if jobs_count == 1:
         # I = p*v for each sample
-        for i in range(len(Ambi_B)-buf):
-            I_vec[int(i+buf/2), :] = np.asarray(
-                            [np.trapz(win * W[i:i+buf] * X[i:i+buf]),
-                             np.trapz(win * W[i:i+buf] * Y[i:i+buf]),
-                             np.trapz(win * W[i:i+buf] * Z[i:i+buf])])
+        for i in range(len(Ambi_B) - buf):
+            I_vec[int(i + buf / 2), :] = np.asarray(
+                [np.trapz(win * W[i:i + buf] * X[i:i + buf]),
+                 np.trapz(win * W[i:i + buf] * Y[i:i + buf]),
+                 np.trapz(win * W[i:i + buf] * Z[i:i + buf])])
     else:
         # preparation
         shared_array_shape = np.shape(I_vec)
         _arr_base = _create_shared_array(shared_array_shape)
-        _arg_itr = zip(range(len(Ambi_B)-buf),
+        _arg_itr = zip(range(len(Ambi_B) - buf),
                        repeat(W), repeat(X), repeat(Y), repeat(Z),
                        repeat(win))
         # execute
@@ -200,7 +199,7 @@ def pseudo_intensity(Ambi_B, MA=False, jobs_count=None):
             pool.starmap(_intensity_sample, _arg_itr)
         # reshape
         I_vec = np.frombuffer(_arr_base.get_obj()).reshape(
-                                shared_array_shape)
+            shared_array_shape)
 
     I_norm = np.linalg.norm(I_vec, axis=1)
     I_norm[I_norm == 0.0] = 10e8  # handle Zeros
@@ -209,7 +208,7 @@ def pseudo_intensity(Ambi_B, MA=False, jobs_count=None):
     # Moving Average filter MA(5)
     if MA:
         I_vec = np.apply_along_axis(np.convolve, 0,
-                                    I_vec, [1/5, 1/5, 1/5, 1/5, 1/5], 'valid')
+                                    I_vec, [1 / 5, 1 / 5, 1 / 5, 1 / 5, 1 / 5], 'valid')
 
     return utils.cart2sph(I_vec[:, 0], I_vec[:, 1], I_vec[:, 2])
 
@@ -283,7 +282,8 @@ def lagrange_delay(N, delay):
     return h
 
 
-def frac_octave_filterbank(n, N_out, fs, f_low, f_high=None, overlap=0.5, l=3):
+def frac_octave_filterbank(n, N_out, fs, f_low, f_high=None, mode='energy',
+                           overlap=0.5, l=3):
     """ Fractional octave band filterbank.
     Design of digital fractional-octave-band filters with energy conservation
     and perfect reconstruction.
@@ -300,6 +300,8 @@ def frac_octave_filterbank(n, N_out, fs, f_low, f_high=None, overlap=0.5, l=3):
         Center frequency of first full band in Hz.
     f_high : int
         Cutoff frequency in Hz, above which no further bands are generated.
+    mode : 'energy' or 'pressure'
+        'energy' produces -3dB at crossover, 'pressure' -6dB.
     overlap : float
         Band overlap, should be between [0, 0.5].
     l : int
@@ -343,19 +345,19 @@ def frac_octave_filterbank(n, N_out, fs, f_low, f_high=None, overlap=0.5, l=3):
         f_high = f_alias
     else:
         f_high = np.min([f_high, f_alias])
-    assert(overlap <= 0.5)
+    assert (overlap <= 0.5)
     # center frequencies
     f_c = []
     # first is f_low
     f_c.append(f_low)
     # check next cutoff frequency
-    while (f_c[-1] * (2**(1/(2*n)))) < f_high:
-        f_c.append(2**(1/n) * f_c[-1])
+    while (f_c[-1] * (2 ** (1 / (2 * n)))) < f_high:
+        f_c.append(2 ** (1 / n) * f_c[-1])
     f_c = np.array(f_c)
 
     # cut-off freqs
-    f_lo = f_c / (2**(1/(2*n)))
-    f_hi = f_c * (2**(1/(2*n)))
+    f_lo = f_c / (2 ** (1 / (2 * n)))
+    f_hi = f_c * (2 ** (1 / (2 * n)))
 
     # convert
     w_s = 2 * np.pi * fs
@@ -383,10 +385,18 @@ def frac_octave_filterbank(n, N_out, fs, f_low, f_high=None, overlap=0.5, l=3):
         # recursion eq. 20
         for l_i in range(l):
             phi = np.sin(np.pi / 2 * phi)
-        # shift phi to [0, 1]
-        phi = 0.5 * (phi + 1)
-        a = np.sin(np.pi / 2 * phi)
-        b = np.cos(np.pi / 2 * phi)
+
+        if mode == 'energy':
+            # shift phi to [0, 1]
+            phi = 0.5 * (phi + 1)
+            a = np.sin(np.pi / 2 * phi)
+            b = np.cos(np.pi / 2 * phi)
+
+        if mode == 'pressure':
+            # This is not part of Antony (2010)
+            a = np.sin(np.pi / 2 * phi)
+            a = 0.5 * (a + 1)
+            b = 1 - a
 
         # Hi
         g[b_idx, k_i[b_idx] - P[b_idx]: k_i[b_idx] + P[b_idx] + 1] = b
@@ -401,7 +411,7 @@ def frac_octave_filterbank(n, N_out, fs, f_low, f_high=None, overlap=0.5, l=3):
     ff[-1, -1] = fs / 2
     ff[-1, 1] = np.sqrt(ff[-1, 0] * ff[-1, -1])
     # first band
-    ff = np.vstack([np.array([0,  np.sqrt(1 * ff[0, 0]), ff[0, 0]]), ff])
+    ff = np.vstack([np.array([0, np.sqrt(1 * ff[0, 0]), ff[0, 0]]), ff])
     return g, ff
 
 
@@ -411,20 +421,20 @@ def subband_levels(x, width, fs, power=False, axis=-1):
 
     if power is False:
         # normalization wrt bandwidth/sampling interval
-        L = np.sqrt(1/width * fs/2 * np.sum(np.abs(x)**2, axis=axis))
+        L = np.sqrt(1 / width * fs / 2 * np.sum(np.abs(x) ** 2, axis=axis))
     else:
-        L = 1/N * 1/width * fs/2 * np.sum(np.abs(x)**2, axis=axis)
+        L = 1 / N * 1 / width * fs / 2 * np.sum(np.abs(x) ** 2, axis=axis)
 
     return L
 
 
 def half_sided_Hann(N):
     """Design half-sided Hann tapering window of order N."""
-    assert(N >= 3)
-    w_full = scysig.hann(2*((N + 1)//2) + 1)
+    assert (N >= 3)
+    w_full = scysig.hann(2 * ((N + 1) // 2) + 1)
     # get half sided window
     w_taper = np.ones(N + 1)
-    w_taper[-((N-1)//2):] = w_full[-((N + 1)//2):-1]
+    w_taper[-((N - 1) // 2):] = w_full[-((N + 1) // 2):-1]
     return w_taper
 
 
