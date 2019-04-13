@@ -5,6 +5,7 @@
 
 import os
 from warnings import warn
+import multiprocessing
 
 import numpy as np
 import pandas as pd
@@ -187,7 +188,8 @@ def load_sofa_data(filename):
     return out_dict
 
 
-def write_ssr_brirs_loudspeaker(filename, ls_irs, hull, fs, hrirs=None):
+def write_ssr_brirs_loudspeaker(filename, ls_irs, hull, fs, bitdepth=32,
+                                hrirs=None, jobs_count=None):
     """Write binaural room impulse responses (BRIRs) and save as wav file.
 
     The azimuth resolution is one degree. The channels are interleaved and
@@ -201,25 +203,49 @@ def write_ssr_brirs_loudspeaker(filename, ls_irs, hull, fs, hrirs=None):
         e.g. by hull.loudspeaker_signals().
     hull : decoder.LoudspeakerSetup
     fs : int
+    bitdepth : 16 or 32
     hrirs : sig.HRIRs, optional
+    jobs_count : int, optional
+        [CPU Cores], Number of Processes, switches implementation for n > 1.
 
     """
     if hrirs is None:
         hrirs = load_hrirs(fs=fs)
     assert(hrirs.fs == fs)
 
+    if jobs_count is None:
+        jobs_count = multiprocessing.cpu_count()
+
     if not filename[-4:] == '.wav':
         filename = filename + '.wav'
 
     ssr_brirs = np.zeros((720, ls_irs.shape[1] + len(hrirs) - 1))
-    for angle in range(0, 360):
-        ir_l, ir_r = hull.binauralize(ls_irs, fs,
-                                      orientation=(np.deg2rad(angle), 0),
-                                      hrirs=hrirs)
-        # left
-        ssr_brirs[2 * angle, :] = ir_l
-        # right
-        ssr_brirs[2 * angle + 1, :] = ir_r
+
+    if jobs_count == 1:
+        for angle in range(0, 360):
+            ir_l, ir_r = hull.binauralize(ls_irs, fs,
+                                          orientation=(np.deg2rad(angle), 0),
+                                          hrirs=hrirs)
+            # left
+            ssr_brirs[2 * angle, :] = ir_l
+            # right
+            ssr_brirs[2 * angle + 1, :] = ir_r
+
+    elif jobs_count > 1:
+        with multiprocessing.Pool(processes=jobs_count) as pool:
+            results = pool.starmap(hull.binauralize,
+                                   map(lambda a: (ls_irs, fs,
+                                                  (np.deg2rad(a), 0),
+                                                  hrirs),
+                                       range(0, 360)))
+        # extract
+        ir_l = [ir[0] for ir in results]
+        ir_r = [ir[1] for ir in results]
+        for angle in range(0, 360):
+            # left
+            ssr_brirs[2 * angle, :] = ir_l[angle]
+            # right
+            ssr_brirs[2 * angle + 1, :] = ir_r[angle]
 
     # normalize
     if np.max(np.abs(ssr_brirs)) > 1:
@@ -227,10 +253,17 @@ def write_ssr_brirs_loudspeaker(filename, ls_irs, hull, fs, hrirs=None):
         ssr_brirs = ssr_brirs / np.max(np.abs(ssr_brirs))
 
     # write to file
-    wavfile.write(filename, fs, ssr_brirs.astype(np.float32).T)
+    if bitdepth == 32:
+        wavfile.write(filename, fs, ssr_brirs.astype(np.float32).T)
+    elif bitdepth == 16:
+        wavfile.write(filename, fs, (32767 * ssr_brirs).astype(np.int16).T)
+    else:
+        raise ValueError('Only 16 or 32 bit.')
 
 
-def write_ssr_brirs_sdm(filename, sdm_p, sdm_phi, sdm_theta, fs, hrirs=None):
+def write_ssr_brirs_sdm(filename, sdm_p, sdm_phi, sdm_theta, fs, bitdepth=32,
+                        hrirs=None):
+
     """Write binaural room impulse responses (BRIRs) and save as wav file.
 
     The azimuth resolution is one degree. The channels are interleaved and
@@ -246,6 +279,7 @@ def write_ssr_brirs_sdm(filename, sdm_p, sdm_phi, sdm_theta, fs, hrirs=None):
     sdm_theta : (n,) array_like
         Colatitude theta(t).
     fs : int
+    bitdepth : 16 or 32
     hrirs : sig.HRIRs, optional
 
     """
@@ -272,4 +306,9 @@ def write_ssr_brirs_sdm(filename, sdm_p, sdm_phi, sdm_theta, fs, hrirs=None):
         ssr_brirs = ssr_brirs / np.max(np.abs(ssr_brirs))
 
     # write to file
-    wavfile.write(filename, fs, ssr_brirs.astype(np.float32).T)
+    if bitdepth == 32:
+        wavfile.write(filename, fs, ssr_brirs.astype(np.float32).T)
+    elif bitdepth == 16:
+        wavfile.write(filename, fs, (32767 * ssr_brirs).astype(np.int16).T)
+    else:
+        raise ValueError('Only 16 or 32 bit.')
