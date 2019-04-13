@@ -149,9 +149,161 @@ def render_loudspeaker_sdm(sdm_p, ls_gains, ls_setup, hrirs,
     return ir_l, ir_r
 
 
-def post_equalization(ls_sigs, sdm_p, fs, ls_distance=None,
-                      blocksize=4096, smoothing_order=5):
+def post_equalization(ls_sigs, sdm_p, fs, ls_distance=None):
     """Post equalization to compensate spectral whitening.
+
+    Parameters
+    ----------
+    ls_sigs : (L, S) np.ndarray
+        Input loudspeaker signals.
+    sdm_p : array_like
+        Reference (sdm) pressure signal.
+    fs : int
+    ls_distance : (L,) array_like, optional
+        Loudspeaker distances in m.
+
+    Returns
+    -------
+    ls_sigs_compensated : (L, S) np.ndarray
+        Compensated loudspeaker signals.
+
+    References
+    ----------
+    Tervo, S., et. al. (2015).
+    Spatial Analysis and Synthesis of Car Audio System and Car Cabin Acoustics
+    with a Compact Microphone Array. Journal of the Audio Engineering Society.
+
+    """
+    if ls_distance is None:
+        ls_distance = np.ones(ls_sigs.shape[0])
+
+    CHECK_SANITY = False
+
+    # prepare filterbank
+    filter_gs, ff = pcs.frac_octave_filterbank(n=1, N_out=2**16,
+                                               fs=fs, f_low=62.5, f_high=16000,
+                                               mode='pressure')
+
+
+    # band dependent block size
+    band_blocksizes = np.zeros(ff.shape[0])
+    # proposed by Tervo
+    band_blocksizes[1:] = np.round(7 / ff[1:, 0] * fs)
+    band_blocksizes[0] = np.round(7 / ff[0, 1] * fs)
+    # make sure they are even
+    band_blocksizes = (np.ceil(band_blocksizes / 2) * 2).astype(int)
+
+    padsize = band_blocksizes.max()
+
+    ntaps = padsize // 2 - 1
+    assert(ntaps % 2), "N does not produce uneven number of filter taps."
+    irs = np.zeros([filter_gs.shape[0], ntaps])
+    for ir_idx, g_b in enumerate(filter_gs):
+        irs[ir_idx, :] = signal.firwin2(ntaps, np.linspace(0, 1, len(g_b)),
+                                        g_b)
+
+
+    # prepare Input
+    pad = np.zeros([ls_sigs.shape[0], padsize])
+    x_padded = np.hstack([pad, ls_sigs, pad])
+    p_padded = np.hstack([np.zeros(padsize), sdm_p, np.zeros(padsize)])
+    ls_sigs_compensated = np.hstack([pad, np.zeros_like(x_padded), pad])
+    ls_sigs_band = np.zeros([ls_sigs_compensated.shape[0],
+                             ls_sigs_compensated.shape[1],
+                             irs.shape[0]])
+    assert(len(p_padded) == x_padded.shape[1])
+
+    for band_idx in range(irs.shape[0]):
+        blocksize = band_blocksizes[band_idx]
+        hopsize = blocksize // 2
+        win = np.hanning(blocksize + 1)[0: -1]
+        start_idx = 0
+        while (start_idx + blocksize) <= x_padded.shape[1]:
+            if CHECK_SANITY:
+                dirac = np.zeros_like(irs)
+                dirac[:, blocksize // 2] = np.sqrt(1/(irs.shape[0]))
+
+            # blocks
+            block_p = win * p_padded[start_idx: start_idx + blocksize]
+            block_sdm = win[np.newaxis, :] * x_padded[:, start_idx:
+                                                      start_idx + blocksize]
+
+            # block spectra
+            nfft = blocksize + blocksize - 1
+
+            H_p = np.fft.fft(block_p, nfft)
+            H_sdm = np.fft.fft(block_sdm, nfft, axis=1)
+            # distance
+            spec_in_origin = np.diag(1 / ls_distance**2) @ H_sdm
+
+            # magnitude difference by spectral division
+            sdm_mag_incoherent = np.sqrt(np.sum(np.abs(spec_in_origin)**2,
+                                                axis=0))
+            sdm_mag_coherent = np.sum(np.abs(spec_in_origin), axis=0)
+
+            # Coherent addition in the lows
+            if band_idx == 0:
+                mag_diff = np.abs(H_p) / np.clip(sdm_mag_coherent, 10e-10, None)
+            elif band_idx == 1:
+                mag_diff = np.abs(H_p) / \
+                           (0.5 * np.clip(sdm_mag_coherent, 10e-10, None) +
+                            0.5 * np.clip(sdm_mag_incoherent, 10e-10, None))
+            elif band_idx == 2:
+                mag_diff = np.abs(H_p) / \
+                           (0.25 * np.clip(sdm_mag_coherent, 10e-10, None) +
+                            0.75 * np.clip(sdm_mag_incoherent, 10e-10, None))
+            else:
+                mag_diff = np.abs(H_p) / np.clip(sdm_mag_incoherent, 10e-10,
+                                                 None)
+
+            # apply to ls input
+            Y = H_sdm * mag_diff[np.newaxis, :]
+
+            # inverse STFT
+            X = np.real(np.fft.ifft(Y, axis=1))
+            # Zero Phase
+            assert(np.mod(X.shape[1], 2))
+            # delay
+            zp_delay = X.shape[1] // 2
+            X = np.roll(X, zp_delay, axis=1)
+
+            # overlap add
+            ls_sigs_band[:, padsize + start_idx - zp_delay:
+                            padsize + start_idx - zp_delay + nfft,
+                         band_idx] += X
+
+            # increase pointer
+            start_idx += hopsize
+
+        # apply filter
+        for ls_idx in range(ls_sigs.shape[0]):
+            ls_sigs_band[ls_idx, :, band_idx] = signal.convolve(ls_sigs_band[
+                                                                ls_idx, :,
+                                                                band_idx],
+                                                                irs[band_idx],
+                                                                mode='same')
+
+    # sum over bands
+    ls_sigs_compensated = np.sum(ls_sigs_band, axis=2)
+
+    # restore shape
+    out_start_idx = int(2 * padsize)
+    out_end_idx = int(-(2 * padsize))
+    if np.any(np.abs(ls_sigs_compensated[:, :out_start_idx]) > 10e-5) or \
+            np.any(np.abs(ls_sigs_compensated[:, -out_end_idx]) > 10e-5):
+        warn('Truncated valid signal, consider more zero padding.')
+
+    ls_sigs_compensated = ls_sigs_compensated[:, out_start_idx: out_end_idx]
+    assert(ls_sigs_compensated.shape == ls_sigs.shape)
+    return ls_sigs_compensated
+
+
+def post_equalization2(ls_sigs, sdm_p, fs, ls_distance=None,
+                      blocksize=4096, smoothing_order=5):
+    """Post equalization to compensate spectral whitening. This alternative
+    version works on fixed blocksizes with octave band gain smoothing.
+    Sonically, this is not the preferred version, but it can gain some insight
+    through the band gains with are returned.
 
     Parameters
     ----------
@@ -170,13 +322,16 @@ def post_equalization(ls_sigs, sdm_p, fs, ls_distance=None,
     -------
     ls_sigs_compensated : (L, S) np.ndarray
         Compensated loudspeaker signals.
+    band_gains_list : list
+        Each element contains the octave band gain applied as post eq.
 
     References
     ----------
-    TERVO, S., et. al. (2015).
+    Tervo, S., et. al. (2015).
     Spatial Analysis and Synthesis of Car Audio System and Car Cabin Acoustics
-    with a Compact Microphone Array. Journal of the Audio Engineering Society
+    with a Compact Microphone Array. Journal of the Audio Engineering Society.
     (Vol. 63).
+
     """
     if ls_distance is None:
         ls_distance = np.ones(ls_sigs.shape[0])
@@ -195,7 +350,7 @@ def post_equalization(ls_sigs, sdm_p, fs, ls_distance=None,
 
     # prepare filterbank
     filter_gs, ff = pcs.frac_octave_filterbank(n=1, N_out=blocksize//2 + 1,
-                                               fs=fs, f_low=62.5, f_high=12000)
+                                               fs=fs, f_low=62.5, f_high=16000)
     ntaps = blocksize+1
     assert(ntaps % 2), "N does not produce uneven number of filter taps."
     irs = np.zeros([filter_gs.shape[0], ntaps])
@@ -301,12 +456,14 @@ def post_equalization(ls_sigs, sdm_p, fs, ls_distance=None,
         start_idx += hopsize
 
     # restore shape
-    if (np.sum(np.abs(ls_sigs_compensated[:, :2 * blocksize])) +
-            np.sum(np.abs(ls_sigs_compensated[:, -(2 * blocksize)]))) > 10e-3:
+    out_start_idx = 2 * blocksize
+    out_end_idx = -(2 * blocksize)
+    if (np.sum(np.abs(ls_sigs_compensated[:, :out_start_idx])) +
+            np.sum(np.abs(ls_sigs_compensated[:, -out_end_idx]))) > 10e-3:
         warn('Truncated valid signal, consider more zero padding.')
 
-    ls_sigs_compensated = ls_sigs_compensated[:,
-                                              2 * blocksize: -(2 * blocksize)]
+    ls_sigs_compensated = ls_sigs_compensated[:, out_start_idx: out_end_idx]
+    assert(ls_sigs_compensated.shape == ls_sigs.shape)
     return ls_sigs_compensated, band_gains_list
 
 
