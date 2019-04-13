@@ -30,12 +30,12 @@ class LoudspeakerSetup:
         _, _, self.d = utils.cart2sph(self.x, self.y, self.z)
 
         # Triangulation of points
-        hull = get_hull(self.x, self.y, self.z)
-        self.points = hull.points
-        self.npoints = hull.npoints
-        self.nsimplex = hull.nsimplex
-        self.vertices = hull.vertices
-        self.simplices = hull.simplices
+        _hull = get_hull(self.x, self.y, self.z)
+        self.points = _hull.points
+        self.npoints = _hull.npoints
+        self.nsimplex = _hull.nsimplex
+        self.vertices = _hull.vertices
+        self.simplices = _hull.simplices
         self.simplices = sort_vertices(self.simplices)
         self.centroids = calculate_centroids(self)
         self.face_areas = calculate_face_areas(self)
@@ -257,7 +257,7 @@ def check_listener_inside(hull, listener_position=None):
         v2 = hull.barycenter - centroid
         # listener inside if both point in the same direction
         if np.dot(v1, v2) < 0:
-            print(f"Listener {listener_position} not inside {face}")
+            print("Listener not inside:", face)
         else:
             valid_simplices.append(face)
     return np.array(valid_simplices)
@@ -409,11 +409,14 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False,
     hull : LoudspeakerSetup
     valid_simplices : (nsimplex, 3) numpy.ndarray
         Valid simplices employed for rendering, defaults hull.valid_simplices.
+    jobs_count : int, optional
+        [CPU Cores], Number of Processes, switches implementation for n > 1.
 
     Returns
     -------
     gains : (n, L) numpy.ndarray
         Panning gains for L loudspeakers to render n sources.
+
     """
     if jobs_count is None:
         jobs_count = multiprocessing.cpu_count()
@@ -499,23 +502,24 @@ def characteristic_ambisonic_order(hull):
     return int(np.ceil(N_e))
 
 
-def allrap(src, hull, N=None):
+def allrap(src, hull, N_sph=None):
     """Loudspeaker gains for All-Round Ambisonic Panning.
     Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
     Journal of Audio Engineering Society, Sec. 4.
 
     Parameters
     ----------
-    src : (n, 3)
-        Cartesian coordinates of n sources to be rendered.
+    src : (N, 3)
+        Cartesian coordinates of N sources to be rendered.
     hull : LoudspeakerSetup
-    N : int
+    N_sph : int
         Decoding order, defaults to hull.characteristic_order.
 
     Returns
     -------
-    gains : (n, L) numpy.ndarray
-        Panning gains for L loudspeakers to render n sources.
+    gains : (N, L) numpy.ndarray
+        Panning gains for L loudspeakers to render N sources.
+
     """
     if hull.ambisonics_hull:
         ambisonics_hull = hull.ambisonics_hull
@@ -525,8 +529,8 @@ def allrap(src, hull, N=None):
         kernel_hull = hull.kernel_hull
     else:
         raise ValueError('Run hull.setup_for_ambisonic() first!')
-    if N is None:
-        N = hull.characteristic_order
+    if N_sph is None:
+        N_sph = hull.characteristic_order
 
     src = np.atleast_2d(src)
     src_count = src.shape[0]
@@ -539,36 +543,37 @@ def allrap(src, hull, N=None):
     G = vbap(src=kernel_hull.points, hull=ambisonics_hull)
 
     # SH tapering coefficients
-    a_n = sph.max_rE_weights(N)
+    a_n = sph.max_rE_weights(N_sph)
 
     gains = np.zeros([src_count, ls_count])
     for src_idx in range(src_count):
         # discretize panning function
         d = utils.angle_between(src[src_idx, :], kernel_hull.points)
-        g_l = sph.bandlimited_dirac(N, d, a_n)
+        g_l = sph.bandlimited_dirac(N_sph, d, a_n)
         gains[src_idx, :] = 4 * np.pi / J * G.T @ g_l
     # remove imaginary loudspeaker
     gains = np.delete(gains, ambisonics_hull.imaginary_speaker, axis=1)
     return gains
 
 
-def allrad(F_nm, hull, N=None):
+def allrad(F_nm, hull, N_sph=None):
     """Loudspeaker gains for All-Round Ambisonic Panning.
     Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
     Journal of Audio Engineering Society, Sec. 6.
 
     Parameters
     ----------
-    F_nm : ((N+1)**2, S) numpy.ndarray
+    F_nm : ((N_sph+1)**2, S) numpy.ndarray
         Matrix of spherical harmonics coefficients of spherical function(S).
     hull : LoudspeakerSetup
-    N : int
+    N_sph : int
         Decoding order, defaults to hull.characteristic_order.
 
     Returns
     -------
     ls_sig : (L, S) numpy.ndarray
         Loudspeaker L output signal S.
+
     """
     if hull.ambisonics_hull:
         ambisonics_hull = hull.ambisonics_hull
@@ -578,8 +583,8 @@ def allrad(F_nm, hull, N=None):
         kernel_hull = hull.kernel_hull
     else:
         raise ValueError('Run hull.setup_for_ambisonic() first!')
-    if N is None:
-        N = hull.characteristic_order
+    if N_sph is None:
+        N_sph = hull.characteristic_order
 
     # virtual t-design loudspeakers
     J = len(kernel_hull.points)
@@ -587,14 +592,14 @@ def allrad(F_nm, hull, N=None):
     G = vbap(src=kernel_hull.points, hull=ambisonics_hull)
 
     # SH tapering coefficients
-    a_n = sph.max_rE_weights(N)
+    a_n = sph.max_rE_weights(N_sph)
     a_n = sph.repeat_order_coeffs(a_n)
 
     # virtual Ambisonic decoder
     _t_azi, _t_colat, _t_r = utils.cart2sph(kernel_hull.points[:, 0],
                                             kernel_hull.points[:, 1],
                                             kernel_hull.points[:, 2])
-    Y_td = sph.sh_matrix(N, _t_azi, _t_colat, SH_type='real')
+    Y_td = sph.sh_matrix(N_sph, _t_azi, _t_colat, SH_type='real')
     # ALLRAD Decoder
     D = 4 * np.pi / J * G.T @ Y_td
     # apply tapering to decoder matrix
@@ -612,14 +617,15 @@ def nearest_loudspeaker(src, hull):
 
     Parameters
     ----------
-    src : (n, 3)
-        Cartesian coordinates of n sources to be rendered.
+    src : (N, 3)
+        Cartesian coordinates of N sources to be rendered.
     hull : LoudspeakerSetup
 
     Returns
     -------
-    gains : (n, L) numpy.ndarray
-        Panning gains for L loudspeakers to render n sources.
+    gains : (N, L) numpy.ndarray
+        Panning gains for L loudspeakers to render N sources.
+
     """
     src = np.atleast_2d(src)
     src_count = src.shape[0]

@@ -32,8 +32,7 @@ from spaudiopy import utils, IO, sig, decoder, sph, plots, grids
 
 
 # %% User setup
-setupname = "graz"
-NONUNIFORM = False
+setupname = "aalto_full"
 LISTEN = True
 
 if setupname == "aalto_full":
@@ -70,25 +69,21 @@ elif setupname == "graz":
 else:
     raise ValueError
 
-x, y, z = utils.sph2cart(utils.deg2rad(ls_dirs[0, :]),
+ls_x, ls_y, ls_z = utils.sph2cart(utils.deg2rad(ls_dirs[0, :]),
                          utils.deg2rad(ls_dirs[1, :]))
-if NONUNIFORM:
-    x = np.r_[x, 1]
-    y = np.r_[y, 1]
-    z = np.r_[z, 1]
 
 listener_position = [0, 0, 0]
 
 
 # %% Show setup
-ls_setup = decoder.LoudspeakerSetup(x, y, z, listener_position)
+ls_setup = decoder.LoudspeakerSetup(ls_x, ls_y, ls_z, listener_position)
 ls_setup.pop_triangles(normal_limit, aperture_limit, opening_limit, blacklist)
 
 ls_setup.show()
 plots.hull_normals(ls_setup)
 
 # Test source location
-src = np.array([1, 1, 0.5])
+src = np.array([1, 0.5, 2.5])
 src_azi, src_colat, _ = utils.cart2sph(*src.tolist())
 
 # %% VBAP
@@ -105,10 +100,10 @@ plots.hull(ls_setup.ambisonics_hull, title='Ambisonic hull')
 plots.hull(ls_setup.kernel_hull, title='Kernel hull')
 
 # ALLRAP
-gains_allrap = decoder.allrap(src, ls_setup, N=N_e)
+gains_allrap = decoder.allrap(src, ls_setup, N_sph=N_e)
 # ALLRAD
 input_F_nm = sph.sh_matrix(N_e, src_azi, src_colat, 'real').T  # SH dirac
-out_allrad = decoder.allrad(input_F_nm, ls_setup, N=N_e)
+out_allrad = decoder.allrad(input_F_nm, ls_setup, N_sph=N_e)
 
 utils.test_diff(gains_allrap, out_allrad, msg="ALLRAD and ALLRAP:")
 
@@ -212,7 +207,8 @@ if LISTEN:
     plt.tight_layout()
 
 # Auralize with SSR-BRS renderer
-IO.write_ssr_brirs('allrap_brirs.wav',
-                   ls_setup.loudspeaker_signals(gains_allrap), ls_setup, fs)
+IO.write_ssr_brirs_loudspeaker('allrap_brirs.wav',
+                               ls_setup.loudspeaker_signals(gains_allrap),
+                               ls_setup, fs)
 
 plt.show()

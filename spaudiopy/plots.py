@@ -451,8 +451,8 @@ def polar(theta, a, title=None, rlim=(-40, 0), ax=None):
         plt.title(title)
 
 
-def decoder_performance(hull, renderer_type, azi_steps=5, el_steps=3, N=None,
-                        **kwargs):
+def decoder_performance(hull, renderer_type, azi_steps=5, el_steps=3,
+                        N_sph=None, **kwargs):
     """Currently rE_mag, E and spread measures.
     For renderer_type='VBAP', 'ALLRAP' or 'NLS.
     """
@@ -469,7 +469,8 @@ def decoder_performance(hull, renderer_type, azi_steps=5, el_steps=3, N=None,
     if renderer_type.lower() == 'vbap':
         G = decoder.vbap(np.c_[_grid_x, _grid_y, grid_z], hull, **kwargs)
     if renderer_type.lower() == 'allrap':
-        G = decoder.allrap(np.c_[_grid_x, _grid_y, grid_z], hull, N, **kwargs)
+        G = decoder.allrap(np.c_[_grid_x, _grid_y, grid_z], hull, N_sph=N_sph,
+                           **kwargs)
     if renderer_type.lower() == 'nls':
         G = decoder.nearest_loudspeaker(np.c_[_grid_x, _grid_y, grid_z], hull,
                                         **kwargs)
