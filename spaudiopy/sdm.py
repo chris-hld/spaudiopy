@@ -149,7 +149,7 @@ def render_loudspeaker_sdm(sdm_p, ls_gains, ls_setup, hrirs,
     return ir_l, ir_r
 
 
-def post_equalization(ls_sigs, sdm_p, fs, ls_distance=None):
+def post_equalization(ls_sigs, sdm_p, fs, ls_distance=None, soft_clip=True):
     """Post equalization to compensate spectral whitening.
 
     Parameters
@@ -161,6 +161,8 @@ def post_equalization(ls_sigs, sdm_p, fs, ls_distance=None):
     fs : int
     ls_distance : (L,) array_like, optional
         Loudspeaker distances in m.
+    soft_clip : bool, optional
+        Limit the compensation boost to +6dB.
 
     Returns
     -------
@@ -255,6 +257,10 @@ def post_equalization(ls_sigs, sdm_p, fs, ls_distance=None):
             else:
                 mag_diff = np.abs(H_p) / np.clip(sdm_mag_incoherent, 10e-10,
                                                  None)
+
+            # soft clip gain
+            if soft_clip:
+                mag_diff[mag_diff > 1] = 1 + np.tanh(mag_diff[mag_diff > 1] - 1)
 
             # apply to ls input
             Y = H_sdm * mag_diff[np.newaxis, :]
