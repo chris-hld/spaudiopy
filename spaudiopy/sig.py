@@ -109,7 +109,7 @@ class MultiSignal(MonoSignal):
             fs = fs_file
         if np.ndim(sig) == 1:
             raise ValueError("Only one channel. Try MonoSignal.")
-        return cls(*sig.T, fs=fs)
+        return cls([*sig.T], fs=fs)
 
     def get_signals(self):
         """Return ndarray of signals, stacked along rows."""
@@ -135,10 +135,14 @@ class AmbiBSignal(MultiSignal):
     def __init__(self, signals, fs=None):
         MultiSignal.__init__(self, signals, fs=fs)
         assert self.channel_count == 4, "Provide four channels!"
-        self.W = self.channel[0].signal
-        self.X = self.channel[1].signal
-        self.Y = self.channel[2].signal
-        self.Z = self.channel[3].signal
+        self.W = utils.asarray_1d(self.channel[0].signal)
+        self.X = utils.asarray_1d(self.channel[1].signal)
+        self.Y = utils.asarray_1d(self.channel[2].signal)
+        self.Z = utils.asarray_1d(self.channel[3].signal)
+
+    @classmethod
+    def from_file(cls, filename, fs=None):
+        return super().from_file(filename, fs=fs)
 
 
 class HRIRs:
