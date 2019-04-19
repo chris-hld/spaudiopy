@@ -100,8 +100,8 @@ plots.subplot_sph_coeffs([np.array([1, 0, 0, 0]),
                          title=["0", "1, -1", "1, 0", "1, 1"])
 
 # %%
-plots.sph_coeffs(np.sqrt(2) * np.array([1, 0, 0, 1]), 'complex',
-                 title="Both * sqrt2 complex")
+plots.sph_coeffs(np.sqrt(2) * np.array([1, 0, 0, -1]), 'complex',
+                 title="sqrt(2) * [1, 0, 0, -1] complex coeffs")
 
 # %%
 # Look at simple B format generator

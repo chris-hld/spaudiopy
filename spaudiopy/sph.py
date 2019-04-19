@@ -211,11 +211,11 @@ def sh_to_b(F_nm, W_weight=None):
     if W_weight is None:
         # Traditionally  W_weight = 1 / np.sqrt(2)
         W_weight = 1
-    # Without np.sqrt(4*np.pi)
-    M = np.array([[W_weight, 0, 0, 0],
-                  [0, 0, 0, 1/np.sqrt(3)],
-                  [0, 1/np.sqrt(3), 0, 0],
-                  [0, 0, 1/np.sqrt(3), 0]])
+    # Conversion matrix SH to B
+    M = np.sqrt(4*np.pi) * np.array([[W_weight, 0, 0, 0],
+                                    [0, 0, 0, 1/np.sqrt(3)],
+                                    [0, 1/np.sqrt(3), 0, 0],
+                                    [0, 0, 1/np.sqrt(3), 0]])
     return np.apply_along_axis(np.dot, 0, F_nm, M.T)
 
 
@@ -239,11 +239,11 @@ def b_to_sh(B, W_weight=None):
     if W_weight is None:
         # Traditionally  W_weight = 1 / np.sqrt(2)
         W_weight = 1
-    # Without np.sqrt(4*np.pi)
-    M = np.array([[W_weight, 0, 0, 0],
-                  [0, 0, 0, 1/np.sqrt(3)],
-                  [0, 1/np.sqrt(3), 0, 0],
-                  [0, 0, 1/np.sqrt(3), 0]])
+    # Conversion matrix SH to B
+    M = np.sqrt(4*np.pi) * np.array([[W_weight, 0, 0, 0],
+                                    [0, 0, 0, 1/np.sqrt(3)],
+                                    [0, 1/np.sqrt(3), 0, 0],
+                                    [0, 0, 1/np.sqrt(3), 0]])
     M_inv = np.linalg.inv(M)
     return np.apply_along_axis(np.dot, 0, B, M_inv.T)
 
@@ -274,9 +274,12 @@ def soundfield_to_b(sig, W_weight=None):
 
 def src_to_B(signal, src_azi, src_colat):
     """Get B format signal channels for source in direction azi/colat."""
-    gw = 1
+    signal = utils.asarray_1d(signal)
+    src_azi = utils.asarray_1d(src_azi)
+    src_colat = utils.asarray_1d(src_colat)
+    gw = np.ones(len(src_azi))
     gx, gy, gz = utils.sph2cart(src_azi, src_colat)
-    g = np.array([gw, gx, gy, gz])
+    g = np.c_[gw, gx, gy, gz]
     return np.outer(g, signal)
 
 
