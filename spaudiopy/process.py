@@ -132,22 +132,27 @@ def match_loudness(sig_in, sig_target):
 def _intensity_sample(i, W, X, Y, Z, win):
     buf = len(win)
     # global shared_array
-    shared_array[int(i + buf / 2), :] = np.asarray(
+    shared_array[int(i + buf // 2), :] = np.asarray(
         [np.trapz(win * W[i:i + buf] * X[i:i + buf]),
          np.trapz(win * W[i:i + buf] * Y[i:i + buf]),
          np.trapz(win * W[i:i + buf] * Z[i:i + buf])])
 
 
 @memory.cache
-def pseudo_intensity(Ambi_B, MA=False, jobs_count=None):
+def pseudo_intensity(Ambi_B, win_len=33, f_bp=None, smoothing_order=5,
+                     jobs_count=None):
     """DOA prototyping.
 
     Parameters
     ----------
     Ambi_B : sig.AmbiBSignal
         Input signal.
-    MA : bool
-        Apply moving average filter MA(5) to output.
+    win_len : int optional
+        Sliding window length.
+    f_bp : tuple(f_lo, f_hi), optional
+        Cutoff frequencies for bandpass, 'None' to disable.
+    smoothing_order : int, optional
+        Apply hanning(smoothing_order) smoothing to output.
     jobs_count : int, optional
         [CPU Cores], Number of Processes, switches implementation for n > 1.
 
@@ -160,35 +165,47 @@ def pseudo_intensity(Ambi_B, MA=False, jobs_count=None):
     if jobs_count is None:
         jobs_count = multiprocessing.cpu_count()
 
-    buf = 33
-    win = np.hanning(buf)
-    # fs = Ambi_B.fs
+    assert(win_len % 2)
+    win = np.hanning(win_len)
+    fs = Ambi_B.fs
     # Z_0 = 413.3
-    # T_int = 1/fs * buf
+    # T_int = 1/fs * win_len
     # a = 1 / (np.sqrt(2) * T_int * Z_0)
 
     # get first order signals
-    W = Ambi_B.channel[0].signal
-    X = Ambi_B.channel[1].signal
-    Y = Ambi_B.channel[2].signal
-    Z = Ambi_B.channel[3].signal
+    W = utils.asarray_1d(Ambi_B.W)
+    X = utils.asarray_1d(Ambi_B.X)
+    Y = utils.asarray_1d(Ambi_B.Y)
+    Z = utils.asarray_1d(Ambi_B.Z)
+
+    # Bandpass signals
+    if f_bp is not None:
+        f_lo = f_bp[0]
+        f_hi = f_bp[1]
+        b, a = scysig.butter(N=2, Wn=(f_lo / (fs / 2), f_hi / (fs / 2)),
+                             btype='bandpass')
+        W = scysig.filtfilt(b, a, W)
+        X = scysig.filtfilt(b, a, X)
+        Y = scysig.filtfilt(b, a, Y)
+        Z = scysig.filtfilt(b, a, Z)
 
     # Initialize intensity vector
     I_vec = np.c_[np.zeros(len(Ambi_B)),
                   np.zeros(len(Ambi_B)), np.zeros(len(Ambi_B))]
 
     if jobs_count == 1:
+        print('Using single job')
         # I = p*v for each sample
-        for i in range(len(Ambi_B) - buf):
-            I_vec[int(i + buf / 2), :] = np.asarray(
-                [np.trapz(win * W[i:i + buf] * X[i:i + buf]),
-                 np.trapz(win * W[i:i + buf] * Y[i:i + buf]),
-                 np.trapz(win * W[i:i + buf] * Z[i:i + buf])])
+        for i in range(len(Ambi_B) - win_len):
+            I_vec[int(i + win_len // 2), :] = np.asarray(
+                [np.trapz(win * W[i:i + win_len] * X[i:i + win_len]),
+                 np.trapz(win * W[i:i + win_len] * Y[i:i + win_len]),
+                 np.trapz(win * W[i:i + win_len] * Z[i:i + win_len])])
     else:
         # preparation
         shared_array_shape = np.shape(I_vec)
         _arr_base = _create_shared_array(shared_array_shape)
-        _arg_itr = zip(range(len(Ambi_B) - buf),
+        _arg_itr = zip(range(len(Ambi_B) - win_len),
                        repeat(W), repeat(X), repeat(Y), repeat(Z),
                        repeat(win))
         # execute
@@ -201,14 +218,14 @@ def pseudo_intensity(Ambi_B, MA=False, jobs_count=None):
         I_vec = np.frombuffer(_arr_base.get_obj()).reshape(
             shared_array_shape)
 
-    I_norm = np.linalg.norm(I_vec, axis=1)
-    I_norm[I_norm == 0.0] = 10e8  # handle Zeros
-    I_vec = I_vec * (1 / I_norm[:, np.newaxis])
-
-    # Moving Average filter MA(5)
-    if MA:
-        I_vec = np.apply_along_axis(np.convolve, 0,
-                                    I_vec, [1 / 5, 1 / 5, 1 / 5, 1 / 5, 1 / 5], 'valid')
+    if smoothing_order > 0:
+        assert(smoothing_order % 2)
+        I_vec = np.apply_along_axis(scysig.convolve, 0, I_vec,
+                                    np.hanning(smoothing_order), 'same')
+    # Normalize
+    # I_norm = np.linalg.norm(I_vec, axis=1)
+    # I_norm[I_norm < 10e8] = 10e8  # handle Zeros
+    # I_vec = I_vec * (1 / I_norm[:, np.newaxis])
 
     return utils.cart2sph(I_vec[:, 0], I_vec[:, 1], I_vec[:, 2])
 

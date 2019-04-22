@@ -471,6 +471,9 @@ def decoder_performance(hull, renderer_type, azi_steps=5, el_steps=3,
     if renderer_type.lower() == 'allrap':
         G = decoder.allrap(np.c_[_grid_x, _grid_y, grid_z], hull, N_sph=N_sph,
                            **kwargs)
+    if renderer_type.lower() == 'allrap2':
+        G = decoder.allrap2(np.c_[_grid_x, _grid_y, grid_z], hull, N_sph=N_sph,
+                            **kwargs)
     if renderer_type.lower() == 'nls':
         G = decoder.nearest_loudspeaker(np.c_[_grid_x, _grid_y, grid_z], hull,
                                         **kwargs)

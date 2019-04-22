@@ -556,8 +556,65 @@ def allrap(src, hull, N_sph=None):
     return gains
 
 
+def allrap2(src, hull, N_sph=None):
+    """Loudspeaker gains for All-Round Ambisonic Panning 2.
+    Zotter, F., & Frank, M. (2018). Ambisonic decoding with panning-invariant
+    loudness on small layouts (AllRAD2). In 144th AES Convention.
+
+    Parameters
+    ----------
+    src : (N, 3)
+        Cartesian coordinates of N sources to be rendered.
+    hull : LoudspeakerSetup
+    N_sph : int
+        Decoding order, defaults to hull.characteristic_order.
+
+    Returns
+    -------
+    gains : (N, L) numpy.ndarray
+        Panning gains for L loudspeakers to render N sources.
+
+    """
+    if hull.ambisonics_hull:
+        ambisonics_hull = hull.ambisonics_hull
+    else:
+        raise ValueError('Run hull.setup_for_ambisonic() first!')
+    if hull.kernel_hull:
+        kernel_hull = hull.kernel_hull
+    else:
+        raise ValueError('Run hull.setup_for_ambisonic() first!')
+    if N_sph is None:
+        N_sph = hull.characteristic_order
+
+    src = np.atleast_2d(src)
+    src_count = src.shape[0]
+    # includes imaginary loudspeakers
+    ls_count = ambisonics_hull.valid_simplices.max() + 1
+
+    # virtual t-design loudspeakers
+    J = len(kernel_hull.points)
+    # virtual speakers expressed as VBAP phantom sources
+    G = vbap(src=kernel_hull.points, hull=ambisonics_hull)
+
+    # SH tapering coefficients
+    a_n = sph.max_rE_weights(N_sph)
+    # sqrt(E) normalization (eq.6)
+    a_w = np.sqrt(np.sum((2 * np.arange(N_sph + 1) + 1) * a_n**2) / (4 * np.pi))
+    a_n /= a_w
+
+    gains = np.zeros([src_count, ls_count])
+    for src_idx in range(src_count):
+        # discretize panning function
+        d = utils.angle_between(src[src_idx, :], kernel_hull.points)
+        g_l = sph.bandlimited_dirac(N_sph, d, a_n)
+        gains[src_idx, :] = np.sqrt(4 * np.pi / J * G.T**2 @ g_l**2)
+    # remove imaginary loudspeaker
+    gains = np.delete(gains, ambisonics_hull.imaginary_speaker, axis=1)
+    return gains
+
+
 def allrad(F_nm, hull, N_sph=None):
-    """Loudspeaker gains for All-Round Ambisonic Panning.
+    """Loudspeaker gains for All-Round Ambisonic Decoder.
     Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
     Journal of Audio Engineering Society, Sec. 6.
 
@@ -604,6 +661,68 @@ def allrad(F_nm, hull, N_sph=None):
     D = 4 * np.pi / J * G.T @ Y_td
     # apply tapering to decoder matrix
     D = D @ np.diag(a_n)
+    # loudspeaker output signals
+    ls_sig = D @ F_nm
+    # remove imaginary loudspeakers
+    ls_sig = np.delete(ls_sig, ambisonics_hull.imaginary_speaker, axis=0)
+    return ls_sig
+
+
+def allrad2(F_nm, hull, N_sph=None):
+    """Loudspeaker gains for All-Round Ambisonic Decoder 2.
+    Zotter, F., & Frank, M. (2018). Ambisonic decoding with panning-invariant
+    loudness on small layouts (AllRAD2). In 144th AES Convention.
+
+    Parameters
+    ----------
+    F_nm : ((N_sph+1)**2, S) numpy.ndarray
+        Matrix of spherical harmonics coefficients of spherical function(S).
+    hull : LoudspeakerSetup
+    N_sph : int
+        Decoding order, defaults to hull.characteristic_order.
+
+    Returns
+    -------
+    ls_sig : (L, S) numpy.ndarray
+        Loudspeaker L output signal S.
+
+    """
+    if hull.ambisonics_hull:
+        ambisonics_hull = hull.ambisonics_hull
+    else:
+        raise ValueError('Run hull.setup_for_ambisonic() first!')
+    if hull.kernel_hull:
+        kernel_hull = hull.kernel_hull
+    else:
+        raise ValueError('Run hull.setup_for_ambisonic() first!')
+    if N_sph is None:
+        N_sph = hull.characteristic_order
+
+    # virtual t-design loudspeakers
+    J = len(kernel_hull.points)
+    # virtual speakers expressed as VBAP phantom sources
+    G = vbap(src=kernel_hull.points, hull=ambisonics_hull)
+
+    # SH tapering coefficients
+    a_n = sph.max_rE_weights(N_sph)
+    # sqrt(E) normalization (eq.6)
+    a_w = np.sqrt(np.sum((2 * np.arange(N_sph + 1) + 1) * a_n**2) / (4 * np.pi))
+    a_n /= a_w
+    a_n = sph.repeat_order_coeffs(a_n)
+
+    # virtual Ambisonic decoder
+    _t_azi, _t_colat, _t_r = utils.cart2sph(kernel_hull.points[:, 0],
+                                            kernel_hull.points[:, 1],
+                                            kernel_hull.points[:, 2])
+    Y_td = sph.sh_matrix(N_sph, _t_azi, _t_colat, SH_type='real')
+
+    # tapered dirac
+    Y_l = Y_td @ np.diag(a_n) @ Y_td.T
+    # Kernel
+    K = np.sqrt(4 * np.pi / J * np.square(G.T) @ np.square(Y_l))
+    # ALLRAD2 Decoder
+    D = 4 * np.pi / J * K @ Y_td
+
     # loudspeaker output signals
     ls_sig = D @ F_nm
     # remove imaginary loudspeakers
