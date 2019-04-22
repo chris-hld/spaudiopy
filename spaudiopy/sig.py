@@ -9,7 +9,7 @@ import numpy as np
 from scipy import signal as scysig
 import soundfile as sf
 
-from . import utils, IO
+from . import utils, IO, sph
 from . import process as pcs
 
 
@@ -143,6 +143,18 @@ class AmbiBSignal(MultiSignal):
     @classmethod
     def from_file(cls, filename, fs=None):
         return super().from_file(filename, fs=fs)
+
+    def sh_to_b(self):
+        # Assume signals are in ACN
+        _B = sph.sh_to_b(self.get_signals())
+        self.channel[0].signal = _B[0, :]
+        self.channel[1].signal = _B[1, :]
+        self.channel[2].signal = _B[2, :]
+        self.channel[3].signal = _B[3, :]
+        self.W = utils.asarray_1d(self.channel[0].signal)
+        self.X = utils.asarray_1d(self.channel[1].signal)
+        self.Y = utils.asarray_1d(self.channel[2].signal)
+        self.Z = utils.asarray_1d(self.channel[3].signal)
 
 
 class HRIRs:

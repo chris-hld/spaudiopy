@@ -257,7 +257,6 @@ def post_equalization(ls_sigs, sdm_p, fs, ls_distance=None, soft_clip=True):
             else:
                 mag_diff = np.abs(H_p) / np.clip(sdm_mag_incoherent, 10e-10,
                                                  None)
-
             # soft clip gain
             if soft_clip:
                 mag_diff[mag_diff > 1] = 1 + np.tanh(mag_diff[mag_diff > 1] - 1)
