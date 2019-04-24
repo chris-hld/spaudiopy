@@ -49,8 +49,8 @@ def spectrum(x, fs, ylim=None, **kwargs):
     freq_resp(freq, specs, ylim=ylim, **kwargs)
 
 
-def freq_resp(freq, amp, to_db=True, smoothing_n = None, title=None, labels=None,
-              xlim=(10, 25000), ylim=(-30, 20)):
+def freq_resp(freq, amp, to_db=True, smoothing_n=None, title=None,
+              labels=None, xlim=(10, 25000), ylim=(-30, 20)):
     """ Plot amplitude of frequency response over time frequency f.
 
     Parameters
@@ -232,7 +232,8 @@ def sph_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None):
                                        np.arange(10e-3, np.pi + el_steps,
                                                  el_steps))
 
-    f_plot = sph.inverse_sht(F_nm, phi_plot.ravel(), theta_plot.ravel(), SH_type)
+    f_plot = sph.inverse_sht(F_nm, phi_plot.ravel(), theta_plot.ravel(),
+                             SH_type)
     f_r = np.abs(f_plot)
     f_ang = np.angle(f_plot)
 
@@ -262,11 +263,12 @@ def sph_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None):
     y0 = np.array([0, 1, 0])
     z0 = np.array([0, 0, 1])
     for i in range(3):
-        ax.plot([-x0[i], x0[i]], [-y0[i], y0[i]], [-z0[i], z0[i]], 'k', alpha=0.3)
+        ax.plot([-x0[i], x0[i]], [-y0[i], y0[i]], [-z0[i], z0[i]], 'k',
+                alpha=0.3)
 
-    ax.set_xlabel('x', fontsize=12)
-    ax.set_ylabel('y', fontsize=12)
-    ax.set_zlabel('z', fontsize=12)
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.set_zlabel('z')
 
     cb = plt.colorbar(m, ticks=[-np.pi, 0, np.pi], shrink=0.3, aspect=8)
     cb.set_ticklabels([r'$-\pi$', r'$0$', r'$\pi$'])
@@ -276,7 +278,7 @@ def sph_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None):
     ax.view_init(25, 230)
     if title is not None:
         plt.title(title)
-    fig.tight_layout()
+    # fig.tight_layout()
 
 
 def subplot_sph_coeffs(F_l, SH_type=None, azi_steps=5, el_steps=3, title=None):
@@ -297,7 +299,7 @@ def subplot_sph_coeffs(F_l, SH_type=None, azi_steps=5, el_steps=3, title=None):
             SH_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
 
         f_plot = sph.inverse_sht(F_nm, phi_plot.ravel(), theta_plot.ravel(),
-                                SH_type)
+                                 SH_type)
         f_r = np.abs(f_plot)
         f_ang = np.angle(f_plot)
 
@@ -322,9 +324,9 @@ def subplot_sph_coeffs(F_l, SH_type=None, azi_steps=5, el_steps=3, title=None):
         ax.set_ylim(-1, 1)
         ax.set_zlim(-1, 1)
 
-        ax.set_xlabel('x', fontsize=12)
-        ax.set_ylabel('y', fontsize=12)
-        ax.set_zlabel('z', fontsize=12)
+        ax.set_xlabel('x')
+        ax.set_ylabel('y')
+        ax.set_zlabel('z')
 
         plt.grid(True)
         ax.view_init(25, 230)
@@ -333,12 +335,13 @@ def subplot_sph_coeffs(F_l, SH_type=None, azi_steps=5, el_steps=3, title=None):
         ax.set_aspect('equal')
         ax_l.append(ax)
 
-    cb = plt.colorbar(m, ticks=[-np.pi, 0, np.pi], shrink=0.3, aspect=8,
-                      ax=ax_l)
-    cb.set_ticklabels([r'$-\pi$', r'$0$', r'$\pi$'])
+    cbar = plt.colorbar(m, shrink=0.3, aspect=8,
+                        ax=ax_l)
+    cbar.set_ticks([-np.pi, 0, np.pi])
+    cbar.set_ticklabels([r'$-\pi$', r'$0$', r'$\pi$'])
 
 
-def hull(hull, simplices=None, mark_invalid=True, title=None):
+def hull(hull, simplices=None, mark_invalid=True, title=None, lim_m=1):
     """Plot loudspeaker setup and valid simplices from its hull object."""
     if simplices is None:
         simplices = hull.simplices
@@ -373,13 +376,14 @@ def hull(hull, simplices=None, mark_invalid=True, title=None):
     for s, co in enumerate(np.c_[x, y, z]):
         ax.text(co[0], co[1], co[2], s, zorder=1)
 
-    ax.set_xlabel('x', fontsize=12)
-    ax.set_ylabel('y', fontsize=12)
-    ax.set_zlabel('z', fontsize=12)
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.set_zlabel('z')
+    ax.locator_params(tight=True, nbins=5)
 
-    ax.set_xlim(-1, 1)
-    ax.set_ylim(-1, 1)
-    ax.set_zlim(-1, 1)
+    ax.set_xlim(-lim_m, lim_m)
+    ax.set_ylim(-lim_m, lim_m)
+    ax.set_zlim(-lim_m, lim_m)
     if title is not None:
         plt.title(title)
 
@@ -405,7 +409,7 @@ def hull_normals(hull, plot_face_normals=True, plot_vertex_normals=True):
                   hull.vertex_normals[:, 1],
                   hull.vertex_normals[:, 2],
                   arrow_length_ratio=0.1,
-                  colors=(0.52941176, 0.56862745, 0.7372549 , 0.8),
+                  colors=(0.52941176, 0.56862745, 0.7372549, 0.8),
                   alpha=0.6, zorder=0, label='vertex normal')
 
     if plot_face_normals:
@@ -425,11 +429,12 @@ def hull_normals(hull, plot_face_normals=True, plot_vertex_normals=True):
                s=48, marker='+', label='listener')
 
     ax.scatter(hull.barycenter[0], hull.barycenter[1], hull.barycenter[2],
-           s=48, marker='*', label='barycenter')
+               s=48, marker='*', label='barycenter')
 
-    ax.set_xlabel('x', fontsize=12)
-    ax.set_ylabel('y', fontsize=12)
-    ax.set_zlabel('z', fontsize=12)
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.set_zlabel('z')
+    ax.locator_params(tight=True, nbins=5)
 
     ax.set_xlim(-1, 1)
     ax.set_ylim(-1, 1)
@@ -491,23 +496,36 @@ def decoder_performance(hull, renderer_type, azi_steps=5, el_steps=3,
 
 
     # Show them
-    fig, axes = plt.subplots(4, 1, sharex='all', figsize=plt.figaspect(3))
-    for ip, var_str in enumerate(['rE_mag', 'E', 'spread', 'ang_error']):
-        _data = eval(var_str)
+    fig, axes = plt.subplots(1, 4, sharex='all', sharey='all',
+                             figsize=plt.figaspect(1/4))
+    for ip, _data in enumerate([rE_mag, E, spread, ang_error]):
         _data = _data.reshape(phi_plot.shape)
         # shift 0 azi to middle
         _data = np.roll(_data, - int(_data.shape[1]/2), axis=1)
         ax = axes[ip]
-        p = ax.imshow(_data, vmin=0, vmax=180 if var_str is 'spread' or
-                                                 var_str is 'ang_error' else
+        p = ax.imshow(_data, vmin=0, vmax=180 if ip == 2 or
+                                                 ip == 3 else
                       np.max([1.0, np.max(_data)]))
         ax.set_xticks(np.linspace(0, _data.shape[1] - 1, 5))
         ax.set_xticklabels(['$-\pi$', '$-\pi/2$', '$0$', '$\pi/2$', '$\pi$'])
         ax.set_yticks(np.linspace(0, _data.shape[0] - 1, 3))
         ax.set_yticklabels(['$0$', '$\pi/2$', '$\pi$'])
-        ax.set_title(var_str)
-        fig.colorbar(p, ax=ax, fraction=0.024, pad=0.04)
+        cbar = fig.colorbar(p, ax=ax, fraction=0.024, pad=0.04)
+        if ip == 0:
+            ax.set_title(r'$\left\|\hat{r}_E \right\|$')
+            ax.set_xlabel('Azimuth')
+            ax.set_ylabel('Colatitude')
+        elif ip == 1:
+            ax.set_title(r'$\hat{E}$')
+        elif ip == 2:
+            ax.set_title(r'$\hat{\sigma}_E$')
+            cbar.set_ticks([0, 90, 180])
+            cbar.set_ticklabels([r'$0^{\circ}$', r'$90^{\circ}$',
+                                 r'$180^{\circ}$'])
+        elif ip == 3:
+            ax.set_title(r'$\Delta \angle$')
+            cbar.set_ticks([0, 90, 180])
+            cbar.set_ticklabels([r'$0^{\circ}$', r'$90^{\circ}$',
+                                 r'$180^{\circ}$'])
 
-    ax.set_xlabel('Azimuth')
-    ax.set_ylabel('Colatitude')
     plt.suptitle(renderer_type)
