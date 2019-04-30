@@ -534,9 +534,10 @@ def allrap(src, hull, N_sph=None):
 
     src = np.atleast_2d(src)
     src_count = src.shape[0]
-    # includes imaginary loudspeakers
     ls_count = ambisonics_hull.valid_simplices.max() + 1
 
+    # normalize direction
+    src = src / np.linalg.norm(src, axis=1)[:, np.newaxis]
     # virtual t-design loudspeakers
     J = len(kernel_hull.points)
     # virtual speakers expressed as VBAP phantom sources
@@ -591,6 +592,8 @@ def allrap2(src, hull, N_sph=None):
     # includes imaginary loudspeakers
     ls_count = ambisonics_hull.valid_simplices.max() + 1
 
+    # normalize direction
+    src = src / np.linalg.norm(src, axis=1)[:, np.newaxis]
     # virtual t-design loudspeakers
     J = len(kernel_hull.points)
     # virtual speakers expressed as VBAP phantom sources
