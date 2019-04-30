@@ -6,9 +6,6 @@ import matplotlib.pyplot as plt
 from matplotlib import cm, colors
 from mpl_toolkits.mplot3d import Axes3D  # for (projection='3d')
 
-from plotly import offline as pltlyof
-import plotly.graph_objs as pltlygo
-
 from . import utils
 from . import sph
 from . import decoder
@@ -83,19 +80,23 @@ def freq_resp(freq, amp, to_db=True, smoothing_n=None, title=None,
             smoothed.append(smooth)
         amp = smoothed
 
-    fig = plt.figure()
-    [plt.semilogx(freq, a.flat) for a in amp]
+    fig, ax = plt.subplots()
+    [ax.semilogx(freq, a.flat) for a in amp]
 
     if title is not None:
         plt.title(title)
+    if smoothing_n is not None:
+        # fake line for extra legend entry
+        ax.plot([], [], '*', color='black')
+        labels.append(r"$\frac{%d}{8}$ octave smoothing" % smoothing_n)
     if labels is not None:
-        plt.legend(labels)
+        ax.legend(labels)
+
     plt.xlabel('Frequency in Hz')
     plt.ylabel('Amplitude in dB')
     plt.xlim(xlim)
     plt.ylim(ylim)
     plt.grid(True)
-    fig.tight_layout()
 
 
 def transfer_function(freq, H, title=None, xlim=(10, 25000)):
@@ -119,7 +120,7 @@ def transfer_function(freq, H, title=None, xlim=(10, 25000)):
     lines2, labels2 = ax2.get_legend_handles_labels()
     ax2.legend(lines1 + lines2, labels1 + labels2, loc=0)
 
-    fig.tight_layout()
+    #fig.tight_layout()
     if title is not None:
         plt.title(title)
 
@@ -150,51 +151,6 @@ def zeropole(b, a, zPlane=False, title=None):
     plt.grid(True)
     if title is not None:
         plt.title(title)
-
-
-def iplot_Sphere(x, y, z, last=-1):
-    """Plot Sphere."""
-    last = min(len(x), last)  # clip last to length of input
-    trace1 = pltlygo.Scatter3d(
-        x=x[:last],
-        y=y[:last],
-        z=z[:last],
-        mode='markers',
-        marker=dict(
-            size=3,
-            color=np.arange(len(x[:last])),
-            colorscale='Viridis',
-            showscale=True,
-            colorbar=dict(
-                title='Sample (t)'
-            ),
-            opacity=0.6
-        ),
-    )
-
-    data = [trace1]
-    layout = pltlygo.Layout(
-        scene=dict(
-            xaxis=dict(range=[-1, 1]),
-            yaxis=dict(range=[-1, 1]),
-            zaxis=dict(range=[-1, 1])),
-        margin=dict(l=0, r=0, b=0, t=0)
-    )
-    fig = pltlygo.Figure(data=data, layout=layout)
-    pltlyof.iplot(fig, image='png')
-
-
-def pseudoI(I_phi, I_theta, I_r, last=-1):
-    """Plot Pseudo-Intensity."""
-    plt.figure()
-    plt.plot(I_r[:last], label=r'$r$')
-    plt.plot(I_phi[:last], label=r'$\phi$')
-    plt.plot(I_theta[:last], label=r'$\theta$')
-    plt.legend()
-    plt.xlabel('t in samples')
-    plt.title('Pseudo-Intensity')
-    plt.figure()
-    iplot_Sphere(*utils.sph2cart(I_phi, I_theta, I_r), last=last)
 
 
 def compare_ambi(Ambi_A, Ambi_B):
@@ -494,35 +450,31 @@ def decoder_performance(hull, renderer_type, azi_steps=5, el_steps=3,
                         (rE / (rE_mag[:, np.newaxis] + 10e-15)))
     ang_error = np.rad2deg(np.arccos(np.clip(col_dot, -1.0, 1.0)))
 
-
     # Show them
-    fig, axes = plt.subplots(1, 4, sharex='all', sharey='all',
-                             figsize=plt.figaspect(1/4))
-    for ip, _data in enumerate([rE_mag, E, spread, ang_error]):
+    fig, axes = plt.subplots(1, 3, sharex='all', sharey='all',
+                             figsize=plt.figaspect(1/3))
+    for ip, _data in enumerate([E, spread, ang_error]):
         _data = _data.reshape(phi_plot.shape)
         # shift 0 azi to middle
         _data = np.roll(_data, - int(_data.shape[1]/2), axis=1)
         ax = axes[ip]
-        p = ax.imshow(_data, vmin=0, vmax=180 if ip == 2 or
-                                                 ip == 3 else
+        p = ax.imshow(_data, vmin=0, vmax=180 if ip == 1 or
+                                                 ip == 2 else
                       np.max([1.0, np.max(_data)]))
         ax.set_xticks(np.linspace(0, _data.shape[1] - 1, 5))
-        ax.set_xticklabels(['$-\pi$', '$-\pi/2$', '$0$', '$\pi/2$', '$\pi$'])
+        ax.set_xticklabels([r'$-\pi$', r'$-\pi/2$', r'$0$',
+                            r'$\pi/2$', r'$\pi$'])
         ax.set_yticks(np.linspace(0, _data.shape[0] - 1, 3))
-        ax.set_yticklabels(['$0$', '$\pi/2$', '$\pi$'])
+        ax.set_yticklabels([r'$0$', r'$\pi/2$', r'$\pi$'])
         cbar = fig.colorbar(p, ax=ax, fraction=0.024, pad=0.04)
         if ip == 0:
-            ax.set_title(r'$\left\|\hat{r}_E \right\|$')
-            ax.set_xlabel('Azimuth')
-            ax.set_ylabel('Colatitude')
-        elif ip == 1:
             ax.set_title(r'$\hat{E}$')
-        elif ip == 2:
+        elif ip == 1:
             ax.set_title(r'$\hat{\sigma}_E$')
             cbar.set_ticks([0, 90, 180])
             cbar.set_ticklabels([r'$0^{\circ}$', r'$90^{\circ}$',
                                  r'$180^{\circ}$'])
-        elif ip == 3:
+        elif ip == 2:
             ax.set_title(r'$\Delta \angle$')
             cbar.set_ticks([0, 90, 180])
             cbar.set_ticklabels([r'$0^{\circ}$', r'$90^{\circ}$',
