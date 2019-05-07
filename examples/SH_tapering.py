@@ -23,6 +23,9 @@ r_0 = 8.75 / 100
 # target spherical order N (>= 3)
 N = 5
 
+# Hann tapering window
+w_Hann = pcs.half_sided_Hann(N)
+
 
 # %% Coloration compensation filter
 def coloration_compensation(N, N_full, kr, w_taper=None):
@@ -54,13 +57,11 @@ colat = np.pi / 2 * np.ones_like(azi)
 dirac_untapered = 4 * np.pi / (N + 1) ** 2 * \
                   sph.bandlimited_dirac(N, azi - dirac_azi)
 dirac_tapered = 4 * np.pi / (N + 1) ** 2 * \
-                sph.bandlimited_dirac(N, azi - dirac_azi,
-                                      w_n=pcs.half_sided_Hann(N))
+                sph.bandlimited_dirac(N, azi - dirac_azi, w_n=w_Hann)
 
 # Coloration compensation of windowing
 compensation_untapered = coloration_compensation(N, N_full, kr)
-compensation_tapered = coloration_compensation(N, N_full, kr,
-                                               w_taper=pcs.half_sided_Hann(N))
+compensation_tapered = coloration_compensation(N, N_full, kr, w_taper=w_Hann)
 
 # Get an FIR filter
 ntaps = 1024 + 1
@@ -73,4 +74,3 @@ plots.polar(azi, dirac_tapered, title='Dirac tapered')
 plots.spectrum(filter_taps, fs, scale_mag=True,
                title='Coloration Equalization')
 plt.show()
-
