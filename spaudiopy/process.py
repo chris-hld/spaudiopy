@@ -445,6 +445,22 @@ def subband_levels(x, width, fs, power=False, axis=-1):
     return L
 
 
+def energy_decay(p):
+    """Energy decay curve (EDC) in dB by Schroeder backwards integration.
+
+    Parameters
+    ----------
+    p : array_like
+
+    Returns
+    -------
+    rd : array_like
+    """
+    a = np.trapz(p**2)
+    b = np.cumsum(p[::-1]**2)[::-1]
+    return 10 * np.log10(b / a)
+
+
 def half_sided_Hann(N):
     """Design half-sided Hann tapering window of order N."""
     assert (N >= 3)
