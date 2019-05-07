@@ -299,7 +299,7 @@ def check_cond_sht(N, azi, colat, SH_type, lim=None):
     return c
 
 
-def bandlimited_dirac(N, d, a_n=None):
+def bandlimited_dirac(N, d, w_n=None):
     r"""Order N spatially bandlimited Dirac pulse at angular distance d.
 
     Parameters
@@ -308,7 +308,7 @@ def bandlimited_dirac(N, d, a_n=None):
         SH order.
     d : (Q,) array_like
         Angular distance in rad.
-    a_n : (N,) array_like
+    w_n : (N,) array_like
         Tapering window w_n.
 
     Returns
@@ -327,11 +327,11 @@ def bandlimited_dirac(N, d, a_n=None):
     Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
     Journal of Audio Engineering Society, eq. (7).
     """
-    if a_n is None:
-        a_n = np.ones(N + 1)
+    if w_n is None:
+        w_n = np.ones(N + 1)
     g_n = np.zeros([(N + 1)**2, len(d)])
     for n, i in enumerate(range(N + 1)):
-        g_n[i, :] = a_n[i] * (2 * n + 1) / (4 * np.pi) * \
+        g_n[i, :] = w_n[i] * (2 * n + 1) / (4 * np.pi) * \
                     scyspecial.eval_legendre(n, np.cos(d))
     dirac = np.sum(g_n, 0)
     return dirac
@@ -434,11 +434,13 @@ def mode_strength(n, kr, sphere_type='rigid'):
         Mode strength b_n(kr).
     """
     def spherical_h2(n, z):
-        return scyspecial.spherical_jn(n, z) + \
-                    1j * scyspecial.spherical_yn(n, z)
+        with np.errstate(divide='ignore'):
+            return scyspecial.spherical_jn(n, z) + \
+                        1j * scyspecial.spherical_yn(n, z)
 
     def spherical_h2_d(n, z):
-        return -spherical_h2(n+1, z) + n/z * spherical_h2(n, z)
+        with np.errstate(divide='ignore'):
+            return -spherical_h2(n+1, z) + n/z * spherical_h2(n, z)
 
     if sphere_type == 'open':
         b_n = 4*np.pi*1j**n * scyspecial.spherical_jn(n, kr)
