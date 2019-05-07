@@ -9,6 +9,7 @@
 # Signal Processing - Proceedings.
 
 import numpy as np
+import matplotlib.pyplot as plt
 from scipy.signal import firwin2
 from spaudiopy import sph, utils, plots
 from spaudiopy import process as pcs
@@ -71,3 +72,5 @@ plots.polar(azi, dirac_untapered, title='Dirac untapered')
 plots.polar(azi, dirac_tapered, title='Dirac tapered')
 plots.spectrum(filter_taps, fs, scale_mag=True,
                title='Coloration Equalization')
+plt.show()
+
