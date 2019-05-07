@@ -280,9 +280,10 @@ def subplot_sph_coeffs(F_l, SH_type=None, azi_steps=5, el_steps=3, title=None):
         ax.set_ylim(-1, 1)
         ax.set_zlim(-1, 1)
 
-        ax.set_xlabel('x')
-        ax.set_ylabel('y')
-        ax.set_zlabel('z')
+        if i_p == 0:
+            ax.set_xlabel('x')
+            ax.set_ylabel('y')
+            ax.set_zlabel('z')
 
         plt.grid(True)
         ax.view_init(25, 230)
@@ -416,6 +417,9 @@ def decoder_performance(hull, renderer_type, azi_steps=5, el_steps=3,
                         N_sph=None, **kwargs):
     """Currently rE_mag, E and spread measures.
     For renderer_type='VBAP', 'ALLRAP' or 'NLS.
+
+    Zotter, F., & Frank, M. (2019). Ambisonics.
+    Springer Topics in Signal Processing.
     """
     azi_steps = np.deg2rad(azi_steps)
     el_steps = np.deg2rad(el_steps)
@@ -444,7 +448,8 @@ def decoder_performance(hull, renderer_type, azi_steps=5, el_steps=3,
     # project points onto unit sphere
     ls_points = hull.points / hull.d[:, np.newaxis]
     rE, rE_mag = sph.r_E(ls_points, G / hull.d[np.newaxis, :]**2)
-    spread = 2 * np.arccos(np.clip(rE_mag, 0, 1)) * 180 / np.pi  # (eq. 16)
+    # Zotter book (eq. 2.11) adds 5/8
+    spread = 2 * np.arccos(np.clip(rE_mag, 0, 1)) * 180 / np.pi
     # angular error
     col_dot = np.einsum('ij,ij->i', np.array([_grid_x, _grid_y, grid_z]).T,
                         (rE / (rE_mag[:, np.newaxis] + 10e-15)))
@@ -458,8 +463,8 @@ def decoder_performance(hull, renderer_type, azi_steps=5, el_steps=3,
         # shift 0 azi to middle
         _data = np.roll(_data, - int(_data.shape[1]/2), axis=1)
         ax = axes[ip]
-        p = ax.imshow(_data, vmin=0, vmax=180 if ip == 1 or
-                                                 ip == 2 else
+        p = ax.imshow(_data, vmin=0, vmax=90 if ip == 1 or
+                                                ip == 2 else
                       np.max([1.0, np.max(_data)]))
         ax.set_xticks(np.linspace(0, _data.shape[1] - 1, 5))
         ax.set_xticklabels([r'$-\pi$', r'$-\pi/2$', r'$0$',
@@ -471,13 +476,14 @@ def decoder_performance(hull, renderer_type, azi_steps=5, el_steps=3,
             ax.set_title(r'$\hat{E}$')
         elif ip == 1:
             ax.set_title(r'$\hat{\sigma}_E$')
-            cbar.set_ticks([0, 90, 180])
-            cbar.set_ticklabels([r'$0^{\circ}$', r'$90^{\circ}$',
-                                 r'$180^{\circ}$'])
+            cbar.set_ticks([0, 45, 90])
+            cbar.set_ticklabels([r'$0^{\circ}$', r'$45^{\circ}$',
+                                 r'$90^{\circ}$'])
         elif ip == 2:
             ax.set_title(r'$\Delta \angle$')
-            cbar.set_ticks([0, 90, 180])
-            cbar.set_ticklabels([r'$0^{\circ}$', r'$90^{\circ}$',
-                                 r'$180^{\circ}$'])
+            cbar.set_ticks([0, 45, 90])
+            cbar.set_ticklabels([r'$0^{\circ}$', r'$45^{\circ}$',
+                                 r'$90^{\circ}$'])
 
     plt.suptitle(renderer_type)
+    plt.subplots_adjust(wspace = 0.25)
