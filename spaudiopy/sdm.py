@@ -149,7 +149,8 @@ def render_loudspeaker_sdm(sdm_p, ls_gains, ls_setup, hrirs,
     return ir_l, ir_r
 
 
-def post_equalization(ls_sigs, sdm_p, fs, ls_distance=None, soft_clip=True):
+def post_equalization(ls_sigs, sdm_p, fs, ls_distance=None, amp_decay=1,
+                      soft_clip=True):
     """Post equalization to compensate spectral whitening.
 
     Parameters
@@ -161,6 +162,8 @@ def post_equalization(ls_sigs, sdm_p, fs, ls_distance=None, soft_clip=True):
     fs : int
     ls_distance : (L,) array_like, optional
         Loudspeaker distances in m.
+    amp_decay : float
+        Distance attenuation exponent.
     soft_clip : bool, optional
         Limit the compensation boost to +6dB.
 
@@ -178,6 +181,7 @@ def post_equalization(ls_sigs, sdm_p, fs, ls_distance=None, soft_clip=True):
     """
     if ls_distance is None:
         ls_distance = np.ones(ls_sigs.shape[0])
+    a = amp_decay  # amplitude decay exponent
 
     CHECK_SANITY = False
 
@@ -236,7 +240,7 @@ def post_equalization(ls_sigs, sdm_p, fs, ls_distance=None, soft_clip=True):
             H_p = np.fft.fft(block_p, nfft)
             H_sdm = np.fft.fft(block_sdm, nfft, axis=1)
             # distance
-            spec_in_origin = np.diag(1 / ls_distance**2) @ H_sdm
+            spec_in_origin = np.diag(1 / ls_distance**a) @ H_sdm
 
             # magnitude difference by spectral division
             sdm_mag_incoherent = np.sqrt(np.sum(np.abs(spec_in_origin)**2,
@@ -303,7 +307,7 @@ def post_equalization(ls_sigs, sdm_p, fs, ls_distance=None, soft_clip=True):
     return ls_sigs_compensated
 
 
-def post_equalization2(ls_sigs, sdm_p, fs, ls_distance=None,
+def post_equalization2(ls_sigs, sdm_p, fs, ls_distance=None, amp_decay=1,
                       blocksize=4096, smoothing_order=5):
     """Post equalization to compensate spectral whitening. This alternative
     version works on fixed blocksizes with octave band gain smoothing.
@@ -340,6 +344,7 @@ def post_equalization2(ls_sigs, sdm_p, fs, ls_distance=None,
     """
     if ls_distance is None:
         ls_distance = np.ones(ls_sigs.shape[0])
+    a = amp_decay  # amplitude decay exponent
 
     CHECK_SANITY = False
 
@@ -377,7 +382,7 @@ def post_equalization2(ls_sigs, sdm_p, fs, ls_distance=None,
 
         # block mags
         p_mag = np.sqrt(np.abs(np.fft.rfft(block_p))**2)
-        sdm_H = np.diag(1 / ls_distance**2) @ np.fft.rfft(block_sdm, axis=1)
+        sdm_H = np.diag(1 / ls_distance**a) @ np.fft.rfft(block_sdm, axis=1)
         sdm_mag_incoherent = np.sqrt(np.sum(np.abs(sdm_H)**2, axis=0))
         sdm_mag_coherent = np.sum(np.abs(sdm_H), axis=0)
         assert(len(p_mag) == len(sdm_mag_incoherent) == len(sdm_mag_coherent))
