@@ -29,6 +29,9 @@ class LoudspeakerSetup:
         self.listener_position -= self.listener_position
         _, _, self.d = utils.cart2sph(self.x, self.y, self.z)
 
+        # amplitude decay exponent
+        self.a = 1
+
         # Triangulation of points
         _hull = get_hull(self.x, self.y, self.z)
         self.points = _hull.points
@@ -137,7 +140,7 @@ class LoudspeakerSetup:
         relative_position = self.points - \
                             self.listener_position
         ls_azi, ls_colat, ls_r = utils.cart2sph(*relative_position.T)
-        ls_signals = np.diag(1 / ls_r ** 2) @ ls_signals
+        ls_signals = np.diag(1 / ls_r ** self.a) @ ls_signals
         # convolve with hrir
         l_sig = np.zeros(ls_signals.shape[1] + len(hrirs) - 1)
         r_sig = np.zeros_like(l_sig)
@@ -470,7 +473,7 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False,
                                 shared_array_shape)
 
     # Distance compensation
-    gains = (hull.d[np.newaxis, :] ** 2) * gains
+    gains = (hull.d[np.newaxis, :] ** hull.a) * gains
     if retain_outside:
         # remove imaginary loudspeaker
         gains = np.delete(gains, hull.imaginary_speaker, axis=1)
@@ -758,7 +761,7 @@ def nearest_loudspeaker(src, hull):
     p = np.inner(src, ls_points)
     idx = np.argmax(p, axis=1)
     for g, i in zip(gains, idx):
-        g[i] = 1.0 * (hull.d[i] ** 2)
+        g[i] = 1.0 * (hull.d[i] ** hull.a)
     return gains
 
 

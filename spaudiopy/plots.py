@@ -451,7 +451,7 @@ def decoder_performance(hull, renderer_type, azi_steps=5, el_steps=3,
     E = np.sum(G**2, axis=1)  # * (4 * np.pi / G.shape[1])  # (eq. 15)
     # project points onto unit sphere
     ls_points = hull.points / hull.d[:, np.newaxis]
-    rE, rE_mag = sph.r_E(ls_points, G / hull.d[np.newaxis, :]**2)
+    rE, rE_mag = sph.r_E(ls_points, G / hull.d[np.newaxis, :] ** hull.a)
     # Zotter book (eq. 2.11) adds 5/8
     spread = 2 * np.arccos(np.clip(rE_mag, 0, 1)) * 180 / np.pi
     # angular error
