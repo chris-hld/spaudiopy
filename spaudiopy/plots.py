@@ -182,6 +182,7 @@ def compare_ambi(Ambi_A, Ambi_B):
 def sph_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None):
     """Plot spherical harmonics coefficients as function on the sphere."""
     F_nm = utils.asarray_1d(F_nm)
+    F_nm = F_nm[:, np.newaxis]
     if SH_type is None:
         SH_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
 
