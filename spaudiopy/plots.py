@@ -255,6 +255,7 @@ def subplot_sph_coeffs(F_l, SH_type=None, azi_steps=5, el_steps=3, title=None):
     ax_l = []
     for i_p, ff in enumerate(F_l):
         F_nm = utils.asarray_1d(ff)
+        F_nm = F_nm[:, np.newaxis]
         if SH_type is None:
             SH_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
 

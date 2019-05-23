@@ -153,20 +153,20 @@ def sht_lstsq(f, N, azi, colat, SH_type, Y_nm=None):
     return lstsq(Y_nm, f)[0]
 
 
-def inverse_sht(F_nm, azi, colat, SH_type, Y_nm=None):
+def inverse_sht(F_nm, azi, colat, SH_type, N=None, Y_nm=None):
     """Perform the inverse spherical harmonics transform.
 
     Parameters
     ----------
     F_nm : ((N+1)**2, S) numpy.ndarray
         Matrix of spherical harmonics coefficients of spherical function(S).
-    N : int
-        Maximum SH order.
     azi : (Q,) array_like
         Azimuth.
     colat : (Q,) array_like
         Colatitude.
     SH_type :  'complex' or 'real' spherical harmonics.
+    N : int, optional
+        Maximum SH order.
     Y_nm : (Q, (N+1)**2) numpy.ndarray, optional
         Matrix of spherical harmonics.
 
@@ -175,11 +175,13 @@ def inverse_sht(F_nm, azi, colat, SH_type, Y_nm=None):
     f : (Q, S)
         The spherical function(S) evaluated at Q directions 'azi/colat'.
     """
-    if Y_nm is None:
+    assert(F_nm.ndim == 2)
+    if N is None:
         N = int(np.sqrt(F_nm.shape[0]) - 1)
+    if Y_nm is None:
         Y_nm = sh_matrix(N, azi, colat, SH_type)
     # perform the inverse transform up to degree N
-    return np.matmul(Y_nm, F_nm)
+    return np.matmul(Y_nm, F_nm[:(N + 1) ** 2, :])
 
 
 def platonic_solid(shape):
@@ -484,3 +486,45 @@ def pressure_on_sphere(N, kr, weights=None):
     for n in range(N + 1):
         p_N += weights[n] * (2 * n + 1) * np.abs(mode_strength(n, kr))**2
     return 1 / (4 * np.pi) * np.sqrt(p_N)
+
+
+def binaural_coloration_compensation(N, f, r_0=0.0875, w_taper=None):
+    """Spectral equalization gain G(kr)|N for diffuse field of order N.
+    This filter compensates the high frequency roll of that occurs for order
+    truncated SH signals. It models the human head as a rigid sphere of radius
+    r_0 (e.g. 0.0875m) and compensates the binaural signals.
+
+    Parameters
+    ----------
+    N : int
+        SH order.
+    f : array_like
+        Time-frequency in Hz.
+    r_0 : radius
+        Rigid sphere radius (approx. human head).
+    w_taper : (N+1,) array_like
+        SH order weights for tapering.
+
+    Returns
+    -------
+    gain : array_like
+        Filter gain(kr).
+
+    References
+    ----------
+    Hold, C., Gamper, H., Pulkki, V., Raghuvanshi, N., & Tashev, I. J. (2019).
+    Improving Binaural Ambisonics Decoding by Spherical Harmonics Domain
+    Tapering and Coloration Compensation.
+    In IEEE International Conference on Acoustics, Speech and Signal Processing.
+    """
+    c = 343  # speed of sound (m/s)
+    k = (2 * np.pi * f) / c
+    kr = k * r_0
+    # get aliasing free N > kr
+    N_full = int(np.ceil(kr[-1]))
+
+    gain = pressure_on_sphere(N_full, kr) / \
+           pressure_on_sphere(N, kr, weights=w_taper)
+    # catch NaNs
+    gain[np.isnan(gain)] = 1
+    return gain
