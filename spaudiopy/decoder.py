@@ -605,7 +605,8 @@ def allrap2(src, hull, N_sph=None):
     # SH tapering coefficients
     a_n = sph.max_rE_weights(N_sph)
     # sqrt(E) normalization (eq.6)
-    a_w = np.sqrt(np.sum((2 * np.arange(N_sph + 1) + 1) * a_n**2) / (4 * np.pi))
+    a_w = np.sqrt(np.sum((2 * (np.arange(N_sph + 1) + 1)) / (4 * np.pi) *
+                         a_n**2))
     a_n /= a_w
 
     gains = np.zeros([src_count, ls_count])
@@ -712,7 +713,8 @@ def allrad2(F_nm, hull, N_sph=None):
     # SH tapering coefficients
     a_n = sph.max_rE_weights(N_sph)
     # sqrt(E) normalization (eq.6)
-    a_w = np.sqrt(np.sum((2 * np.arange(N_sph + 1) + 1) * a_n**2) / (4 * np.pi))
+    a_w = np.sqrt(np.sum((2 * (np.arange(N_sph + 1) + 1)) / (4 * np.pi) *
+                         a_n**2))
     a_n /= a_w
     a_n = sph.repeat_order_coeffs(a_n)
 
@@ -728,7 +730,6 @@ def allrad2(F_nm, hull, N_sph=None):
     K = np.sqrt(4 * np.pi / J * np.square(G.T) @ np.square(Y_l))
     # ALLRAD2 Decoder
     D = 4 * np.pi / J * K @ Y_td
-
     # loudspeaker output signals
     ls_sig = D @ F_nm
     # remove imaginary loudspeakers
