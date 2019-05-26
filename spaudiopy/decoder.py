@@ -725,13 +725,10 @@ def allrad2(F_nm, hull, N_sph=None):
     Y_td = sph.sh_matrix(N_sph, _t_azi, _t_colat, SH_type='real')
 
     # tapered dirac
-    Y_l = Y_td @ np.diag(a_n) @ Y_td.T
-    # Kernel
-    K = np.sqrt(4 * np.pi / J * np.square(G.T) @ np.square(Y_l))
+    Y_k = Y_td @ np.diag(a_n) @ F_nm
     # ALLRAD2 Decoder
-    D = 4 * np.pi / J * K @ Y_td
-    # loudspeaker output signals
-    ls_sig = D @ F_nm
+    ls_sig = np.sqrt(4 * np.pi / J * np.square(G.T) @ np.square(Y_k))
+
     # remove imaginary loudspeakers
     ls_sig = np.delete(ls_sig, ambisonics_hull.imaginary_speaker, axis=0)
     return ls_sig
