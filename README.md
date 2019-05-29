@@ -11,8 +11,7 @@ You'll need Python >= 3.6 .
 
 You can simply install via pip:  
   `pip install spaudiopy`
- 
- 
+  
    
 If you want to go into detail and install from source:
 
@@ -20,7 +19,8 @@ If you want to go into detail and install from source:
   `conda create --name spaudio python=3.6 anaconda joblib`
 2. Activate this new environment:  
   `conda activate spaudio`
-Install the package and remaining dependencies:
+  
+Install the package and remaining dependencies:  
   `pip install -e . ` 
 
 
