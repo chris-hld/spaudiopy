@@ -9,15 +9,19 @@ https://spaudiopy.readthedocs.io/
 It's easiest to start with something like [Anaconda](https://www.anaconda.com/distribution/) as a Python distribution.
 You'll need Python >= 3.6 .
 
+You can simply install via pip:  
+  `pip install spaudiopy`
+ 
+ 
+   
+If you want to go into detail and install from source:
+
 1. Create a conda environment:  
   `conda create --name spaudio python=3.6 anaconda joblib`
 2. Activate this new environment:  
   `conda activate spaudio`
-
-
-The easiest way to install this package from its sources and install the remaining dependencies is to use pip:
-
-`pip install -e . ` .
+Install the package and remaining dependencies:
+  `pip install -e . ` 
 
 
 Licence
