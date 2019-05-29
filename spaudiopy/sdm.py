@@ -249,7 +249,8 @@ def post_equalization(ls_sigs, sdm_p, fs, ls_distance=None, amp_decay=1,
 
             # Coherent addition in the lows
             if band_idx == 0:
-                mag_diff = np.abs(H_p) / np.clip(sdm_mag_coherent, 10e-10, None)
+                mag_diff = np.abs(H_p) / \
+                            np.clip(sdm_mag_coherent, 10e-10, None)
             elif band_idx == 1:
                 mag_diff = np.abs(H_p) / \
                            (0.5 * np.clip(sdm_mag_coherent, 10e-10, None) +
@@ -263,7 +264,8 @@ def post_equalization(ls_sigs, sdm_p, fs, ls_distance=None, amp_decay=1,
                                                  None)
             # soft clip gain
             if soft_clip:
-                mag_diff[mag_diff > 1] = 1 + np.tanh(mag_diff[mag_diff > 1] - 1)
+                mag_diff[mag_diff > 1] = 1 + \
+                                          np.tanh(mag_diff[mag_diff > 1] - 1)
 
             # apply to ls input
             Y = H_sdm * mag_diff[np.newaxis, :]
@@ -308,7 +310,7 @@ def post_equalization(ls_sigs, sdm_p, fs, ls_distance=None, amp_decay=1,
 
 
 def post_equalization2(ls_sigs, sdm_p, fs, ls_distance=None, amp_decay=1,
-                      blocksize=4096, smoothing_order=5):
+                       blocksize=4096, smoothing_order=5):
     """Post equalization to compensate spectral whitening. This alternative
     version works on fixed blocksizes with octave band gain smoothing.
     Sonically, this is not the preferred version, but it can gain some insight
@@ -407,9 +409,11 @@ def post_equalization2(ls_sigs, sdm_p, fs, ls_distance=None, amp_decay=1,
         # attenuate lows (coherent)
         band_gains = np.zeros_like(band_gains_coherent)
         band_gains[0] = band_gains_coherent[0]
-        band_gains[1] = np.mean([band_gains_coherent[1],
-                                band_gains_incoherent[1]])
-        band_gains[2:] = band_gains_incoherent[2:]
+        band_gains[1] = 0.5 * band_gains_coherent[1] + \
+                        0.5 * band_gains_incoherent[1]
+        band_gains[2] = 0.25 * band_gains_coherent[2] + \
+                        0.75 * band_gains_incoherent[2]
+        band_gains[3:] = band_gains_incoherent[3:]
 
         # gain smoothing over blocks
         if len(band_gains_list) > 0:
@@ -474,7 +478,7 @@ def post_equalization2(ls_sigs, sdm_p, fs, ls_distance=None, amp_decay=1,
 
     ls_sigs_compensated = ls_sigs_compensated[:, out_start_idx: out_end_idx]
     assert(ls_sigs_compensated.shape == ls_sigs.shape)
-    return ls_sigs_compensated, band_gains_list
+    return ls_sigs_compensated, band_gains_list[2:-2]
 
 
 # Parallel worker stuff -->
