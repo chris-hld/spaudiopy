@@ -52,7 +52,7 @@ Y_nm_r = sph.sh_matrix(N, azi, colat, 'real')
 
 # %%
 # Look at some SHTs
-sig = np.array([[1, 1, 1, 1]]).T
+sig = np.array([1, 1, 1, 1])
 sig_t = np.c_[np.eye(4), np.eye(4)]  # second axis s(t)
 sig_B = sph.soundfield_to_b(sig)
 F_nm = sph.sht(sig, N, azi, colat, SH_type='real')

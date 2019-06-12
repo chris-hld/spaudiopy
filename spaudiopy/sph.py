@@ -110,7 +110,8 @@ def sht(f, N, azi, colat, SH_type, weights=None, Y_nm=None):
     F_nm : ((N+1)**2, S) numpy.ndarray
         Matrix of spherical harmonics coefficients of spherical function(S).
     """
-    assert(f.ndim == 2)
+    if f.ndim == 1:
+        f = f[:, np.newaxis]  # upgrade to handle 1D arrays
     if Y_nm is None:
         Y_nm = sh_matrix(N, azi, colat, SH_type)
     if weights is None:
@@ -149,7 +150,8 @@ def sht_lstsq(f, N, azi, colat, SH_type, Y_nm=None):
     F_nm : ((N+1)**2, S) numpy.ndarray
         Matrix of spherical harmonics coefficients of spherical function(S).
     """
-    assert(f.ndim == 2)
+    if f.ndim == 1:
+        f = f[:, np.newaxis]  # upgrade to handle 1D arrays
     if Y_nm is None:
         Y_nm = sh_matrix(N, azi, colat, SH_type)
     return lstsq(Y_nm, f)[0]
