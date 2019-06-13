@@ -20,8 +20,11 @@ f = np.linspace(0, fs / 2, 1000)
 # target spherical harmonics order N (>= 3)
 N = 5
 
-# Hann tapering window
+# tapering windows
 w_Hann = pcs.half_sided_Hann(N)
+w_rE = sph.max_rE_weights(N)
+# Choose here:
+w_taper = w_Hann
 
 
 # %% Spatial dirac in SH domain
@@ -36,12 +39,12 @@ colat = np.pi / 2 * np.ones_like(azi)
 dirac_untapered = 4 * np.pi / (N + 1) ** 2 * \
                   sph.bandlimited_dirac(N, azi - dirac_azi)
 dirac_tapered = 4 * np.pi / (N + 1) ** 2 * \
-                sph.bandlimited_dirac(N, azi - dirac_azi, w_n=w_Hann)
+                sph.bandlimited_dirac(N, azi - dirac_azi, w_n=w_taper)
 
 # Coloration compensation of windowing
 compensation_untapered = sph.binaural_coloration_compensation(N, f)
 compensation_tapered = sph.binaural_coloration_compensation(N, f,
-                                                            w_taper=w_Hann)
+                                                            w_taper=w_taper)
 
 # Get an FIR filter
 ntaps = 128 + 1
