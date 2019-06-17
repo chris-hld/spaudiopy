@@ -1,7 +1,7 @@
 import setuptools
 
 setuptools.setup(name='spaudiopy',
-                 version='0.1 alpha',
+                 version='0.1.1',
                  description='Spatial Audio Python Package',
                  url='https://github.com/chris-hld/spaudiopy',
                  author='Chris Hold',
