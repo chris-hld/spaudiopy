@@ -1,6 +1,9 @@
 Installation
 ============
 
+For the unpatient, you can just install the pip version
+  `pip install spaudiopy`
+
 
 Requirements
 ------------
@@ -23,3 +26,5 @@ Download this package from `GitHub <https://github.com/chris-hld/spaudiopy>`_ an
 `pip install -e .`  .
 
 This will check all dependencies and install this package as editable.
+
+  
