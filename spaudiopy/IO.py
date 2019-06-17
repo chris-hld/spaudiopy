@@ -9,12 +9,12 @@ import multiprocessing
 
 import numpy as np
 import pandas as pd
-from scipy.io import loadmat, wavfile
+from scipy.io import loadmat, savemat, wavfile
 import h5py
 
 import soundfile as sf
 
-from . import utils, sig, decoder, sdm
+from . import utils, sig, decoder, sdm, grids, sph, process
 
 
 def load_audio(filenames, fs=None):
@@ -126,7 +126,9 @@ def load_hrirs(fs, filename=None, dummy=False):
     try:
         mat = loadmat(filename)
     except FileNotFoundError:
-        raise ValueError("No default hrirs. Try running HRIRs_from_SH.py")
+        warn("No default hrirs. Generating them...")
+        get_default_hrirs()
+        mat = loadmat(filename)
 
     hrir_l = np.array(np.squeeze(mat['hrir_l']), dtype=float)
     hrir_r = np.array(np.squeeze(mat['hrir_r']), dtype=float)
@@ -144,6 +146,78 @@ def load_hrirs(fs, filename=None, dummy=False):
     HRIRs = sig.HRIRs(hrir_l, hrir_r, grid, hrir_fs)
     assert HRIRs.fs == fs
     return HRIRs
+
+
+def get_default_hrirs(grid_azi=None, grid_colat=None):
+    """Creates the default HRIRs loaded by load_hrirs() by inverse SHT.
+    By default it renders onto a gauss grid of order N=35, and additionally
+    resamples fs to 48kHz.
+
+    Parameters
+    ----------
+    grid_azi : array_like, optional
+    grid_colat : array_like, optional
+
+    Notes
+    -----
+    HRTFs in SH domain obtained from
+    http://dx.doi.org/10.14279/depositonce-5718.3
+
+    """
+    default_file = '../data/0 HRIRs neutral head orientation/' \
+                   'SphericalHarmonics/FABIAN_DIR_measured_HATO_0.mat'
+    current_file_dir = os.path.dirname(__file__)
+    filename = os.path.join(current_file_dir, default_file)
+    # %% Load HRTF
+    try:
+        file = loadmat(filename)
+
+    except FileNotFoundError:
+        import requests, zipfile, io
+        print("Downloading from https://depositonce.tu-berlin.de/handle/"
+              "11303/6153.3 ...")
+        r = requests.get('https://depositonce.tu-berlin.de/bitstream/11303/'
+                         '6153.3/8/FABIAN_HRTFs_NeutralHeadOrientation.zip')
+        with zipfile.ZipFile(io.BytesIO(r.content)) as zip_ref:
+            zip_ref.extractall(os.path.join(current_file_dir, '../data/'))
+        file = loadmat(filename)
+    # CTF already compensated in DIR
+    # Extracting the data is a bit ugly here...
+    SamplingRate = int(file['SamplingRate'])
+    SH_l = file['SH'][0][0][0]
+    SH_r = file['SH'][0][0][1]
+    f = np.squeeze(file['SH'][0][0][5])
+
+    # default grid:
+    if (grid_azi is None) and (grid_colat is None):
+        grid_azi, grid_colat, _ = grids.gauss(35)  # grid positions
+
+    # %% Inverse SHT
+    HRTF_l = sph.inverse_sht(SH_l, grid_azi, grid_colat, 'complex')
+    HRTF_r = sph.inverse_sht(SH_r, grid_azi, grid_colat, 'complex')
+    assert HRTF_l.shape == HRTF_r.shape
+    # %%
+    hrir_l = np.fft.irfft(HRTF_l)  # creates 256 samples(t)
+    hrir_r = np.fft.irfft(HRTF_r)  # creates 256 samples(t)
+    assert hrir_l.shape == hrir_r.shape
+
+    # %% Resample to 48k
+    fs_target = 48000
+    hrir_l_48k, hrir_r_48k, _ = process.resample_hrirs(hrir_l, hrir_r,
+                                                       SamplingRate,
+                                                       fs_target)
+
+    savemat(os.path.join(current_file_dir, '../data/HRTF_default'),
+            {'hrir_l': hrir_l,
+             'hrir_r': hrir_r,
+             'azi': grid_azi, 'elev': grid_colat,
+             'SamplingRate': SamplingRate})
+    savemat(os.path.join(current_file_dir, '../data/HRTF_default48k'),
+            {'hrir_l': hrir_l_48k,
+             'hrir_r': hrir_r_48k,
+             'azi': grid_azi, 'elev': grid_colat,
+             'SamplingRate': fs_target})
+    print("Saved new default HRIRs.")
 
 
 def load_sdm(filename, init_nan=True):
