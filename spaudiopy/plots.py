@@ -11,7 +11,7 @@ from . import sph
 from . import decoder
 
 
-def spectrum(x, fs, ylim=None, **kwargs):
+def spectrum(x, fs, ylim=None, scale_mag=False, **kwargs):
     """Positive (single sided) amplitude spectrum of time signal x.
     kwargs are forwarded to plots.freq_resp().
 
@@ -42,7 +42,11 @@ def spectrum(x, fs, ylim=None, **kwargs):
             # even
             # should be spec[1:-1] *= 2., but this looks "correct" for plotting
             mag[1:] *= 2.
+        # scale by factor bins/2
+        if scale_mag:
+            mag = mag * bins/2
         specs.append(mag)
+
     freq_resp(freq, specs, ylim=ylim, **kwargs)
 
 
@@ -178,6 +182,7 @@ def compare_ambi(Ambi_A, Ambi_B):
 def sph_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None):
     """Plot spherical harmonics coefficients as function on the sphere."""
     F_nm = utils.asarray_1d(F_nm)
+    F_nm = F_nm[:, np.newaxis]
     if SH_type is None:
         SH_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
 
@@ -251,6 +256,7 @@ def subplot_sph_coeffs(F_l, SH_type=None, azi_steps=5, el_steps=3, title=None):
     ax_l = []
     for i_p, ff in enumerate(F_l):
         F_nm = utils.asarray_1d(ff)
+        F_nm = F_nm[:, np.newaxis]
         if SH_type is None:
             SH_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
 
