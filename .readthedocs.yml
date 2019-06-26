@@ -19,4 +19,4 @@ python:
         path: .
 
 conda:
-  file: docs/readthedocs-environment.yml
+  environment: docs/readthedocs-environment.yml
