@@ -1,7 +1,0 @@
-Sphinx>=1.8.5
-Sphinx-RTD-Theme
-sphinxcontrib-bibtex
-
-NumPy
-SciPy
-matplotlib>=1.5
