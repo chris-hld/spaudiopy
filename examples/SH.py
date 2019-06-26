@@ -54,7 +54,7 @@ Y_nm_r = sph.sh_matrix(N, azi, colat, 'real')
 # Look at some SHTs
 sig = np.array([1, 1, 1, 1])
 sig_t = np.c_[np.eye(4), np.eye(4)]  # second axis s(t)
-sig_B = sph.soundfield_to_B(sig)
+sig_B = sph.soundfield_to_b(sig)
 F_nm = sph.sht(sig, N, azi, colat, SH_type='real')
 F_nm_t = sph.sht(sig_t, N, azi, colat, SH_type='real')
 
@@ -100,8 +100,8 @@ plots.subplot_sph_coeffs([np.array([1, 0, 0, 0]),
                          title=["0", "1, -1", "1, 0", "1, 1"])
 
 # %%
-plots.sph_coeffs(np.sqrt(2) * np.array([1, 0, 0, 1]), 'complex',
-                 title="Both * sqrt2 complex")
+plots.sph_coeffs(np.sqrt(2) * np.array([1, 0, 0, -1]), 'complex',
+                 title="sqrt(2) * [1, 0, 0, -1] complex coeffs")
 
 # %%
 # Look at simple B format generator

@@ -46,15 +46,15 @@ plt.scatter(azi, colat)
 # %% Load HRTF
 try:
     file = loadmat(
-    '../data/FABIAN_HRTF_DATABASE_V2/1 HRIRs/SphericalHarmonics/FABIAN_HRIR_measured_HATO_0.mat')
+    '../data/0 HRIRs neutral head orientation/SphericalHarmonics/FABIAN_HRIR_measured_HATO_0.mat')
 except FileNotFoundError:
     import requests, zipfile, io
-    print("Downloading from http://dx.doi.org/10.14279/depositonce-5718.2...")
-    r = requests.get('https://depositonce.tu-berlin.de/bitstream/11303/6153.2/18/FABIAN_HRTF_DATABASE_V2.zip')
+    print("Downloading from https://depositonce.tu-berlin.de/handle/11303/6153.3 ...")
+    r = requests.get('https://depositonce.tu-berlin.de/bitstream/11303/6153.3/8/FABIAN_HRTFs_NeutralHeadOrientation.zip')
     with zipfile.ZipFile(io.BytesIO(r.content)) as zip_ref:
         zip_ref.extractall('../data/')
     file = loadmat(
-    '../data/FABIAN_HRTF_DATABASE_V2/1 HRIRs/SphericalHarmonics/FABIAN_HRIR_measured_HATO_0.mat')
+    '../data/0 HRIRs neutral head orientation/SphericalHarmonics/FABIAN_HRIR_measured_HATO_0.mat')
 
 # Extracting the data is a bit ugly here...
 SamplingRate = int(file['SamplingRate'])
@@ -75,11 +75,11 @@ HRTF_r = sph.inverse_sht(SH_r, azi, colat, 'complex')
 assert HRTF_l.shape == HRTF_r.shape
 print("HRTF shape:", HRTF_l.shape)
 plt_idx = int(HRTF_l.shape[0] / 2)
-plots.f_amp(f, [HRTF_l[plt_idx, :],
-                HRTF_r[plt_idx, :]],
-            title=r"HRTF for $\phi={:.2}, \theta={:.2}$".format(
-                azi[plt_idx], colat[plt_idx]),
-            labels=['left', 'right'])
+plots.freq_resp(f, [HRTF_l[plt_idx, :],
+                    HRTF_r[plt_idx, :]],
+                title=r"HRTF for $\phi={:.2}, \theta={:.2}$".format(
+                    azi[plt_idx], colat[plt_idx]),
+                labels=['left', 'right'])
 
 # %% [markdown]
 # The inverse spherical harmonics transform renders from the spherical harmonics representation to the defined grid.
@@ -94,8 +94,8 @@ hrir_r = np.fft.irfft(HRTF_r)  # creates 256 samples(t)
 assert hrir_l.shape == hrir_r.shape
 print("hrir shape:", hrir_l.shape)
 plt.figure()
-plt.plot(utils.dB(hrir_l[plt_idx, :]), label='left')
-plt.plot(utils.dB(hrir_r[plt_idx, :]), label='right')
+plt.plot(utils.db(hrir_l[plt_idx, :]), label='left')
+plt.plot(utils.db(hrir_r[plt_idx, :]), label='right')
 plt.legend()
 plt.grid()
 plt.xlabel('t in samples')
@@ -103,14 +103,13 @@ plt.ylabel('A in dB')
 plt.title('HRIR ETC')
 
 # %% Headphone compensation / applying inverse common transfer function
-sofa_data = IO.load_SOFA_data('../data//FABIAN_HRTF_DATABASE_V2/1 HRIRs/SOFA/FABIAN_CTF_measured_inverted_smoothed.sofa')
+sofa_data = IO.load_sofa_data('../data/0 HRIRs neutral head orientation/SOFA/FABIAN_CTF_measured_inverted_smoothed.sofa')
 h_headphone = sofa_data['Data.IR']
 h_samplerate = sofa_data['Data.SamplingRate']
 
 assert SamplingRate == h_samplerate
-plots.f_amp(np.fft.rfftfreq(len(h_headphone), 1 / h_samplerate),
-            np.fft.rfft(h_headphone, axis=0),
-            labels=['HP Filter'], title='Headphone compensation')
+plots.spectrum(h_headphone, h_samplerate, ylim=[-60, -30],
+               labels='HP Filter', title='Headphone compensation spectrum')
 
 hrir_l_hp = np.apply_along_axis(lambda m:
                                 scysignal.convolve(m, h_headphone),
@@ -122,32 +121,35 @@ hrir_r_hp = np.apply_along_axis(lambda m:
 print("Compensated HRIR:", hrir_l_hp.shape)
 
 freq = np.fft.rfftfreq(hrir_l_hp.shape[1], d=1. / SamplingRate)
-plots.f_amp(freq, [np.fft.rfft(hrir_l_hp[plt_idx, :]),
-                   np.fft.rfft(hrir_r_hp[plt_idx, :])],
-            labels=['HRTF left', 'HRTF right'],
-            title='Compensated HRTF')
+plots.freq_resp(freq, [np.fft.rfft(hrir_l_hp[plt_idx, :]),
+                       np.fft.rfft(hrir_r_hp[plt_idx, :])],
+                labels=['HRTF left', 'HRTF right'],
+                title='Compensated HRTF')
 
 # %% Resample to 48k
 fs_target = 48000
-hrir_l_hp48k, hrir_r_hp48k, _ = process.resample_HRIRs(hrir_l_hp, hrir_r_hp,
+hrir_l_hp48k, hrir_r_hp48k, _ = process.resample_hrirs(hrir_l_hp, hrir_r_hp,
                                                        SamplingRate,
                                                        fs_target)
 print("Resampled HRIR:", hrir_l_hp48k.shape)
 freq = np.fft.rfftfreq(hrir_l_hp48k.shape[1], d=1. / SamplingRate)
-plots.f_amp(freq, [np.fft.rfft(hrir_l_hp48k[plt_idx, :]),
+plots.freq_resp(freq, [np.fft.rfft(hrir_l_hp48k[plt_idx, :]),
                    np.fft.rfft(hrir_r_hp48k[plt_idx, :])],
-            labels=['HRTF left', 'HRTF right'],
-            title='Resampled HRTF')
+                labels=['HRTF left', 'HRTF right'],
+                title='Resampled HRTF')
 
 # %% Save to .mat
-savemat('../data/HRTF_default', {'hrir_l': hrir_l_hp,
-                                 'hrir_r': hrir_r_hp,
-                                 'azi': azi, 'elev': colat,
-                                 'SamplingRate': SamplingRate})
-savemat('../data/HRTF_default48k', {'hrir_l': hrir_l_hp48k,
-                                   'hrir_r': hrir_r_hp48k,
-                                   'azi': azi, 'elev': colat,
-                                   'SamplingRate': fs_target})
+# IO.get_default_hrirs() does the job now, have a look!
+SAVENEW = False
+if SAVENEW:
+    savemat('../data/HRTF_default', {'hrir_l': hrir_l_hp,
+                                     'hrir_r': hrir_r_hp,
+                                     'azi': azi, 'elev': colat,
+                                     'SamplingRate': SamplingRate})
+    savemat('../data/HRTF_default48k', {'hrir_l': hrir_l_hp48k,
+                                       'hrir_r': hrir_r_hp48k,
+                                       'azi': azi, 'elev': colat,
+                                       'SamplingRate': fs_target})
 
 # %%
 plt.show()

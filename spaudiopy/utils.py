@@ -87,27 +87,31 @@ def area_triangle(p1, p2, p3):
     return 0.5 * np.linalg.norm(np.cross((p2 - p1), (p3 - p1)))
 
 
-def dB(data, power=False):
-    """Calculate the 20*log10(abs(x)).
+def db(x, power=False):
+    """Convert *x* to decibel.
+    Parameters
+    ----------
+    x : array_like
+        Input data.  Values of 0 lead to negative infinity.
+    power : bool, optional
+        If ``power=False`` (the default), *x* is squared before
+        conversion.
+    """
+    with np.errstate(divide='ignore'):
+        return (10 if power else 20) * np.log10(np.abs(x))
+
+
+def rms(x, axis=-1):
+    """RMS (root-mean-squared) along given axis.
 
     Parameters
     ----------
-    data : array_like
-       signals to be converted to db
-    power : boolean
-       data is a power signal and only needs factor 10
-
-    Returns
-    -------
-    db : array_like
-       (20 or 10) * log10(abs(data))
-
+    x : array_like
+        Input data.
+    axis : int, optional
+        Axis along which RMS is calculated
     """
-    if power:
-        factor = 10
-    else:
-        factor = 20
-    return factor * np.log10(np.abs(data))
+    return np.sqrt(np.mean(x * np.conj(x), axis=axis))
 
 
 def stack(vector_1, vector_2):
@@ -125,14 +129,36 @@ def stack(vector_1, vector_2):
     return np.squeeze(out)
 
 
-def test_diff(v1, v2, VERBOSE=True):
+def test_diff(v1, v2, msg=None, VERBOSE=True):
     """Test if the cumulative element-wise difference between v1 and v2
     is greater 10-e8.
     """
     d = np.sum(np.abs(v1.ravel() - v2.ravel()))
     if VERBOSE:
+        if msg is not None:
+            print(msg, '--', end=' ')
         if np.any(d > 10e-8):
             print('Diff: ', d)
         else:
             print('Close enough')
     return d
+
+
+def interleave_channels(left_channel, right_channel, style=None):
+    """Interleave left and right channels (Nchannel x Nsamples).
+    Style = 'SSR' checks if we total 360 channels.
+
+    """
+    if not left_channel.shape == right_channel.shape:
+        raise ValueError('left_channel and right_channel '
+                         'have to be of same dimensions!')
+
+    if style == 'SSR':
+        if not (left_channel.shape[0] == 360):
+            raise ValueError('Provided arrays to have 360 channels '
+                             '(Nchannel x Nsamples).')
+
+    output_data = np.repeat(left_channel, 2, axis=0)
+    output_data[1::2, :] = right_channel
+
+    return output_data

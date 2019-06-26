@@ -55,9 +55,9 @@ def sh_matrix(N, azi, colat, SH_type='complex', weights=None):
         Q = len(azi)
     if weights is None:
         weights = np.ones(Q)
-    if SH_type is 'complex':
+    if SH_type == 'complex':
         Ymn = np.zeros([Q, (N+1)**2], dtype=complex)
-    elif SH_type is 'real':
+    elif SH_type == 'real':
         Ymn = np.zeros([Q, (N+1)**2], dtype=float)
     else:
         raise ValueError('SH_type unknown.')
@@ -65,9 +65,9 @@ def sh_matrix(N, azi, colat, SH_type='complex', weights=None):
     i = 0
     for n in range(N+1):
         for m in range(-n, n+1):
-            if SH_type is 'complex':
+            if SH_type == 'complex':
                 Ymn[:, i] = weights * scyspecial.sph_harm(m, n, azi, colat)
-            elif SH_type is 'real':
+            elif SH_type == 'real':
                 if m == 0:
                     Ymn[:, i] = weights * np.real(
                             scyspecial.sph_harm(m, n, azi, colat))
@@ -110,6 +110,8 @@ def sht(f, N, azi, colat, SH_type, weights=None, Y_nm=None):
     F_nm : ((N+1)**2, S) numpy.ndarray
         Matrix of spherical harmonics coefficients of spherical function(S).
     """
+    if f.ndim == 1:
+        f = f[:, np.newaxis]  # upgrade to handle 1D arrays
     if Y_nm is None:
         Y_nm = sh_matrix(N, azi, colat, SH_type)
     if weights is None:
@@ -148,25 +150,27 @@ def sht_lstsq(f, N, azi, colat, SH_type, Y_nm=None):
     F_nm : ((N+1)**2, S) numpy.ndarray
         Matrix of spherical harmonics coefficients of spherical function(S).
     """
+    if f.ndim == 1:
+        f = f[:, np.newaxis]  # upgrade to handle 1D arrays
     if Y_nm is None:
         Y_nm = sh_matrix(N, azi, colat, SH_type)
     return lstsq(Y_nm, f)[0]
 
 
-def inverse_sht(F_nm, azi, colat, SH_type, Y_nm=None):
+def inverse_sht(F_nm, azi, colat, SH_type, N=None, Y_nm=None):
     """Perform the inverse spherical harmonics transform.
 
     Parameters
     ----------
     F_nm : ((N+1)**2, S) numpy.ndarray
         Matrix of spherical harmonics coefficients of spherical function(S).
-    N : int
-        Maximum SH order.
     azi : (Q,) array_like
         Azimuth.
     colat : (Q,) array_like
         Colatitude.
     SH_type :  'complex' or 'real' spherical harmonics.
+    N : int, optional
+        Maximum SH order.
     Y_nm : (Q, (N+1)**2) numpy.ndarray, optional
         Matrix of spherical harmonics.
 
@@ -175,11 +179,13 @@ def inverse_sht(F_nm, azi, colat, SH_type, Y_nm=None):
     f : (Q, S)
         The spherical function(S) evaluated at Q directions 'azi/colat'.
     """
-    if Y_nm is None:
+    assert(F_nm.ndim == 2)
+    if N is None:
         N = int(np.sqrt(F_nm.shape[0]) - 1)
+    if Y_nm is None:
         Y_nm = sh_matrix(N, azi, colat, SH_type)
     # perform the inverse transform up to degree N
-    return np.matmul(Y_nm, F_nm)
+    return np.matmul(Y_nm, F_nm[:(N + 1) ** 2, :])
 
 
 def platonic_solid(shape):
@@ -211,11 +217,11 @@ def sh_to_b(F_nm, W_weight=None):
     if W_weight is None:
         # Traditionally  W_weight = 1 / np.sqrt(2)
         W_weight = 1
-    # Without np.sqrt(4*np.pi)
-    M = np.array([[W_weight, 0, 0, 0],
-                  [0, 0, 0, 1/np.sqrt(3)],
-                  [0, 1/np.sqrt(3), 0, 0],
-                  [0, 0, 1/np.sqrt(3), 0]])
+    # Conversion matrix SH to B
+    M = np.sqrt(4*np.pi) * np.array([[W_weight, 0, 0, 0],
+                                    [0, 0, 0, 1/np.sqrt(3)],
+                                    [0, 1/np.sqrt(3), 0, 0],
+                                    [0, 0, 1/np.sqrt(3), 0]])
     return np.apply_along_axis(np.dot, 0, F_nm, M.T)
 
 
@@ -239,16 +245,16 @@ def b_to_sh(B, W_weight=None):
     if W_weight is None:
         # Traditionally  W_weight = 1 / np.sqrt(2)
         W_weight = 1
-    # Without np.sqrt(4*np.pi)
-    M = np.array([[W_weight, 0, 0, 0],
-                  [0, 0, 0, 1/np.sqrt(3)],
-                  [0, 1/np.sqrt(3), 0, 0],
-                  [0, 0, 1/np.sqrt(3), 0]])
+    # Conversion matrix SH to B
+    M = np.sqrt(4*np.pi) * np.array([[W_weight, 0, 0, 0],
+                                    [0, 0, 0, 1/np.sqrt(3)],
+                                    [0, 1/np.sqrt(3), 0, 0],
+                                    [0, 0, 1/np.sqrt(3), 0]])
     M_inv = np.linalg.inv(M)
     return np.apply_along_axis(np.dot, 0, B, M_inv.T)
 
 
-def soundfield_to_B(sig, W_weight=None):
+def soundfield_to_b(sig, W_weight=None):
     """Convert soundfield tetraeder mic input signals to B-format by SHT.
 
     Parameters
@@ -274,9 +280,12 @@ def soundfield_to_B(sig, W_weight=None):
 
 def src_to_B(signal, src_azi, src_colat):
     """Get B format signal channels for source in direction azi/colat."""
-    gw = 1
+    signal = utils.asarray_1d(signal)
+    src_azi = utils.asarray_1d(src_azi)
+    src_colat = utils.asarray_1d(src_colat)
+    gw = np.ones(len(src_azi))
     gx, gy, gz = utils.sph2cart(src_azi, src_colat)
-    g = np.array([gw, gx, gy, gz])
+    g = np.c_[gw, gx, gy, gz]
     return np.outer(g, signal)
 
 
@@ -296,7 +305,7 @@ def check_cond_sht(N, azi, colat, SH_type, lim=None):
     return c
 
 
-def bandlimited_dirac(N, d, a_n=None):
+def bandlimited_dirac(N, d, w_n=None):
     r"""Order N spatially bandlimited Dirac pulse at angular distance d.
 
     Parameters
@@ -305,7 +314,7 @@ def bandlimited_dirac(N, d, a_n=None):
         SH order.
     d : (Q,) array_like
         Angular distance in rad.
-    a_n : (N,) array_like
+    w_n : (N,) array_like
         Tapering window w_n.
 
     Returns
@@ -324,11 +333,11 @@ def bandlimited_dirac(N, d, a_n=None):
     Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
     Journal of Audio Engineering Society, eq. (7).
     """
-    if a_n is None:
-        a_n = np.ones(N + 1)
+    if w_n is None:
+        w_n = np.ones(N + 1)
     g_n = np.zeros([(N + 1)**2, len(d)])
     for n, i in enumerate(range(N + 1)):
-        g_n[i, :] = a_n[i] * (2 * n + 1) / (4 * np.pi) * \
+        g_n[i, :] = w_n[i] * (2 * n + 1) / (4 * np.pi) * \
                     scyspecial.eval_legendre(n, np.cos(d))
     dirac = np.sum(g_n, 0)
     return dirac
@@ -376,7 +385,8 @@ def r_E(p, g):
     g = np.atleast_2d(g)
     assert(p.shape[0] == g.shape[1]), 'Provide gain per speaker!'
     E = np.sum(g**2, axis=1)
-    rE = np.diag(1 / E) @ (g**2 @ p)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        rE = np.diag(1 / E) @ (g**2 @ p)
     rE_mag = np.sqrt(np.sum(rE**2, axis=1))
     # catch division by zero NaN
     rE_mag = np.nan_to_num(rE_mag)
@@ -430,11 +440,13 @@ def mode_strength(n, kr, sphere_type='rigid'):
         Mode strength b_n(kr).
     """
     def spherical_h2(n, z):
-        return scyspecial.spherical_jn(n, z) + \
-                    1j * scyspecial.spherical_yn(n, z)
+        with np.errstate(divide='ignore'):
+            return scyspecial.spherical_jn(n, z) + \
+                        1j * scyspecial.spherical_yn(n, z)
 
     def spherical_h2_d(n, z):
-        return -spherical_h2(n+1, z) + n/z * spherical_h2(n, z)
+        with np.errstate(divide='ignore'):
+            return -spherical_h2(n+1, z) + n/z * spherical_h2(n, z)
 
     if sphere_type == 'open':
         b_n = 4*np.pi*1j**n * scyspecial.spherical_jn(n, kr)
@@ -478,3 +490,45 @@ def pressure_on_sphere(N, kr, weights=None):
     for n in range(N + 1):
         p_N += weights[n] * (2 * n + 1) * np.abs(mode_strength(n, kr))**2
     return 1 / (4 * np.pi) * np.sqrt(p_N)
+
+
+def binaural_coloration_compensation(N, f, r_0=0.0875, w_taper=None):
+    """Spectral equalization gain G(kr)|N for diffuse field of order N.
+    This filter compensates the high frequency roll of that occurs for order
+    truncated SH signals. It models the human head as a rigid sphere of radius
+    r_0 (e.g. 0.0875m) and compensates the binaural signals.
+
+    Parameters
+    ----------
+    N : int
+        SH order.
+    f : array_like
+        Time-frequency in Hz.
+    r_0 : radius
+        Rigid sphere radius (approx. human head).
+    w_taper : (N+1,) array_like
+        SH order weights for tapering.
+
+    Returns
+    -------
+    gain : array_like
+        Filter gain(kr).
+
+    References
+    ----------
+    Hold, C., Gamper, H., Pulkki, V., Raghuvanshi, N., & Tashev, I. J. (2019).
+    Improving Binaural Ambisonics Decoding by Spherical Harmonics Domain
+    Tapering and Coloration Compensation.
+    In IEEE International Conference on Acoustics, Speech and Signal Processing.
+    """
+    c = 343  # speed of sound (m/s)
+    k = (2 * np.pi * f) / c
+    kr = k * r_0
+    # get aliasing free N > kr
+    N_full = int(np.ceil(kr[-1]))
+
+    gain = pressure_on_sphere(N_full, kr) / \
+           pressure_on_sphere(N, kr, weights=w_taper)
+    # catch NaNs
+    gain[np.isnan(gain)] = 1
+    return gain

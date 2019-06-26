@@ -9,7 +9,7 @@ import numpy as np
 from scipy import signal as scysig
 import soundfile as sf
 
-from . import utils
+from . import utils, IO, sph
 from . import process as pcs
 
 
@@ -18,7 +18,14 @@ class MonoSignal:
     """Signal class for a MONO channel audio signal."""
 
     def __init__(self, signal, fs):
-        """Constructor."""
+        """Constructor
+
+        Parameters
+        ----------
+        signal : array_like
+        fs : int
+
+        """
         self.signal = utils.asarray_1d(signal)
         self.fs = fs
 
@@ -43,6 +50,9 @@ class MonoSignal:
             raise ValueError("Signal must be mono. Try MultiSignal.")
         return cls(sig, fs)
 
+    def save(self, filename):
+        IO.save_audio(self, filename)
+
     def trim(self, start, stop):
         """Trim audio to start and stop in seconds."""
         assert start < len(self) / self.fs, "Trim start exceeds signal."
@@ -61,15 +71,21 @@ class MonoSignal:
 class MultiSignal(MonoSignal):
     """Signal class for a MULTI channel audio signal."""
 
-    def __init__(self, *signals, fs=None):
-        """Constructor."""
+    def __init__(self, signals, fs=None):
+        """Constructor
+
+        Parameters
+        ----------
+        signals : list of array_like
+        fs : int
+
+        """
+        assert isinstance(signals, (list, tuple))
         self.channel = []
         if fs is None:
             raise ValueError("Provide fs (as kwarg).")
         else:
             self.fs = fs
-        if isinstance(signals[0], list):
-            signals = signals[0]  # unpack tuṕle if list was given
         for s in signals:
             self.channel.append(MonoSignal(s, fs))
         self.channel_count = len(self.channel)
@@ -77,6 +93,10 @@ class MultiSignal(MonoSignal):
     def __len__(self):
         """Override len()."""
         return len(self.channel[0])
+
+    def __getitem__(self, key):
+        """Override [] operator, returns signal channel."""
+        return self.channel[key]
 
     @classmethod
     def from_file(cls, filename, fs=None):
@@ -89,10 +109,10 @@ class MultiSignal(MonoSignal):
             fs = fs_file
         if np.ndim(sig) == 1:
             raise ValueError("Only one channel. Try MonoSignal.")
-        return cls(*sig.T, fs=fs)
+        return cls([*sig.T], fs=fs)
 
     def get_signals(self):
-        """Return ndarray of signals, stacked along first dimension."""
+        """Return ndarray of signals, stacked along rows."""
         return np.asarray([x.signal for x in self.channel])
 
     def trim(self, start, stop):
@@ -101,16 +121,40 @@ class MultiSignal(MonoSignal):
         for c in self.channel:
             c.signal = c.signal[int(start * c.fs): int(stop * c.fs)]
 
+    def apply(self, func, *args, **kwargs):
+        """Apply function 'func' to all signals, arguments are forwarded."""
+        for c in self.channel:
+            c.signal = func(*args, **kwargs)
+
+    def filter(self, h, **kwargs):
+        raise NotImplementedError
+
 
 class AmbiBSignal(MultiSignal):
     """Signal class for first order Ambisonics B-format signals."""
-    def __init__(self, *signals, fs=None):
-        MultiSignal.__init__(self, *signals, fs=fs)
+    def __init__(self, signals, fs=None):
+        MultiSignal.__init__(self, signals, fs=fs)
         assert self.channel_count == 4, "Provide four channels!"
-        self.W = self.channel[0].signal
-        self.X = self.channel[1].signal
-        self.Y = self.channel[2].signal
-        self.Z = self.channel[3].signal
+        self.W = utils.asarray_1d(self.channel[0].signal)
+        self.X = utils.asarray_1d(self.channel[1].signal)
+        self.Y = utils.asarray_1d(self.channel[2].signal)
+        self.Z = utils.asarray_1d(self.channel[3].signal)
+
+    @classmethod
+    def from_file(cls, filename, fs=None):
+        return super().from_file(filename, fs=fs)
+
+    def sh_to_b(self):
+        # Assume signals are in ACN
+        _B = sph.sh_to_b(self.get_signals())
+        self.channel[0].signal = _B[0, :]
+        self.channel[1].signal = _B[1, :]
+        self.channel[2].signal = _B[2, :]
+        self.channel[3].signal = _B[3, :]
+        self.W = utils.asarray_1d(self.channel[0].signal)
+        self.X = utils.asarray_1d(self.channel[1].signal)
+        self.Y = utils.asarray_1d(self.channel[2].signal)
+        self.Z = utils.asarray_1d(self.channel[3].signal)
 
 
 class HRIRs:

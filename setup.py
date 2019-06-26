@@ -1,8 +1,17 @@
 import setuptools
 
+# read the contents of your README file
+from os import path
+this_directory = path.abspath(path.dirname(__file__))
+with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
+    long_description = f.read()
+
+
 setuptools.setup(name='spaudiopy',
-                 version='0.1 alpha',
+                 version='0.1.1',
                  description='Spatial Audio Python Package',
+                 long_description=long_description,
+                 long_description_content_type='text/markdown',
                  url='https://github.com/chris-hld/spaudiopy',
                  author='Chris Hold',
                  author_email='Chris.Hold@mailbox.tu-berlin.de',
@@ -17,7 +26,6 @@ setuptools.setup(name='spaudiopy',
                                    'pandas',
                                    'joblib',
                                    'matplotlib',
-                                   'plotly',
                                    'soundfile',
                                    'sounddevice',
                                    'resampy',
