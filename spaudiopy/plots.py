@@ -493,3 +493,31 @@ def decoder_performance(hull, renderer_type, azi_steps=5, el_steps=3,
 
     plt.suptitle(renderer_type)
     plt.subplots_adjust(wspace = 0.25)
+
+
+def doa(azi, colat, fs, p=None, size=20):
+    """Direction of Arrival, with optional p(t) scaling the size."""
+    # t in ms
+    t_ms = np.linspace(0, len(azi) / fs, len(azi), endpoint=False) * 1000
+
+    # shift azi to [np.pi, np.pi]
+    azi[azi > np.pi] = azi[azi > np.pi] % -np.pi
+    # colar to elevation
+    ele = np.pi/2 - colat
+
+    if p is not None:
+        s_plot = p / np.max(p)
+    else:
+        s_plot = 1
+
+    fig, ax = plt.subplots()
+    p = ax.scatter(azi, ele, s=s_plot*size, c=t_ms, alpha=0.5)
+    ax.set_xlabel("Azimuth in rad")
+    ax.set_ylabel("Elevation in rad")
+    ax.set_xticks([-np.pi, -np.pi/2, 0, np.pi/2, np.pi])
+    ax.set_xticklabels([r'$-\pi$', r'$-\pi / 2$', r'$-0$',
+                       r'$\pi / 2$', r'$\pi$'])
+    ax.set_yticks([-np.pi/2, 0, np.pi/2])
+    ax.set_yticklabels([r'$-\pi / 2$', r'$-0$', r'$\pi / 2$'])
+    cbar = plt.colorbar(p)
+    cbar.set_label("t in ms")
