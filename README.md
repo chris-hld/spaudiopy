@@ -19,10 +19,13 @@ You can simply install via pip:
 If you want to go into detail and install from source:
 
 1. Create a conda environment:  
-  `conda create --name spaudio python=3.6 anaconda joblib`
+  `conda create --name spaudio python=3.6 anaconda joblib portaudio`
 2. Activate this new environment:  
   `conda activate spaudio`
   
+Get the latest source code from GitHub:
+  `git clone https://github.com/chris-hld/spaudiopy.git && cd spaudiopy`
+
 Install the package and remaining dependencies:  
   `pip install -e . ` 
 

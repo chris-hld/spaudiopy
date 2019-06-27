@@ -11,7 +11,7 @@ It's easiest to start with something like `Anaconda <https://www.anaconda.com/di
 You'll need Python >= 3.6 .
 
 1. Create a conda environment:
-  `conda create --name spaudio python=3.6 anaconda joblib plotly`
+  `conda create --name spaudio python=3.6 anaconda joblib portaudio`
 2. Activate this new environment:
   `conda activate spaudio`
 
