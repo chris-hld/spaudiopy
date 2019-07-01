@@ -89,6 +89,7 @@ def area_triangle(p1, p2, p3):
 
 def db(x, power=False):
     """Convert *x* to decibel.
+
     Parameters
     ----------
     x : array_like

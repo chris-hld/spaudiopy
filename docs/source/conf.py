@@ -44,6 +44,8 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',  # support for NumPy-style docstrings
+    'matplotlib.sphinxext.mathmpl',
+    'matplotlib.sphinxext.plot_directive',
 ]
 
 # autodoc
@@ -71,6 +73,14 @@ napoleon_use_admonition_for_references = False
 napoleon_use_ivar = False
 napoleon_use_param = False
 napoleon_use_rtype = False
+
+# matplotlib inline plots
+plot_include_source = True
+plot_html_show_source_link = False
+plot_html_show_formats = False
+plot_pre_code = ''
+plot_rcparams = None
+plot_formats = ['svg', 'pdf', ('png', 96)]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

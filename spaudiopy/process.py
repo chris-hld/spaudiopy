@@ -338,20 +338,24 @@ def frac_octave_filterbank(n, N_out, fs, f_low, f_high=None, mode='energy',
 
     Examples
     --------
-    >>> fs = 44100
-    >>> N = 2**16
-    >>> gs, ff = frac_octave_filterbank(n=1, N_out=N, fs=fs, f_low=100, f_high=8000)
-    >>> f = np.linspace(0, fs//2, N)
-    >>> fig, ax = plt.subplots(2, 1)
-    >>> ax[0].semilogx(f, gs.T)
-    >>> ax[0].set_title('Band gains')
-    >>> ax[1].semilogx(f, np.sum(np.abs(gs)**2, axis=0))
-    >>> ax[1].set_title('$\sum |g| ^ 2$')
-    >>> for a_i in ax:
-    >>>     a_i.grid(True)
-    >>>     a_i.set_xlim([20, fs//2])
-    >>>     a_i.set_xlabel('f in Hz')
-    >>>     a_i.set_ylabel('Amplitude')
+    .. plot::
+
+        import spaudiopy as spa
+        fs = 44100
+        N = 2**16
+        gs, ff = spa.process.frac_octave_filterbank(n=1, N_out=N, fs=fs, f_low=100, f_high=8000)
+        f = np.linspace(0, fs//2, N)
+        fig, ax = plt.subplots(2, 1)
+        ax[0].semilogx(f, gs.T)
+        ax[0].set_title('Band gains')
+        ax[1].semilogx(f, np.sum(np.abs(gs)**2, axis=0))
+        ax[1].set_title('$\sum |g| ^ 2$')
+        for a_idx in ax:
+            a_idx.grid(True)
+            a_idx.set_xlim([20, fs//2])
+            a_idx.set_xlabel('f in Hz')
+            a_idx.set_ylabel('Amplitude')
+
     """
     # fft bins
     N = (N_out - 1) * 2
