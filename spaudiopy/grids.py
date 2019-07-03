@@ -1,4 +1,16 @@
 # -*- coding: utf-8 -*-
+"""Sampling grids.
+
+.. plot::
+    :context: reset
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import spaudiopy as spa
+    plt.rcParams['figure.figsize'] = 8, 4.5  # inch
+    plt.rcParams['axes.grid'] = True
+
+"""
 
 import os
 import numpy as np
@@ -30,6 +42,16 @@ def load_t_design(degree):
     -------
     vecs : numpy.ndarray
         Coordinates of points.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        vecs = spa.grids.load_t_design(degree=5)
+        hull = spa.decoder.get_hull(*vecs.T)
+        spa.plots.hull(hull, mark_invalid=False)
+
     """
     if degree > 21:
         raise ValueError('Designs of order > 21 are not implemented.')
@@ -68,6 +90,16 @@ def load_Fliege_Maier_nodes(grid_order):
         Coordinates of points.
     weights : array_like
         Quadrature weights.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        vecs, weights = spa.grids.load_Fliege_Maier_nodes(grid_order=5)
+        hull = spa.decoder.get_hull(*vecs.T)
+        spa.plots.hull(hull, mark_invalid=False)
+
     """
     if grid_order > 30:
         raise ValueError('Designs of order > 30 are not implemented.')
@@ -102,6 +134,16 @@ def equal_angle(n):
         Colatitude.
     weights : array_like
         Quadrature weights.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        azi, colat, weights = spa.grids.equal_angle(n=5)
+        hull = spa.decoder.get_hull(*spa.utils.sph2cart(azi, colat))
+        spa.plots.hull(hull, mark_invalid=False)
+
     """
     azi = np.linspace(0, 2*np.pi, 2*n+2, endpoint=False)
     colat, d_colat = np.linspace(0, np.pi, 2*n+2, endpoint=False, retstep=True)
@@ -137,6 +179,16 @@ def gauss(n):
         Colatitude.
     weights : array_like
         Quadrature weights.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        azi, colat, weights = spa.grids.gauss(n=5)
+        hull = spa.decoder.get_hull(*spa.utils.sph2cart(azi, colat))
+        spa.plots.hull(hull, mark_invalid=False)
+
     """
     azi = np.linspace(0, 2*np.pi, 2*n+2, endpoint=False)
     x, weights = np.polynomial.legendre.leggauss(n+1)
@@ -189,6 +241,15 @@ def lebedev(n):
     weights : array_like
         Quadrature weights.
 
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        azi, colat, weights = spa.grids.lebedev(n=5)
+        hull = spa.decoder.get_hull(*spa.utils.sph2cart(azi, colat))
+        spa.plots.hull(hull, mark_invalid=False)
+
     """
     def available_quadrature(d):
         """Get smallest availabe quadrature of of degree d.
@@ -204,7 +265,7 @@ def lebedev(n):
         raise ValueError("Maximum available Lebedev grid order is 65. "
                          "(requested: {})".format(n))
 
-    # this needs https://pypi.python.org/pypi/quadpy
+    # this needs https://pypi.python.org/pypi/quadpy < 0.13.0
     q = quadpy.sphere.Lebedev(str(available_quadrature(2*n)))
     if np.any(q.weights < 0):
         warn("Lebedev grid of order {} has negative weights.".format(n))

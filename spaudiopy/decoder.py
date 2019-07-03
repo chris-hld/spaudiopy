@@ -1,4 +1,25 @@
 # -*- coding: utf-8 -*-
+"""Loudspeaker decoders.
+
+.. plot::
+    :context: reset
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import spaudiopy as spa
+    plt.rcParams['figure.figsize'] = 8, 4.5  # inch
+    plt.rcParams['axes.grid'] = True
+
+    # Loudspeaker Setup
+    ls_dirs = np.array([[-18, -54, -90, -126, -162, -198, -234, -270, -306,
+                 -342, 0, -72, -144, -216, -288, -45, -135, -225,
+                 -315, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -10, -10, -10, -10, -10,
+                 45, 45, 45, 45, 90]])
+    ls_x, ls_y, ls_z = spa.utils.sph2cart(spa.utils.deg2rad(ls_dirs[0, :]),
+                                          spa.utils.deg2rad(90 - ls_dirs[1, :]))
+
+"""
 
 import copy
 import multiprocessing
@@ -12,8 +33,29 @@ from spaudiopy import utils, sph, IO, plots, grids
 
 
 class LoudspeakerSetup:
+    """Creates a 'hull' object containing all information for further decoding.
+
+    .. plot::
+        :context: close-figs
+
+        ls_setup = spa.decoder.LoudspeakerSetup(ls_x, ls_y, ls_z)
+        ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
+                               opening_limit=150)
+        ls_setup.show()
+
+    """
+
     def __init__(self, x, y, z, listener_position=None):
-        """Constructor"""
+        """
+        Parameters
+        ----------
+        x : array_like
+        y : array_like
+        z : array_like
+        listener_position : (3,), optional
+            Offset, will be substracted from the loudspeaker positions.
+
+        """
         self.x = utils.asarray_1d(x)
         self.y = utils.asarray_1d(y)
         self.z = utils.asarray_1d(z)
@@ -65,7 +107,16 @@ class LoudspeakerSetup:
 
     def pop_triangles(self, normal_limit=None, aperture_limit=None,
                       opening_limit=None, blacklist=None):
-        """Refine triangulation by removing them from valid simplices."""
+        """Refine triangulation by removing them from valid simplices.
+
+        Parameters
+        ----------
+        normal_limit : float, optional
+        aperture_limit : float, optional
+        opening_limit : flaot, optional
+        blacklist : list, optional
+
+        """
         if normal_limit is not None:
             self.valid_simplices = check_normals(self, normal_limit)
         if aperture_limit is not None:
@@ -76,6 +127,7 @@ class LoudspeakerSetup:
             self.valid_simplices = apply_blacklist(self, blacklist)
 
     def get_characteristic_order(self):
+        """Characteristic Ambisonics order."""
         N_e = characteristic_ambisonic_order(self)
         if N_e < 1:
             raise ValueError
@@ -177,6 +229,7 @@ class LoudspeakerSetup:
         return (sig_in[:, np.newaxis] * ls_gains).T
 
     def show(self):
+        """Plot hull object."""
         plots.hull(self, title='Loudspeaker Setup')
 
 
@@ -319,7 +372,7 @@ def check_opening(hull, opening_limit=135):
 
 
 def apply_blacklist(hull, blacklist=None):
-    """Specify a blacklist to exclude simplcies from valid simplices."""
+    """Specify a blacklist to exclude simplices from valid simplices."""
     if blacklist is not None:
         valid_simplices = []
         for face in hull.valid_simplices:

@@ -1,4 +1,21 @@
 # -*- coding: utf-8 -*-
+"""Spherical Harmonics.
+
+.. plot::
+    :context: reset
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import spaudiopy as spa
+    plt.rcParams['figure.figsize'] = 8, 4.5  # inch
+    plt.rcParams['axes.grid'] = True
+
+    spa.plots.subplot_sph_coeffs([ np.sqrt(4 * np.pi) * np.array([1, 0, 0, 0]),
+                                   np.sqrt(4/3 * np.pi) * np.array([0, 1, 0, 0]),
+                                   np.sqrt(4/3 * np.pi) * np.array([0, 0, 1, 0]),
+                                   np.sqrt(4/3 * np.pi) * np.array([0, 0, 0, 1])],
+                                 title=["$Y_{0, 0}$", "$Y_{1, -1}$", "$Y_{1, 0}$", "$Y_{1, 1}$"])
+"""
 
 import numpy as np
 from scipy import special as scyspecial
@@ -45,6 +62,9 @@ def sh_matrix(N, azi, colat, SH_type='complex', weights=None):
     -------
     Ymn : (Q, (N+1)**2) numpy.ndarray
         Matrix of spherical harmonics.
+
+    Examples
+    --------
 
     """
     azi = utils.asarray_1d(azi)

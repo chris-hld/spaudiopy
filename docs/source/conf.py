@@ -12,10 +12,11 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import os
+import sys
 
+sys.path.insert(0, os.path.abspath('../../'))
+#print('\n'.join(sys.path))
 
 # -- Project information -----------------------------------------------------
 
@@ -39,17 +40,28 @@ needs_sphinx = '1.3' # for sphinx.ext.napoleon
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',  # support for NumPy-style docstrings
+    'matplotlib.sphinxext.mathmpl',
+    'matplotlib.sphinxext.plot_directive',
 ]
 
 # autodoc
-autoclass_content = 'init'
-autodoc_member_order = 'bysource'
-autodoc_default_flags = ['members', 'undoc-members']
+autodoc_default_options = {
+    'members' : None,
+    'undoc-members': None,
+    'member-order': 'bysource',
+    'special-members': '__init__',
+    'exclude-members': '__weakref__'
+}
+
 # Mock import soundfile, because it  depends on external C lib
 autodoc_mock_imports = ['soundfile']
+
+# autosummary
+autosummary_generate = ['api']
 
 # napoleon
 napoleon_google_docstring = False
@@ -62,6 +74,14 @@ napoleon_use_admonition_for_references = False
 napoleon_use_ivar = False
 napoleon_use_param = False
 napoleon_use_rtype = False
+
+# matplotlib inline plots
+plot_include_source = True
+plot_html_show_source_link = False
+plot_html_show_formats = False
+plot_pre_code = ''
+#plot_rcparams = {'savefig.bbox': 'tight', }
+plot_formats = ['svg', 'pdf', ('png', 96)]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -107,7 +127,7 @@ html_theme = 'sphinx_rtd_theme'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+#html_static_path = ['_static']
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.

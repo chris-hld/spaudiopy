@@ -1,6 +1,19 @@
-# -*- coding: utf-8 -*-
-"""
-@author: chris
+""" spaudiopy
+
+.. rubric:: Submodules
+
+.. autosummary::
+   :toctree:
+
+   IO
+   sig
+   sph
+   decoder
+   process
+   utils
+   grids
+   sdm
+
 """
 
 from . import decoder
@@ -12,3 +25,4 @@ from . import sdm
 from . import sph
 from . import sig
 from . import utils
+

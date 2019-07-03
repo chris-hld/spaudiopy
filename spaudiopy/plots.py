@@ -1,4 +1,16 @@
 # -*- coding: utf-8 -*-
+"""Plotting helpers.
+
+.. plot::
+    :context: reset
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import spaudiopy as spa
+    plt.rcParams['figure.figsize'] = 8, 4.5  # inch
+    plt.rcParams['axes.grid'] = True
+
+"""
 
 import numpy as np
 
@@ -322,8 +334,9 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, lim_m=1):
     x = hull.points[:, 0]
     y = hull.points[:, 1]
     z = hull.points[:, 2]
+
     fig = plt.figure()
-    ax = fig.add_subplot(1, 1, 1, projection='3d', aspect='equal')
+    ax = fig.gca(projection='3d', aspect='equal')
     # valid
     ax.plot_trisurf(x, y, z,
                     triangles=valid_s,
@@ -356,8 +369,9 @@ def hull_normals(hull, plot_face_normals=True, plot_vertex_normals=True):
     x = hull.points[:, 0]
     y = hull.points[:, 1]
     z = hull.points[:, 2]
+
     fig = plt.figure()
-    ax = fig.add_subplot(1, 1, 1, projection='3d', aspect='equal')
+    ax = fig.gca(projection='3d', aspect='equal')
     ax.plot_trisurf(x, y, z,
                     triangles=hull.simplices,
                     edgecolor='black', linewidth=0.5,
@@ -409,7 +423,7 @@ def polar(theta, a, title=None, rlim=(-40, 0), ax=None):
     """Polar plot that allows negative values for 'a'."""
     if ax is None:
         fig = plt.figure()
-        ax = fig.add_subplot(111, projection='polar')
+        ax = fig.gca(projection='polar')
     ax.plot(theta, utils.db(np.clip(a, 0, None)), label='pos')
     ax.plot(theta, utils.db(abs(np.clip(a, None, 0))), label='neg')
     ax.set_rmin(rlim[0])

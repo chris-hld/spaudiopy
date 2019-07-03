@@ -25,12 +25,12 @@ setuptools.setup(name='spaudiopy',
                                    'scipy',
                                    'pandas',
                                    'joblib',
-                                   'matplotlib',
+                                   'matplotlib<3.1.0',  # https://github.com/matplotlib/matplotlib/issues/1077
                                    'soundfile',
                                    'sounddevice',
                                    'resampy',
                                    'h5py',
-                                   'quadpy'
+                                   'quadpy<0.13.0'  # API change
                                    ],
                  platforms='any',
                  python_requires='>=3.6',
