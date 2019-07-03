@@ -10,6 +10,11 @@
     plt.rcParams['figure.figsize'] = 8, 4.5  # inch
     plt.rcParams['axes.grid'] = True
 
+**Memory cached functions**
+
+.. autofunction:: spaudiopy.process.resample_hrirs(hrir_l, hrir_r, fs_hrir, fs_target, jobs_count=None)
+.. autofunction:: spaudiopy.process.pseudo_intensity(Ambi_B, win_len=33, f_bp=None, smoothing_order=5, jobs_count=None)
+
 """
 
 from itertools import repeat
@@ -234,10 +239,6 @@ def pseudo_intensity(Ambi_B, win_len=33, f_bp=None, smoothing_order=5,
         assert(smoothing_order % 2)
         I_vec = np.apply_along_axis(scysig.convolve, 0, I_vec,
                                     np.hanning(smoothing_order), 'same')
-    # Normalize
-    # I_norm = np.linalg.norm(I_vec, axis=1)
-    # I_norm[I_norm < 10e8] = 10e8  # handle Zeros
-    # I_vec = I_vec * (1 / I_norm[:, np.newaxis])
 
     return utils.cart2sph(I_vec[:, 0], I_vec[:, 1], I_vec[:, 2])
 

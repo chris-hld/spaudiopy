@@ -10,6 +10,10 @@
     plt.rcParams['figure.figsize'] = 8, 4.5  # inch
     plt.rcParams['axes.grid'] = True
 
+**Memory cached functions**
+
+.. autofunction:: spaudiopy.sdm.render_bsdm(sdm_p, sdm_phi, sdm_theta, hrirs, jobs_count=None)
+
 """
 
 from itertools import repeat
