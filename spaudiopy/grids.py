@@ -265,7 +265,7 @@ def lebedev(n):
         raise ValueError("Maximum available Lebedev grid order is 65. "
                          "(requested: {})".format(n))
 
-    # this needs https://pypi.python.org/pypi/quadpy
+    # this needs https://pypi.python.org/pypi/quadpy < 0.13.0
     q = quadpy.sphere.Lebedev(str(available_quadrature(2*n)))
     if np.any(q.weights < 0):
         warn("Lebedev grid of order {} has negative weights.".format(n))

@@ -30,7 +30,7 @@ setuptools.setup(name='spaudiopy',
                                    'sounddevice',
                                    'resampy',
                                    'h5py',
-                                   'quadpy'
+                                   'quadpy<0.13.0'  # API change
                                    ],
                  platforms='any',
                  python_requires='>=3.6',
