@@ -7,5 +7,5 @@ dependencies:
   - sphinxcontrib-bibtex
   - numpy
   - scipy
-  - matplotlib
+  - matplotlib<3.1
 

@@ -423,7 +423,7 @@ def polar(theta, a, title=None, rlim=(-40, 0), ax=None):
     """Polar plot that allows negative values for 'a'."""
     if ax is None:
         fig = plt.figure()
-        ax = fig.add_subplot(111, projection='polar')
+        ax = fig.gca(projection='polar')
     ax.plot(theta, utils.db(np.clip(a, 0, None)), label='pos')
     ax.plot(theta, utils.db(abs(np.clip(a, None, 0))), label='neg')
     ax.set_rmin(rlim[0])
