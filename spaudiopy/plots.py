@@ -1,4 +1,16 @@
 # -*- coding: utf-8 -*-
+"""Plotting helpers.
+
+.. plot::
+    :context: reset
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import spaudiopy as spa
+    plt.rcParams['figure.figsize'] = 8, 4.5  # inch
+    plt.rcParams['axes.grid'] = True
+
+"""
 
 import numpy as np
 

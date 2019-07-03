@@ -1,4 +1,16 @@
 # -*- coding: utf-8 -*-
+"""Spatial Decomposition Method (SDM).
+
+.. plot::
+    :context: reset
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import spaudiopy as spa
+    plt.rcParams['figure.figsize'] = 8, 4.5  # inch
+    plt.rcParams['axes.grid'] = True
+
+"""
 
 from itertools import repeat
 from warnings import warn
@@ -19,7 +31,7 @@ memory = Memory(cachedir)
 
 
 def render_stereo_sdm(sdm_p, sdm_phi, sdm_theta):
-    """Stereophonic SDM Render IR.
+    """Stereophonic SDM Render IR, with a cos(phi) pannign law.
 
     Parameters
     ----------
@@ -58,8 +70,7 @@ def _render_bsdm_sample(i, p, phi, theta, hrirs):
 
 @memory.cache
 def render_bsdm(sdm_p, sdm_phi, sdm_theta, hrirs, jobs_count=None):
-    """
-    Binaural SDM Render.
+    """Binaural SDM Render.
 
     Parameters
     ----------
@@ -70,8 +81,8 @@ def render_bsdm(sdm_p, sdm_phi, sdm_theta, hrirs, jobs_count=None):
     sdm_theta : (n,) array_like
         Colatitude theta(t).
     hrirs : sig.HRIRs
-    jobs_count : int
-        Parallel jobs, switches implementation if > 1.
+    jobs_count : int, optional
+        Parallel jobs, defaults to number of CPU cores.
 
     Returns
     -------

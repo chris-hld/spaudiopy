@@ -56,6 +56,7 @@ autodoc_default_options = {
     'special-members': '__init__',
     'exclude-members': '__weakref__'
 }
+
 # Mock import soundfile, because it  depends on external C lib
 autodoc_mock_imports = ['soundfile']
 
@@ -78,10 +79,8 @@ napoleon_use_rtype = False
 plot_include_source = True
 plot_html_show_source_link = False
 plot_html_show_formats = False
-plot_pre_code = 'import numpy as np; from matplotlib import pyplot as plt'
-plot_rcparams = {
-    'savefig.bbox': 'tight',
-    }
+#plot_pre_code = 'import numpy as np; from matplotlib import pyplot as plt'
+#plot_rcparams = {'savefig.bbox': 'tight', }
 plot_formats = ['svg', 'pdf', ('png', 96)]
 
 # Add any paths that contain templates here, relative to this directory.
