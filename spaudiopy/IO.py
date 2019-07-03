@@ -102,7 +102,7 @@ def save_audio(signal, filename, fs=None):
 
 def load_hrirs(fs, filename=None, dummy=False):
     """Convenience function to load 'HRTF.mat'.
-    The file to contains ['hrir_l', 'hrir_r', 'fs', 'azi', 'colat'].
+    The file contains ['hrir_l', 'hrir_r', 'fs', 'azi', 'colat'].
 
     Parameters
     ----------
@@ -238,7 +238,7 @@ def get_default_hrirs(grid_azi=None, grid_colat=None):
 
 def load_sdm(filename, init_nan=True):
     """Convenience function to load 'SDM.mat'.
-    The file to contains
+    The file contains
     ['h_ref' or 'p', 'sdm_azi' or 'sdm_phi', 'sdm_colat' or 'sdm_theta', 'fs'].
 
     Parameters
