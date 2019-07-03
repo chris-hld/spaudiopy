@@ -334,8 +334,9 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, lim_m=1):
     x = hull.points[:, 0]
     y = hull.points[:, 1]
     z = hull.points[:, 2]
+
     fig = plt.figure()
-    ax = fig.add_subplot(1, 1, 1, projection='3d', aspect='equal')
+    ax = fig.gca(projection='3d', aspect='equal')
     # valid
     ax.plot_trisurf(x, y, z,
                     triangles=valid_s,
@@ -368,8 +369,9 @@ def hull_normals(hull, plot_face_normals=True, plot_vertex_normals=True):
     x = hull.points[:, 0]
     y = hull.points[:, 1]
     z = hull.points[:, 2]
+
     fig = plt.figure()
-    ax = fig.add_subplot(1, 1, 1, projection='3d', aspect='equal')
+    ax = fig.gca(projection='3d', aspect='equal')
     ax.plot_trisurf(x, y, z,
                     triangles=hull.simplices,
                     edgecolor='black', linewidth=0.5,
