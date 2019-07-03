@@ -42,6 +42,16 @@ def load_t_design(degree):
     -------
     vecs : numpy.ndarray
         Coordinates of points.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        vecs = spa.grids.load_t_design(degree=5)
+        hull = spa.decoder.get_hull(*vecs.T)
+        spa.plots.hull(hull, mark_invalid=False)
+
     """
     if degree > 21:
         raise ValueError('Designs of order > 21 are not implemented.')
@@ -80,6 +90,16 @@ def load_Fliege_Maier_nodes(grid_order):
         Coordinates of points.
     weights : array_like
         Quadrature weights.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        vecs, weights = spa.grids.load_Fliege_Maier_nodes(grid_order=5)
+        hull = spa.decoder.get_hull(*vecs.T)
+        spa.plots.hull(hull, mark_invalid=False)
+
     """
     if grid_order > 30:
         raise ValueError('Designs of order > 30 are not implemented.')
@@ -114,6 +134,16 @@ def equal_angle(n):
         Colatitude.
     weights : array_like
         Quadrature weights.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        azi, colat, weights = spa.grids.equal_angle(n=5)
+        hull = spa.decoder.get_hull(*spa.utils.sph2cart(azi, colat))
+        spa.plots.hull(hull, mark_invalid=False)
+
     """
     azi = np.linspace(0, 2*np.pi, 2*n+2, endpoint=False)
     colat, d_colat = np.linspace(0, np.pi, 2*n+2, endpoint=False, retstep=True)
@@ -149,6 +179,16 @@ def gauss(n):
         Colatitude.
     weights : array_like
         Quadrature weights.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        azi, colat, weights = spa.grids.gauss(n=5)
+        hull = spa.decoder.get_hull(*spa.utils.sph2cart(azi, colat))
+        spa.plots.hull(hull, mark_invalid=False)
+
     """
     azi = np.linspace(0, 2*np.pi, 2*n+2, endpoint=False)
     x, weights = np.polynomial.legendre.leggauss(n+1)
@@ -200,6 +240,15 @@ def lebedev(n):
         Colatitude.
     weights : array_like
         Quadrature weights.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        azi, colat, weights = spa.grids.lebedev(n=5)
+        hull = spa.decoder.get_hull(*spa.utils.sph2cart(azi, colat))
+        spa.plots.hull(hull, mark_invalid=False)
 
     """
     def available_quadrature(d):

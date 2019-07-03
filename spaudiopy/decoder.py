@@ -18,10 +18,6 @@
                  45, 45, 45, 45, 90]])
     ls_x, ls_y, ls_z = spa.utils.sph2cart(spa.utils.deg2rad(ls_dirs[0, :]),
                                           spa.utils.deg2rad(90 - ls_dirs[1, :]))
-    ls_setup = spa.decoder.LoudspeakerSetup(ls_x, ls_y, ls_z)
-    ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
-                           opening_limit=150)
-    ls_setup.show()
 
 """
 
@@ -38,6 +34,15 @@ from spaudiopy import utils, sph, IO, plots, grids
 
 class LoudspeakerSetup:
     """Creates a 'hull' object containing all information for further decoding.
+
+    .. plot::
+        :context: close-figs
+
+        ls_setup = spa.decoder.LoudspeakerSetup(ls_x, ls_y, ls_z)
+        ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
+                               opening_limit=150)
+        ls_setup.show()
+
     """
 
     def __init__(self, x, y, z, listener_position=None):

@@ -351,8 +351,8 @@ def frac_octave_filterbank(n, N_out, fs, f_low, f_high=None, mode='energy',
     Examples
     --------
     .. plot::
+        :context: close-figs
 
-        import spaudiopy as spa
         fs = 44100
         N = 2**16
         gs, ff = spa.process.frac_octave_filterbank(n=1, N_out=N, fs=fs, f_low=100, f_high=8000)
