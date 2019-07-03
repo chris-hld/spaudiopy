@@ -38,6 +38,7 @@ def load_audio(filenames, fs=None):
     -------
     sig : sig.MonoSignal or sig.MultiSignal
         Audio signal.
+
     """
     loaded_data = []
     loaded_fs = []
@@ -79,6 +80,7 @@ def save_audio(signal, filename, fs=None):
         Audio file name.
     fs : int
         fs(t).
+
     """
     # assert(isinstance(signal, (sig.MonoSignal, sig.MultiSignal)))
     if isinstance(sig, sig.MonoSignal):
@@ -99,7 +101,8 @@ def save_audio(signal, filename, fs=None):
 
 
 def load_hrirs(fs, filename=None, dummy=False):
-    """Convenience function to load HRTF.mat.
+    """Convenience function to load 'HRTF.mat'.
+    The file to contains ['hrir_l', 'hrir_r', 'fs', 'azi', 'colat'].
 
     Parameters
     ----------
@@ -121,30 +124,34 @@ def load_hrirs(fs, filename=None, dummy=False):
             [azi: azimuth, colat: colatitude] for hrirs.
         fs : int
             fs(t).
+
     """
     if filename is None:
-        if fs == 44100:
-            default_file = '../data/HRTF_default.mat'
-        elif fs == 48000:
-            default_file = '../data/HRTF_default48k.mat'
-        else:
-            raise ValueError("No default hrirs.")
+        if fs not in [44100, 48000]:
+            raise NotImplementedError('44100 or 48000 default available.')
+        default_file = '../data/' + 'HRTF_default_' + str(fs) + '.mat'
         current_file_dir = os.path.dirname(__file__)
         filename = os.path.join(current_file_dir, default_file)
 
-    try:
-        mat = loadmat(filename)
-    except FileNotFoundError:
-        warn("No default hrirs. Generating them...")
-        get_default_hrirs()
+        try:
+            mat = loadmat(filename)
+        except FileNotFoundError:
+            warn("No default hrirs. Generating them...")
+            get_default_hrirs()
+            mat = loadmat(filename)
+    else:
         mat = loadmat(filename)
 
     hrir_l = np.array(np.squeeze(mat['hrir_l']), dtype=float)
     hrir_r = np.array(np.squeeze(mat['hrir_r']), dtype=float)
-    hrir_fs = int(mat['SamplingRate'])
+    try:
+        hrir_fs = int(mat['fs'])
+    except KeyError:
+        hrir_fs = int(mat['SamplingRate'])
+
     azi = np.array(np.squeeze(mat['azi']), dtype=float)
-    elev = np.array(np.squeeze(mat['elev']), dtype=float)
-    grid = pd.DataFrame({'azi': azi, 'colat': elev})
+    colat = np.array(np.squeeze(mat['colat']), dtype=float)
+    grid = pd.DataFrame({'azi': azi, 'colat': colat})
     if dummy is True:
         # Create diracs as dummy
         hrir_l = np.zeros_like(hrir_l)
@@ -216,21 +223,23 @@ def get_default_hrirs(grid_azi=None, grid_colat=None):
                                                        SamplingRate,
                                                        fs_target)
 
-    savemat(os.path.join(current_file_dir, '../data/HRTF_default'),
+    savemat(os.path.join(current_file_dir, '../data/HRTF_default_44100'),
             {'hrir_l': hrir_l,
              'hrir_r': hrir_r,
-             'azi': grid_azi, 'elev': grid_colat,
-             'SamplingRate': SamplingRate})
-    savemat(os.path.join(current_file_dir, '../data/HRTF_default48k'),
+             'azi': grid_azi, 'colat': grid_colat,
+             'fs': SamplingRate})
+    savemat(os.path.join(current_file_dir, '../data/HRTF_default_48000'),
             {'hrir_l': hrir_l_48k,
              'hrir_r': hrir_r_48k,
-             'azi': grid_azi, 'elev': grid_colat,
-             'SamplingRate': fs_target})
+             'azi': grid_azi, 'colat': grid_colat,
+             'fs': fs_target})
     print("Saved new default HRIRs.")
 
 
 def load_sdm(filename, init_nan=True):
-    """Convenience function to load SDM.mat.
+    """Convenience function to load 'SDM.mat'.
+    The file to contains
+    ['h_ref' or 'p', 'sdm_azi' or 'sdm_phi', 'sdm_colat' or 'sdm_theta', 'fs'].
 
     Parameters
     ----------
@@ -243,22 +252,33 @@ def load_sdm(filename, init_nan=True):
     -------
     h : (n,) array_like
         p(t).
-    sdm_phi : (n,) array_like
+    sdm_azi : (n,) array_like
         Azimuth angle.
-    sdm_theta : (n,) array_like
+    sdm_colat : (n,) array_like
         Colatitude angle.
     fs : int
         fs(t).
+
     """
     mat = loadmat(filename)
-    h = np.array(np.squeeze(mat['h_ref']), dtype=float)
-    sdm_phi = np.array(np.squeeze(mat['sdm_phi']), dtype=float)
-    sdm_theta = np.array(np.squeeze(mat['sdm_theta']), dtype=float)
+    try:
+        h = np.array(np.squeeze(mat['h_ref']), dtype=float)
+    except KeyError:
+        h = np.array(np.squeeze(mat['p']), dtype=float)
+    try:
+        sdm_azi = np.array(np.squeeze(mat['sdm_azi']), dtype=float)
+    except KeyError:
+        sdm_azi = np.array(np.squeeze(mat['sdm_phi']), dtype=float)
+    try:
+        sdm_colat = np.array(np.squeeze(mat['sdm_colat']), dtype=float)
+    except KeyError:
+        sdm_colat = np.array(np.squeeze(mat['sdm_theta']), dtype=float)
+
     if init_nan:
-        sdm_phi[np.isnan(sdm_phi)] = 0.
-        sdm_theta[np.isnan(sdm_theta)] = np.pi / 2
+        sdm_azi[np.isnan(sdm_azi)] = 0.
+        sdm_colat[np.isnan(sdm_colat)] = np.pi / 2
     fs = int(mat['fs'])
-    return h, sdm_phi, sdm_theta, fs
+    return h, sdm_azi, sdm_colat, fs
 
 
 def load_sofa_data(filename):

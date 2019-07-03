@@ -25,7 +25,7 @@ setuptools.setup(name='spaudiopy',
                                    'scipy',
                                    'pandas',
                                    'joblib',
-                                   'matplotlib!=3.1.*',  # https://github.com/matplotlib/matplotlib/issues/1077
+                                   'matplotlib<3.1.0',  # https://github.com/matplotlib/matplotlib/issues/1077
                                    'soundfile',
                                    'sounddevice',
                                    'resampy',
