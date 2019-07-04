@@ -509,7 +509,7 @@ def decoder_performance(hull, renderer_type, azi_steps=5, el_steps=3,
     plt.subplots_adjust(wspace = 0.25)
 
 
-def doa(azi, colat, fs, p=None, size=200):
+def doa(azi, colat, fs, p=None, size=300):
     """Direction of Arrival, with optional p(t) scaling the size."""
     # t in ms
     t_ms = np.linspace(0, len(azi) / fs, len(azi), endpoint=False) * 1000

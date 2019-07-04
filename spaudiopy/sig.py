@@ -18,6 +18,7 @@ import copy
 import numpy as np
 from scipy import signal as scysig
 import soundfile as sf
+import sounddevice as sd
 
 from . import utils, IO, sph
 from . import process as pcs
@@ -75,7 +76,13 @@ class MonoSignal:
     def filter(self, h, **kwargs):
         """Convolve signal, kwargs are forwarded to signal.convolve."""
         h = utils.asarray_1d(h)
-        return scysig.convolve(self.signal, h, **kwargs)
+        self.signal = scysig.convolve(self.signal, h, **kwargs)
+
+    def play(self, gain=1, wait=True):
+        """Play sound signal. Adjust gain and wait until finished."""
+        sd.play(gain * self.signal, int(self.fs))
+        if wait:
+            sd.wait()
 
 
 class MultiSignal(MonoSignal):
@@ -136,8 +143,16 @@ class MultiSignal(MonoSignal):
         for c in self.channel:
             c.signal = func(*args, **kwargs)
 
-    def filter(self, h, **kwargs):
-        raise NotImplementedError
+    def filter(self, irs, **kwargs):
+        for c, h in zip(self.channel, irs):
+            h = utils.asarray_1d(h)
+            c.signal = scysig.convolve(c, h, **kwargs)
+
+    def play(self, gain=1, wait=True):
+        """Play sound signal. Adjust gain and wait until finished."""
+        sd.play(gain * self.get_signals().T, int(self.fs))
+        if wait:
+            sd.wait()
 
 
 class AmbiBSignal(MultiSignal):
@@ -155,7 +170,7 @@ class AmbiBSignal(MultiSignal):
         return super().from_file(filename, fs=fs)
 
     def sh_to_b(self):
-        # Assume signals are in ACN
+        # Assume signals are in ACN and override (does not make a copy!)
         _B = sph.sh_to_b(self.get_signals())
         self.channel[0].signal = _B[0, :]
         self.channel[1].signal = _B[1, :]
