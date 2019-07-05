@@ -6,9 +6,9 @@
 
     import numpy as np
     import matplotlib.pyplot as plt
-    import spaudiopy as spa
-    plt.rcParams['figure.figsize'] = 8, 4.5  # inch
     plt.rcParams['axes.grid'] = True
+
+    import spaudiopy as spa
 
     # Loudspeaker Setup
     ls_dirs = np.array([[-18, -54, -90, -126, -162, -198, -234, -270, -306,

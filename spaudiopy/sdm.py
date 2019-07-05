@@ -6,13 +6,13 @@
 
     import numpy as np
     import matplotlib.pyplot as plt
-    import spaudiopy as spa
-    plt.rcParams['figure.figsize'] = 8, 4.5  # inch
     plt.rcParams['axes.grid'] = True
+
+    import spaudiopy as spa
 
 **Memory cached functions**
 
-.. autofunction:: spaudiopy.process.pseudo_intensity(Ambi_B, win_len=33, f_bp=None, smoothing_order=5, jobs_count=1)
+.. autofunction:: spaudiopy.sdm.pseudo_intensity(ambi_b, win_len=33, f_bp=None, smoothing_order=5, jobs_count=1)
 .. autofunction:: spaudiopy.sdm.render_bsdm(sdm_p, sdm_phi, sdm_theta, hrirs, jobs_count=None)
 
 """

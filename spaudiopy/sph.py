@@ -6,9 +6,9 @@
 
     import numpy as np
     import matplotlib.pyplot as plt
-    import spaudiopy as spa
-    plt.rcParams['figure.figsize'] = 8, 4.5  # inch
     plt.rcParams['axes.grid'] = True
+
+    import spaudiopy as spa
 
     spa.plots.subplot_sph_coeffs([ np.sqrt(4 * np.pi) * np.array([1, 0, 0, 0]),
                                    np.sqrt(4/3 * np.pi) * np.array([0, 1, 0, 0]),
