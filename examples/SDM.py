@@ -8,9 +8,9 @@ import matplotlib.pyplot as plt
 from spaudiopy import sig, sdm, process, plots, utils
 
 # Load (A-format) SH impulse response
-ambi_ir = sig.AmbiBSignal.from_file('../data/IR_Gewandhaus_SH1.wav')
+ambi_ir = sig.MultiSignal.from_file('../data/IR_Gewandhaus_SH1.wav')
 # convert to B-format
-ambi_ir.sh_to_b()
+ambi_ir = sig.AmbiBSignal.sh_to_b(ambi_ir)
 
 fs = ambi_ir.fs
 
@@ -30,14 +30,18 @@ ir_l, ir_r = sdm.render_stereo_sdm(sdm_p, sdm_azi, sdm_colat)
 s_in = sig.MonoSignal.from_file('../data/piano_mono.flac', fs)
 s_in.trim(2.6, 6)
 
-s_out = sig.MultiSignal([s_in.signal, s_in.signal], fs=fs)
-s_out.filter([ir_l, ir_r])
+s_out_p = s_in.copy()
+s_out_p.filter(sdm_p)
+
+s_out_SDM = sig.MultiSignal([s_in.signal, s_in.signal], fs=fs)
+s_out_SDM.filter([ir_l, ir_r])
 
 
 LISTEN = True
 if LISTEN:
     print("input")
     s_in.play()
-    print("output")
-    s_out.play(wait=False, gain=0.5/np.max([ir_l, ir_r]))
-
+    print("output: Omni")
+    s_out_p.play(gain=0.5/np.max([ir_l, ir_r]))
+    print("output: SDM")
+    s_out_SDM.play(gain=0.5/np.max([ir_l, ir_r]), wait=False)
