@@ -24,6 +24,7 @@
 import copy
 import multiprocessing
 from itertools import repeat
+from warnings import warn
 
 import numpy as np
 import scipy.spatial as scyspat
@@ -510,6 +511,7 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False,
                     gains[src_idx, valid_simplices[face_idx]] = projection
                     break  # found valid gains
     else:
+        warn("Using %i processes..." % jobs_count)
         # preparation
         shared_array_shape = np.shape(gains)
         _arr_base = _create_shared_array(shared_array_shape)

@@ -101,7 +101,6 @@ def pseudo_intensity(ambi_b, win_len=33, f_bp=None, smoothing_order=5,
                   np.zeros(len(ambi_b)), np.zeros(len(ambi_b))]
 
     if jobs_count == 1:
-        print('Using single job')
         # I = p*v for each sample
         for i in range(len(ambi_b) - win_len):
             I_vec[int(i + win_len // 2), :] = np.asarray(
@@ -109,6 +108,7 @@ def pseudo_intensity(ambi_b, win_len=33, f_bp=None, smoothing_order=5,
                  np.trapz(win * W[i:i + win_len] * Y[i:i + win_len]),
                  np.trapz(win * W[i:i + win_len] * Z[i:i + win_len])])
     else:
+        warn("Using %i processes..." % jobs_count)
         # preparation
         shared_array_shape = np.shape(I_vec)
         _arr_base = _create_shared_array(shared_array_shape)
@@ -210,6 +210,7 @@ def render_bsdm(sdm_p, sdm_phi, sdm_theta, hrirs, jobs_count=1):
             bsdm_r[i:i + len(h_r)] += p * h_r
 
     else:
+        warn("Using %i processes..." % jobs_count)
         _shared_array_shape = np.shape(np.c_[bsdm_l, bsdm_r])
         _arr_base = _create_shared_array(_shared_array_shape)
         _arg_itr = zip(range(len(sdm_p)), sdm_p, sdm_phi, sdm_theta,
