@@ -438,6 +438,7 @@ def _invert_triplets(simplices, points):
     return inverted_ls_triplets
 
 
+# part of parallel vbap:
 def _vbap_gains_single_source(src_idx, src, inverted_ls_triplets,
                               valid_simplices):
     for face_idx, ls_base in enumerate(inverted_ls_triplets):
@@ -453,7 +454,7 @@ def _vbap_gains_single_source(src_idx, src, inverted_ls_triplets,
 
 
 def vbap(src, hull, valid_simplices=None, retain_outside=False,
-         jobs_count=None):
+         jobs_count=1):
     """Loudspeaker gains for Vector Base Amplitude Panning decoding.
     Pulkki, V. (1997). Virtual Sound Source Positioning Using Vector Base
     Amplitude Panning. AES, 144(5), 357–360.
@@ -465,8 +466,8 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False,
     hull : LoudspeakerSetup
     valid_simplices : (nsimplex, 3) numpy.ndarray
         Valid simplices employed for rendering, defaults hull.valid_simplices.
-    jobs_count : int, optional
-        [CPU Cores], Number of Processes, switches implementation for n > 1.
+    jobs_count : int or None, optional
+        Number of parallel jobs, 'None' employs 'cpu_count'.
 
     Returns
     -------

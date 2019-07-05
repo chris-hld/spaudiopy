@@ -12,6 +12,7 @@
 
 **Memory cached functions**
 
+.. autofunction:: spaudiopy.process.pseudo_intensity(Ambi_B, win_len=33, f_bp=None, smoothing_order=5, jobs_count=1)
 .. autofunction:: spaudiopy.sdm.render_bsdm(sdm_p, sdm_phi, sdm_theta, hrirs, jobs_count=None)
 
 """
@@ -32,6 +33,105 @@ from . import process as pcs
 # Prepare Caching
 cachedir = './__cache_dir'
 memory = Memory(cachedir)
+
+
+# part of parallel pseudo_intensity:
+def _intensity_sample(i, W, X, Y, Z, win):
+    buf = len(win)
+    # global shared_array
+    shared_array[int(i + buf // 2), :] = np.asarray(
+        [np.trapz(win * W[i:i + buf] * X[i:i + buf]),
+         np.trapz(win * W[i:i + buf] * Y[i:i + buf]),
+         np.trapz(win * W[i:i + buf] * Z[i:i + buf])])
+
+
+@memory.cache
+def pseudo_intensity(ambi_b, win_len=33, f_bp=None, smoothing_order=5,
+                     jobs_count=1):
+    """Direction of arrival (DOA) for each time sample from pseudo-intensity.
+
+    Parameters
+    ----------
+    ambi_b : sig.AmbiBSignal
+        Input signal, B-format.
+    win_len : int optional
+        Sliding window length.
+    f_bp : tuple(f_lo, f_hi), optional
+        Cutoff frequencies for bandpass, 'None' to disable.
+    smoothing_order : int, optional
+        Apply hanning(smoothing_order) smoothing to output.
+    jobs_count : int or None, optional
+        Number of parallel jobs, 'None' employs 'cpu_count'.
+
+    Returns
+    -------
+    I_azi, I_colat, I_r : array_like
+        Pseudo intensity vector for each time sample.
+    """
+    # WIP
+    if jobs_count is None:
+        jobs_count = multiprocessing.cpu_count()
+
+    assert(win_len % 2)
+    win = np.hanning(win_len)
+    fs = ambi_b.fs
+    # Z_0 = 413.3
+    # T_int = 1/fs * win_len
+    # a = 1 / (np.sqrt(2) * T_int * Z_0)
+
+    # get first order signals
+    W = utils.asarray_1d(ambi_b.W)
+    X = utils.asarray_1d(ambi_b.X)
+    Y = utils.asarray_1d(ambi_b.Y)
+    Z = utils.asarray_1d(ambi_b.Z)
+
+    # Bandpass signals
+    if f_bp is not None:
+        f_lo = f_bp[0]
+        f_hi = f_bp[1]
+        b, a = signal.butter(N=2, Wn=(f_lo / (fs / 2), f_hi / (fs / 2)),
+                             btype='bandpass')
+        W = signal.filtfilt(b, a, W)
+        X = signal.filtfilt(b, a, X)
+        Y = signal.filtfilt(b, a, Y)
+        Z = signal.filtfilt(b, a, Z)
+
+    # Initialize intensity vector
+    I_vec = np.c_[np.zeros(len(ambi_b)),
+                  np.zeros(len(ambi_b)), np.zeros(len(ambi_b))]
+
+    if jobs_count == 1:
+        print('Using single job')
+        # I = p*v for each sample
+        for i in range(len(ambi_b) - win_len):
+            I_vec[int(i + win_len // 2), :] = np.asarray(
+                [np.trapz(win * W[i:i + win_len] * X[i:i + win_len]),
+                 np.trapz(win * W[i:i + win_len] * Y[i:i + win_len]),
+                 np.trapz(win * W[i:i + win_len] * Z[i:i + win_len])])
+    else:
+        # preparation
+        shared_array_shape = np.shape(I_vec)
+        _arr_base = _create_shared_array(shared_array_shape)
+        _arg_itr = zip(range(len(ambi_b) - win_len),
+                       repeat(W), repeat(X), repeat(Y), repeat(Z),
+                       repeat(win))
+        # execute
+        with multiprocessing.Pool(processes=jobs_count,
+                                  initializer=_init_shared_array,
+                                  initargs=(_arr_base,
+                                            shared_array_shape,)) as pool:
+            pool.starmap(_intensity_sample, _arg_itr)
+        # reshape
+        I_vec = np.frombuffer(_arr_base.get_obj()).reshape(
+            shared_array_shape)
+
+    if smoothing_order > 0:
+        assert(smoothing_order % 2)
+        I_vec = np.apply_along_axis(signal.convolve, 0, I_vec,
+                                    np.hanning(smoothing_order), 'same')
+    I_azi, I_colat, I_r = utils.cart2sph(I_vec[:, 0], I_vec[:, 1],
+                                         I_vec[:, 2], steady_colat=True)
+    return I_azi, I_colat, I_r
 
 
 def render_stereo_sdm(sdm_p, sdm_phi, sdm_theta):
@@ -65,6 +165,7 @@ def render_stereo_sdm(sdm_p, sdm_phi, sdm_theta):
     return ir_l, ir_r
 
 
+# part of parallel render_bsdm:
 def _render_bsdm_sample(i, p, phi, theta, hrirs):
     h_l, h_r = hrirs[hrirs.nearest(phi, theta)]
     # global shared_array
@@ -73,7 +174,7 @@ def _render_bsdm_sample(i, p, phi, theta, hrirs):
 
 
 @memory.cache
-def render_bsdm(sdm_p, sdm_phi, sdm_theta, hrirs, jobs_count=None):
+def render_bsdm(sdm_p, sdm_phi, sdm_theta, hrirs, jobs_count=1):
     """Binaural SDM Render.
 
     Parameters
@@ -85,8 +186,8 @@ def render_bsdm(sdm_p, sdm_phi, sdm_theta, hrirs, jobs_count=None):
     sdm_theta : (n,) array_like
         Colatitude theta(t).
     hrirs : sig.HRIRs
-    jobs_count : int, optional
-        Parallel jobs, defaults to number of CPU cores.
+    jobs_count : int or None, optional
+        Number of parallel jobs, 'None' employs 'cpu_count'.
 
     Returns
     -------

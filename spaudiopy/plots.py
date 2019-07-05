@@ -520,7 +520,7 @@ def doa(azi, colat, fs, p=None, size=200):
     ele = np.pi/2 - colat
 
     if p is not None:
-        s_plot = p / np.max(p)
+        s_plot = np.clip(p / np.max(p), 10e-15, None)
     else:
         s_plot = 1
 

@@ -40,14 +40,15 @@ def rad2deg(rad):
     return rad / np.pi * 180 % 360
 
 
-def cart2sph(x, y, z):
+def cart2sph(x, y, z, steady_colat=False):
     """Vectorized conversion of cartesian to spherical coordinates."""
     x = asarray_1d(x)
     y = asarray_1d(y)
     z = asarray_1d(z)
     r = np.sqrt(x**2 + y**2 + z**2)
     azi = np.arctan2(y, x)
-    colat = np.arccos(z / r)
+    colat = np.arccos(z / r) if not steady_colat else \
+            np.arccos(z / np.clip(r, 10e-15, None))
     return azi, colat, r
 
 

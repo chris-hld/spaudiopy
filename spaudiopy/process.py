@@ -13,7 +13,6 @@
 **Memory cached functions**
 
 .. autofunction:: spaudiopy.process.resample_hrirs(hrir_l, hrir_r, fs_hrir, fs_target, jobs_count=None)
-.. autofunction:: spaudiopy.process.pseudo_intensity(Ambi_B, win_len=33, f_bp=None, smoothing_order=5, jobs_count=None)
 
 """
 
@@ -22,7 +21,7 @@ from itertools import repeat
 import numpy as np
 import resampy
 import pickle
-from scipy import signal as scysig
+from scipy import signal
 from joblib import Memory
 import multiprocessing
 
@@ -50,8 +49,8 @@ def resample_hrirs(hrir_l, hrir_r, fs_hrir, fs_target, jobs_count=None):
         Current fs(t) of hrirs.
     fs_target : int
         Target fs(t) of hrirs.
-    jobs_count : int, optional
-        [CPU Cores], Number of Processes, switches implementation for n > 1.
+    jobs_count : int or None, optional
+        Number of parallel jobs, 'None' employs 'cpu_count'.
 
     Returns
     -------
@@ -146,103 +145,6 @@ def match_loudness(sig_in, sig_target):
     return sig_out
 
 
-def _intensity_sample(i, W, X, Y, Z, win):
-    buf = len(win)
-    # global shared_array
-    shared_array[int(i + buf // 2), :] = np.asarray(
-        [np.trapz(win * W[i:i + buf] * X[i:i + buf]),
-         np.trapz(win * W[i:i + buf] * Y[i:i + buf]),
-         np.trapz(win * W[i:i + buf] * Z[i:i + buf])])
-
-
-@memory.cache
-def pseudo_intensity(Ambi_B, win_len=33, f_bp=None, smoothing_order=5,
-                     jobs_count=None):
-    """DOA prototyping.
-
-    Parameters
-    ----------
-    Ambi_B : sig.AmbiBSignal
-        Input signal.
-    win_len : int optional
-        Sliding window length.
-    f_bp : tuple(f_lo, f_hi), optional
-        Cutoff frequencies for bandpass, 'None' to disable.
-    smoothing_order : int, optional
-        Apply hanning(smoothing_order) smoothing to output.
-    jobs_count : int, optional
-        [CPU Cores], Number of Processes, switches implementation for n > 1.
-
-    Returns
-    -------
-    I_azi, I_colat, I_r : array_like
-        Pseudo intensity vector.
-    """
-    # WIP
-    if jobs_count is None:
-        jobs_count = multiprocessing.cpu_count()
-
-    assert(win_len % 2)
-    win = np.hanning(win_len)
-    fs = Ambi_B.fs
-    # Z_0 = 413.3
-    # T_int = 1/fs * win_len
-    # a = 1 / (np.sqrt(2) * T_int * Z_0)
-
-    # get first order signals
-    W = utils.asarray_1d(Ambi_B.W)
-    X = utils.asarray_1d(Ambi_B.X)
-    Y = utils.asarray_1d(Ambi_B.Y)
-    Z = utils.asarray_1d(Ambi_B.Z)
-
-    # Bandpass signals
-    if f_bp is not None:
-        f_lo = f_bp[0]
-        f_hi = f_bp[1]
-        b, a = scysig.butter(N=2, Wn=(f_lo / (fs / 2), f_hi / (fs / 2)),
-                             btype='bandpass')
-        W = scysig.filtfilt(b, a, W)
-        X = scysig.filtfilt(b, a, X)
-        Y = scysig.filtfilt(b, a, Y)
-        Z = scysig.filtfilt(b, a, Z)
-
-    # Initialize intensity vector
-    I_vec = np.c_[np.zeros(len(Ambi_B)),
-                  np.zeros(len(Ambi_B)), np.zeros(len(Ambi_B))]
-
-    if jobs_count == 1:
-        print('Using single job')
-        # I = p*v for each sample
-        for i in range(len(Ambi_B) - win_len):
-            I_vec[int(i + win_len // 2), :] = np.asarray(
-                [np.trapz(win * W[i:i + win_len] * X[i:i + win_len]),
-                 np.trapz(win * W[i:i + win_len] * Y[i:i + win_len]),
-                 np.trapz(win * W[i:i + win_len] * Z[i:i + win_len])])
-    else:
-        # preparation
-        shared_array_shape = np.shape(I_vec)
-        _arr_base = _create_shared_array(shared_array_shape)
-        _arg_itr = zip(range(len(Ambi_B) - win_len),
-                       repeat(W), repeat(X), repeat(Y), repeat(Z),
-                       repeat(win))
-        # execute
-        with multiprocessing.Pool(processes=jobs_count,
-                                  initializer=_init_shared_array,
-                                  initargs=(_arr_base,
-                                            shared_array_shape,)) as pool:
-            pool.starmap(_intensity_sample, _arg_itr)
-        # reshape
-        I_vec = np.frombuffer(_arr_base.get_obj()).reshape(
-            shared_array_shape)
-
-    if smoothing_order > 0:
-        assert(smoothing_order % 2)
-        I_vec = np.apply_along_axis(scysig.convolve, 0, I_vec,
-                                    np.hanning(smoothing_order), 'same')
-
-    return utils.cart2sph(I_vec[:, 0], I_vec[:, 1], I_vec[:, 2])
-
-
 def ambeo_a2b(Ambi_A, filter_coeffs=None):
     """Convert A 'MultiSignal' (type I: FLU, FRD, BLD, BRU) to B AmbiBSignal.
 
@@ -263,10 +165,10 @@ def ambeo_a2b(Ambi_A, filter_coeffs=None):
                              fs=Ambi_A.fs)
     if filter_coeffs is not None:
         b0_d, a0_d, b1_d, a1_d = pickle.load(open(filter_coeffs, "rb"))
-        Ambi_B.W = scysig.lfilter(b0_d, a0_d, Ambi_B.W)
-        Ambi_B.X = scysig.lfilter(b1_d, a1_d, Ambi_B.X)
-        Ambi_B.Y = scysig.lfilter(b1_d, a1_d, Ambi_B.Y)
-        Ambi_B.Z = scysig.lfilter(b1_d, a1_d, Ambi_B.Z)
+        Ambi_B.W = signal.lfilter(b0_d, a0_d, Ambi_B.W)
+        Ambi_B.X = signal.lfilter(b1_d, a1_d, Ambi_B.X)
+        Ambi_B.Y = signal.lfilter(b1_d, a1_d, Ambi_B.Y)
+        Ambi_B.Z = signal.lfilter(b1_d, a1_d, Ambi_B.Z)
     return Ambi_B
 
 
@@ -362,7 +264,7 @@ def frac_octave_filterbank(n, N_out, fs, f_low, f_high=None, mode='energy',
         ax[0].semilogx(f, gs.T)
         ax[0].set_title('Band gains')
         ax[1].semilogx(f, np.sum(np.abs(gs)**2, axis=0))
-        ax[1].set_title('$\sum |g| ^ 2$')
+        ax[1].set_title(r'$\sum |g| ^ 2$')
         for a_idx in ax:
             a_idx.grid(True)
             a_idx.set_xlim([20, fs//2])
@@ -481,25 +383,9 @@ def energy_decay(p):
 def half_sided_Hann(N):
     """Design half-sided Hann tapering window of order N."""
     assert (N >= 3)
-    w_full = scysig.hann(2 * ((N + 1) // 2) + 1)
+    w_full = signal.hann(2 * ((N + 1) // 2) + 1)
     # get half sided window
     w_taper = np.ones(N + 1)
     w_taper[-((N - 1) // 2):] = w_full[-((N + 1) // 2):-1]
     return w_taper
 
-
-# Parallel worker stuff -->
-def _create_shared_array(shared_array_shape):
-    """Allocate ctypes array from shared memory with lock."""
-    d_type = 'd'
-    shared_array_base = multiprocessing.Array(d_type, shared_array_shape[0] *
-                                              shared_array_shape[1])
-    return shared_array_base
-
-
-def _init_shared_array(shared_array_base, shared_array_shape):
-    """Makes 'shared_array' available to child processes."""
-    global shared_array
-    shared_array = np.frombuffer(shared_array_base.get_obj())
-    shared_array = shared_array.reshape(shared_array_shape)
-# < --Parallel worker stuff
