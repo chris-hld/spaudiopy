@@ -90,12 +90,14 @@ def save_audio(signal, filename, fs=None):
     if type(signal) == sig.MonoSignal:
         data = signal.signal
         data_fs = signal.fs
-    elif type(signal) == sig.MultiSignal:
+    elif type(signal) in (sig.MultiSignal, sig.AmbiBSignal):
         data = signal.get_signals().T
         data_fs = signal.fs
-    else:
+    elif isinstance(signal, (np.ndarray, np.generic)):
         data = signal
         data_fs = fs
+    else:
+        raise NotImplementedError('Data type not supported.')
 
     sf.write(filename, data, data_fs)
 
