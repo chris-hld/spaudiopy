@@ -32,7 +32,7 @@ from . import process as pcs
 # Prepare Caching
 cachedir = './__cache_dir'
 memory = Memory(cachedir)
-#shared_array = np.zeros((3, 3))
+shared_array = None
 
 
 # part of parallel pseudo_intensity:
@@ -134,7 +134,7 @@ def pseudo_intensity(ambi_b, win_len=33, f_bp=None, smoothing_order=5,
 
 
 def pseudo_intensity_jl(ambi_b, win_len=33, f_bp=None, smoothing_order=5,
-                     jobs_count=1):
+                        jobs_count=1):
     """Direction of arrival (DOA) for each time sample from pseudo-intensity.
 
     Parameters
@@ -188,16 +188,17 @@ def pseudo_intensity_jl(ambi_b, win_len=33, f_bp=None, smoothing_order=5,
                   np.zeros(len(ambi_b)), np.zeros(len(ambi_b))]
 
     # preparation
+    print(jobs_count)
     shared_array_shape = np.shape(I_vec)
     _arr_base = _create_shared_array(shared_array_shape)
     _init_shared_array(_arr_base, shared_array_shape)
 
     _arg_itr = zip(range(len(ambi_b) - win_len),
-                   repeat(W), repeat(X), repeat(Y), repeat(Z),
-                   repeat(win))
+                   repeat(W), repeat(X), repeat(Y), repeat(Z))
     # execute
-    Parallel(n_jobs=jobs_count, mmap_mode='r+')(delayed(_intensity_sample)(i, W, X, Y, Z, win)
-                                        for (i, W, X, Y, Z, win) in _arg_itr )
+    Parallel(n_jobs=jobs_count, mmap_mode='r+')(delayed(_intensity_sample)
+                                                (i, W, X, Y, Z, win=win) for
+                                                (i, W, X, Y, Z) in _arg_itr)
     # reshape
     I_vec = np.frombuffer(_arr_base.get_obj()).reshape(
         shared_array_shape)

@@ -8,6 +8,9 @@ Test parallel computing.
 import os
 import sys
 import pytest
+import time
+
+from warnings import warn
 
 import numpy as np
 from numpy.testing import assert_allclose
@@ -23,6 +26,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(
 
 @pytest.mark.parametrize('test_jobs', [2, 4, None])
 def test_pseudo_intensity(test_jobs):
+    tic = time.time()
     fs = 44100
     n_samples = 10000
     ambi_b = spa.sig.AmbiBSignal([np.random.randn(n_samples),
@@ -32,7 +36,24 @@ def test_pseudo_intensity(test_jobs):
     azi_r, colat_r, r_r = spa.sdm.pseudo_intensity(ambi_b, jobs_count=1)
     azi_t, colat_t, r_t = spa.sdm.pseudo_intensity(ambi_b, jobs_count=test_jobs)
     assert_allclose([azi_t, colat_t, r_t], [azi_r, colat_r, r_r])
-    return azi_r, colat_r, r_r
+    toc = time.time()
+    warn(str(test_jobs) + ' : ' + str(toc - tic))
+
+
+@pytest.mark.parametrize('test_jobs', [1, 2])
+def test_pseudo_intensity_jl(test_jobs):
+    tic = time.time()
+    fs = 44100
+    n_samples = 10000
+    ambi_b = spa.sig.AmbiBSignal([np.random.randn(n_samples),
+                                  np.random.randn(n_samples),
+                                  np.random.randn(n_samples),
+                                  np.random.randn(n_samples)], fs=fs)
+    azi_r, colat_r, r_r = spa.sdm.pseudo_intensity_jl(ambi_b, jobs_count=1)
+    azi_t, colat_t, r_t = spa.sdm.pseudo_intensity_jl(ambi_b, jobs_count=test_jobs)
+    assert_allclose([azi_t, colat_t, r_t], [azi_r, colat_r, r_r])
+    toc = time.time()
+    warn(str(test_jobs) + ' : ' + str(toc - tic))
 
 
 @pytest.mark.parametrize('test_jobs', [2, 4, None])
