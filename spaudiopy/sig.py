@@ -180,6 +180,7 @@ class AmbiBSignal(MultiSignal):
         """Alternative constructor, convert from sig.Multisignal.
         Assumes ACN channel order.
         """
+        assert isinstance(multisig, MultiSignal)
         _B = sph.sh_to_b(multisig.copy().get_signals())
         return cls([*_B], fs=multisig.fs)
 
