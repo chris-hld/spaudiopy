@@ -33,6 +33,7 @@ from . import process as pcs
 # Prepare Caching
 cachedir = './__cache_dir'
 memory = Memory(cachedir)
+shared_array = None
 
 
 # part of parallel pseudo_intensity:
@@ -596,9 +597,8 @@ def post_equalization2(ls_sigs, sdm_p, fs, ls_distance=None, amp_decay=1,
 
 
 # Parallel worker stuff -->
-def _create_shared_array(shared_array_shape):
+def _create_shared_array(shared_array_shape, d_type='d'):
     """Allocate ctypes array from shared memory with lock."""
-    d_type = 'd'
     shared_array_base = multiprocessing.Array(d_type, shared_array_shape[0] *
                                               shared_array_shape[1])
     return shared_array_base

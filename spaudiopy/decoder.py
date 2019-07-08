@@ -31,6 +31,8 @@ from scipy import signal
 
 from spaudiopy import utils, sph, IO, plots, grids
 
+shared_array = None
+
 
 class LoudspeakerSetup:
     """Creates a 'hull' object containing all information for further decoding.
@@ -453,8 +455,7 @@ def _vbap_gains_single_source(src_idx, src, inverted_ls_triplets,
             break  # found valid gains
 
 
-def vbap(src, hull, valid_simplices=None, retain_outside=False,
-         jobs_count=1):
+def vbap(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
     """Loudspeaker gains for Vector Base Amplitude Panning decoding.
     Pulkki, V. (1997). Virtual Sound Source Positioning Using Vector Base
     Amplitude Panning. AES, 144(5), 357–360.
@@ -466,6 +467,8 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False,
     hull : LoudspeakerSetup
     valid_simplices : (nsimplex, 3) numpy.ndarray
         Valid simplices employed for rendering, defaults hull.valid_simplices.
+    retain_outside : bool, optional
+        Render on the 'ambisonic hull' to fade out amplitude.
     jobs_count : int or None, optional
         Number of parallel jobs, 'None' employs 'cpu_count'.
 
@@ -818,9 +821,8 @@ def nearest_loudspeaker(src, hull):
 
 
 # Parallel worker stuff -->
-def _create_shared_array(shared_array_shape):
+def _create_shared_array(shared_array_shape, d_type='d'):
     """Allocate ctypes array from shared memory with lock."""
-    d_type = 'd'
     shared_array_base = multiprocessing.Array(d_type, shared_array_shape[0] *
                                               shared_array_shape[1])
     return shared_array_base
