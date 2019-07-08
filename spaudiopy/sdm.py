@@ -21,18 +21,18 @@ from itertools import repeat
 from warnings import warn
 
 import numpy as np
-from joblib import Memory
+from joblib import Memory, Parallel, delayed
 import multiprocessing
 
 from scipy import signal
-from . import utils
-from . import sig
+from . import utils, sig
 from . import process as pcs
 
 
 # Prepare Caching
 cachedir = './__cache_dir'
 memory = Memory(cachedir)
+#shared_array = np.zeros((3, 3))
 
 
 # part of parallel pseudo_intensity:
@@ -45,7 +45,6 @@ def _intensity_sample(i, W, X, Y, Z, win):
          np.trapz(win * W[i:i + buf] * Z[i:i + buf])])
 
 
-@memory.cache
 def pseudo_intensity(ambi_b, win_len=33, f_bp=None, smoothing_order=5,
                      jobs_count=1):
     """Direction of arrival (DOA) for each time sample from pseudo-intensity.
@@ -124,6 +123,84 @@ def pseudo_intensity(ambi_b, win_len=33, f_bp=None, smoothing_order=5,
         # reshape
         I_vec = np.frombuffer(_arr_base.get_obj()).reshape(
             shared_array_shape)
+
+    if smoothing_order > 0:
+        assert(smoothing_order % 2)
+        I_vec = np.apply_along_axis(signal.convolve, 0, I_vec,
+                                    np.hanning(smoothing_order), 'same')
+    I_azi, I_colat, I_r = utils.cart2sph(I_vec[:, 0], I_vec[:, 1],
+                                         I_vec[:, 2], steady_colat=True)
+    return I_azi, I_colat, I_r
+
+
+def pseudo_intensity_jl(ambi_b, win_len=33, f_bp=None, smoothing_order=5,
+                     jobs_count=1):
+    """Direction of arrival (DOA) for each time sample from pseudo-intensity.
+
+    Parameters
+    ----------
+    ambi_b : sig.AmbiBSignal
+        Input signal, B-format.
+    win_len : int optional
+        Sliding window length.
+    f_bp : tuple(f_lo, f_hi), optional
+        Cutoff frequencies for bandpass, 'None' to disable.
+    smoothing_order : int, optional
+        Apply hanning(smoothing_order) smoothing to output.
+    jobs_count : int or None, optional
+        Number of parallel jobs, 'None' employs 'cpu_count'.
+
+    Returns
+    -------
+    I_azi, I_colat, I_r : array_like
+        Pseudo intensity vector for each time sample.
+    """
+    # WIP
+    if jobs_count is None:
+        jobs_count = multiprocessing.cpu_count()
+
+    assert(win_len % 2)
+    win = np.hanning(win_len)
+    fs = ambi_b.fs
+    # Z_0 = 413.3
+    # T_int = 1/fs * win_len
+    # a = 1 / (np.sqrt(2) * T_int * Z_0)
+
+    # get first order signals
+    W = utils.asarray_1d(ambi_b.W)
+    X = utils.asarray_1d(ambi_b.X)
+    Y = utils.asarray_1d(ambi_b.Y)
+    Z = utils.asarray_1d(ambi_b.Z)
+
+    # Bandpass signals
+    if f_bp is not None:
+        f_lo = f_bp[0]
+        f_hi = f_bp[1]
+        b, a = signal.butter(N=2, Wn=(f_lo / (fs / 2), f_hi / (fs / 2)),
+                             btype='bandpass')
+        W = signal.filtfilt(b, a, W)
+        X = signal.filtfilt(b, a, X)
+        Y = signal.filtfilt(b, a, Y)
+        Z = signal.filtfilt(b, a, Z)
+
+    # Initialize intensity vector
+    I_vec = np.c_[np.zeros(len(ambi_b)),
+                  np.zeros(len(ambi_b)), np.zeros(len(ambi_b))]
+
+    # preparation
+    shared_array_shape = np.shape(I_vec)
+    _arr_base = _create_shared_array(shared_array_shape)
+    _init_shared_array(_arr_base, shared_array_shape)
+
+    _arg_itr = zip(range(len(ambi_b) - win_len),
+                   repeat(W), repeat(X), repeat(Y), repeat(Z),
+                   repeat(win))
+    # execute
+    Parallel(n_jobs=jobs_count, mmap_mode='r+')(delayed(_intensity_sample)(i, W, X, Y, Z, win)
+                                        for (i, W, X, Y, Z, win) in _arg_itr )
+    # reshape
+    I_vec = np.frombuffer(_arr_base.get_obj()).reshape(
+        shared_array_shape)
 
     if smoothing_order > 0:
         assert(smoothing_order % 2)
