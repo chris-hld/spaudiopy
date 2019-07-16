@@ -3,9 +3,9 @@
 
 import numpy as np
 
-import matplotlib.pyplot as plt
-
 from spaudiopy import IO, sig, sdm, plots, utils, decoder
+
+LISTEN = True
 
 # 5.0+4 Setup
 ls_dirs = np.array([[0, -30, 30, 110, -110, -30, 30, 110, -110],
@@ -59,7 +59,6 @@ s_out_SDM_ls = sig.MultiSignal([s_in.signal, s_in.signal], fs=fs)
 s_out_SDM_ls.filter([ir_ls_l, ir_ls_r])
 
 
-LISTEN = True
 if LISTEN:
     print("input")
     s_in.play()

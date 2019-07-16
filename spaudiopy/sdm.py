@@ -244,9 +244,12 @@ def render_binaural_loudspeaker_sdm(sdm_p, ls_gains, ls_setup, fs,
     ls_gains : (n, l)
         Loudspeaker (l) gains.
     ls_setup : decoder.LoudspeakerSetup
-    hrirs : sig.HRIRs
-    orientation : (azi, colat) tuple, optional
-        Listener orientation offset (azimuth, colatitude) in rad.
+    fs : int
+    post_eq_func : None, 'default' or function
+        Post EQ applied to the loudspeaker signals. 'default' calls
+        'sdm.post_equalization', 'None' disables (not recommended).
+        You can also provide your custom post-eq-function with the signature
+        'post_eq_func(ls_sigs, sdm_p, fs, ls_setup, **kwargs)'.
 
     Returns
     -------
@@ -254,6 +257,7 @@ def render_binaural_loudspeaker_sdm(sdm_p, ls_gains, ls_setup, fs,
         Left binaural impulse response.
     ir_r : array_like
         Right binaural impulse response.
+
     """
     n = len(sdm_p)
     ls_gains = np.atleast_2d(ls_gains)
