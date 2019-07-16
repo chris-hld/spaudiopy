@@ -82,7 +82,7 @@ def freq_resp(freq, amp, to_db=True, smoothing_n=None, title=None,
 
     if to_db:
         # Avoid zeros in spec for dB
-        amp = [utils.db(a + 10e-15) for a in amp]
+        amp = [utils.db(np.clip(a, 10e-15, None)) for a in amp]
 
     if smoothing_n is not None:
         smoothed = []
@@ -102,6 +102,8 @@ def freq_resp(freq, amp, to_db=True, smoothing_n=None, title=None,
     if title is not None:
         plt.title(title)
     if smoothing_n is not None:
+        if labels is None:
+            labels = [None] * len(amp)
         # fake line for extra legend entry
         ax.plot([], [], '*', color='black')
         labels.append(r"$\frac{%d}{8}$ octave smoothing" % smoothing_n)

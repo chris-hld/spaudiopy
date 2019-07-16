@@ -791,8 +791,8 @@ def allrad2(F_nm, hull, N_sph=None):
 
 
 def nearest_loudspeaker(src, hull):
-    """Loudspeaker gains for nearest loudspeaker decoding, based on euclidean
-    distance.
+    """Loudspeaker gains for nearest loudspeaker selection (NLS) decoding,
+    based on euclidean distance.
 
     Parameters
     ----------

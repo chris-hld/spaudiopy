@@ -12,7 +12,7 @@
 
 **Memory cached functions**
 
-.. autofunction:: spaudiopy.process.pseudo_intensity(Ambi_B, win_len=33, f_bp=None, smoothing_order=5, jobs_count=1)
+.. autofunction:: spaudiopy.sdm.pseudo_intensity(Ambi_B, win_len=33, f_bp=None, smoothing_order=5, jobs_count=1)
 .. autofunction:: spaudiopy.sdm.render_bsdm(sdm_p, sdm_phi, sdm_theta, hrirs, jobs_count=None)
 
 """
@@ -67,6 +67,7 @@ def pseudo_intensity(ambi_b, win_len=33, f_bp=None, smoothing_order=5,
     -------
     I_azi, I_colat, I_r : array_like
         Pseudo intensity vector for each time sample.
+
     """
     # WIP
     if jobs_count is None:
@@ -136,6 +137,7 @@ def pseudo_intensity(ambi_b, win_len=33, f_bp=None, smoothing_order=5,
 
 def render_stereo_sdm(sdm_p, sdm_phi, sdm_theta):
     """Stereophonic SDM Render IR, with a cos(phi) pannign law.
+    This is only meant for quick testing.
 
     Parameters
     ----------
@@ -176,6 +178,7 @@ def _render_bsdm_sample(i, p, phi, theta, hrirs):
 @memory.cache
 def render_bsdm(sdm_p, sdm_phi, sdm_theta, hrirs, jobs_count=1):
     """Binaural SDM Render.
+    Convolves each sample with corresponding hrir. No Post-EQ.
 
     Parameters
     ----------
@@ -230,10 +233,9 @@ def render_bsdm(sdm_p, sdm_phi, sdm_theta, hrirs, jobs_count=1):
     return bsdm_l, bsdm_r
 
 
-def render_loudspeaker_sdm(sdm_p, ls_gains, ls_setup, hrirs,
-                           orientation=(0, 0)):
-    """
-    Render sdm signal on loudspeaker setup as binaural synthesis.
+def render_binaural_loudspeaker_sdm(sdm_p, ls_gains, ls_setup, fs,
+                                    post_eq_func='default', **kwargs):
+    """Render sdm signal on loudspeaker setup as binaural synthesis.
 
     Parameters
     ----------
@@ -258,14 +260,22 @@ def render_loudspeaker_sdm(sdm_p, ls_gains, ls_setup, hrirs,
     assert(n == ls_gains.shape[0])
 
     # render loudspeaker signals
-    ls_sigs = sdm_p * ls_gains.T
-    ir_l, ir_r = ls_setup.binauralize(ls_sigs, hrirs.fs,
-                                      orientation=orientation, hrirs=hrirs)
+    ls_sigs = ls_setup.loudspeaker_signals(ls_gains=ls_gains, sig_in=sdm_p)
+
+    # post EQ
+    if post_eq_func is not None:
+        if post_eq_func == 'default':
+            ls_sigs = post_equalization(ls_sigs, sdm_p, fs, ls_setup, **kwargs)
+        else:  # user defined function
+            ls_sigs = post_eq_func(ls_sigs, sdm_p, fs, ls_setup, **kwargs)
+    else:
+        warn("No post EQ applied!")
+
+    ir_l, ir_r = ls_setup.binauralize(ls_sigs, fs)
     return ir_l, ir_r
 
 
-def post_equalization(ls_sigs, sdm_p, fs, ls_distance=None, amp_decay=1,
-                      soft_clip=True):
+def post_equalization(ls_sigs, sdm_p, fs, ls_setup, soft_clip=True):
     """Post equalization to compensate spectral whitening.
 
     Parameters
@@ -275,10 +285,7 @@ def post_equalization(ls_sigs, sdm_p, fs, ls_distance=None, amp_decay=1,
     sdm_p : array_like
         Reference (sdm) pressure signal.
     fs : int
-    ls_distance : (L,) array_like, optional
-        Loudspeaker distances in m.
-    amp_decay : float
-        Distance attenuation exponent.
+    ls_setup : decoder.LoudspeakerSetup
     soft_clip : bool, optional
         Limit the compensation boost to +6dB.
 
@@ -294,9 +301,8 @@ def post_equalization(ls_sigs, sdm_p, fs, ls_distance=None, amp_decay=1,
     with a Compact Microphone Array. Journal of the Audio Engineering Society.
 
     """
-    if ls_distance is None:
-        ls_distance = np.ones(ls_sigs.shape[0])
-    a = amp_decay  # amplitude decay exponent
+    ls_distance = ls_setup.d  # ls distance
+    a = ls_setup.a  # distance attenuation exponent
 
     CHECK_SANITY = False
 
@@ -424,12 +430,12 @@ def post_equalization(ls_sigs, sdm_p, fs, ls_distance=None, amp_decay=1,
     return ls_sigs_compensated
 
 
-def post_equalization2(ls_sigs, sdm_p, fs, ls_distance=None, amp_decay=1,
+def post_equalization2(ls_sigs, sdm_p, fs, ls_setup,
                        blocksize=4096, smoothing_order=5):
     """Post equalization to compensate spectral whitening. This alternative
     version works on fixed blocksizes with octave band gain smoothing.
-    Sonically, this is not the preferred version, but it can gain some insight
-    through the band gains with are returned.
+    Sonically, this seems not the preferred version, but it can gain some
+    insight through the band gains which are returned.
 
     Parameters
     ----------
@@ -438,8 +444,7 @@ def post_equalization2(ls_sigs, sdm_p, fs, ls_distance=None, amp_decay=1,
     sdm_p : array_like
         Reference (sdm) pressure signal.
     fs : int
-    ls_distance : (L,) array_like, optional
-        Loudspeaker distances in m.
+    ls_setup : decoder.LoudspeakerSetup
     blocksize : int
     smoothing_order : int
         Block smoothing, increasing Hanning window up to this order.
@@ -451,17 +456,9 @@ def post_equalization2(ls_sigs, sdm_p, fs, ls_distance=None, amp_decay=1,
     band_gains_list : list
         Each element contains the octave band gain applied as post eq.
 
-    References
-    ----------
-    Tervo, S., et. al. (2015).
-    Spatial Analysis and Synthesis of Car Audio System and Car Cabin Acoustics
-    with a Compact Microphone Array. Journal of the Audio Engineering Society.
-    (Vol. 63).
-
     """
-    if ls_distance is None:
-        ls_distance = np.ones(ls_sigs.shape[0])
-    a = amp_decay  # amplitude decay exponent
+    ls_distance = ls_setup.d  # ls distance
+    a = ls_setup.a  # distance attenuation exponent
 
     CHECK_SANITY = False
 
