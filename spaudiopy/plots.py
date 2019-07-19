@@ -535,10 +535,10 @@ def doa(azi, colat, fs, p=None, size=300):
     ax.set_xlabel("Azimuth in rad")
     ax.set_ylabel("Elevation in rad")
     ax.set_xticks([-np.pi, -np.pi/2, 0, np.pi/2, np.pi])
-    ax.set_xticklabels([r'$-\pi$', r'$-\pi / 2$', r'$-0$',
+    ax.set_xticklabels([r'$-\pi$', r'$-\pi / 2$', r'$0$',
                        r'$\pi / 2$', r'$\pi$'])
     ax.set_yticks([-np.pi/2, 0, np.pi/2])
-    ax.set_yticklabels([r'$-\pi / 2$', r'$-0$', r'$\pi / 2$'])
+    ax.set_yticklabels([r'$-\pi / 2$', r'$0$', r'$\pi / 2$'])
 
     cbar = plt.colorbar(p)
     cbar.set_label("t in ms")
