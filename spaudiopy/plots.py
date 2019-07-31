@@ -362,6 +362,7 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, lim_m=1):
     ax.set_xlim(-lim_m, lim_m)
     ax.set_ylim(-lim_m, lim_m)
     ax.set_zlim(-lim_m, lim_m)
+    ax.view_init(25, 230)
     if title is not None:
         plt.title(title)
 
@@ -419,6 +420,7 @@ def hull_normals(hull, plot_face_normals=True, plot_vertex_normals=True):
     ax.set_ylim(-1, 1)
     ax.set_zlim(-1, 1)
     plt.legend(loc='best')
+    ax.view_init(25, 230)
 
 
 def polar(theta, a, title=None, rlim=(-40, 0), ax=None):
