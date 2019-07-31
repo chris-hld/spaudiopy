@@ -57,8 +57,8 @@ autodoc_default_options = {
     'exclude-members': '__weakref__'
 }
 
-# Mock import soundfile, because it  depends on external C lib
-autodoc_mock_imports = ['soundfile']
+# Mock import soundfile and sounddevice, because they depend on external C lib
+autodoc_mock_imports = ['soundfile', 'sounddevice']
 
 # autosummary
 autosummary_generate = ['api']
