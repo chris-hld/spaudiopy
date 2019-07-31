@@ -24,6 +24,7 @@
 import copy
 import multiprocessing
 from itertools import repeat
+from warnings import warn
 
 import numpy as np
 import scipy.spatial as scyspat
@@ -419,13 +420,16 @@ def find_imaginary_loudspeaker(hull):
 
     # Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
     # Journal of Audio Engineering Society, sec. 1.1
-    av_valid_n = np.zeros([1, 3])
+    avg_valid_n = np.zeros([1, 3])
+    avg_d = 0
     for face in hull.valid_simplices:
         # find valid face in all faces
         mask = np.isin(hull.simplices, face).sum(axis=-1) == 3
-        av_valid_n += hull.face_areas[mask] * hull.face_normals[mask]
+        avg_valid_n += hull.face_areas[mask] * hull.face_normals[mask]
+        avg_d += np.mean(hull.d[hull.simplices[mask]])
     # r**3 seems necessary
-    imaginary_loudspeaker_coordinates = -av_valid_n / np.mean(hull.d)**3
+    imaginary_loudspeaker_coordinates = -avg_valid_n / \
+                                        (avg_d / len(hull.valid_simplices))**3
     return imaginary_loudspeaker_coordinates
 
 
@@ -513,6 +517,7 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
                     gains[src_idx, valid_simplices[face_idx]] = projection
                     break  # found valid gains
     else:
+        warn("Using %i processes..." % jobs_count)
         # preparation
         shared_array_shape = np.shape(gains)
         _arr_base = _create_shared_array(shared_array_shape)
@@ -792,8 +797,8 @@ def allrad2(F_nm, hull, N_sph=None):
 
 
 def nearest_loudspeaker(src, hull):
-    """Loudspeaker gains for nearest loudspeaker decoding, based on euclidean
-    distance.
+    """Loudspeaker gains for nearest loudspeaker selection (NLS) decoding,
+    based on euclidean distance.
 
     Parameters
     ----------

@@ -82,7 +82,7 @@ def freq_resp(freq, amp, to_db=True, smoothing_n=None, title=None,
 
     if to_db:
         # Avoid zeros in spec for dB
-        amp = [utils.db(a + 10e-15) for a in amp]
+        amp = [utils.db(np.clip(a, 10e-15, None)) for a in amp]
 
     if smoothing_n is not None:
         smoothed = []
@@ -102,6 +102,8 @@ def freq_resp(freq, amp, to_db=True, smoothing_n=None, title=None,
     if title is not None:
         plt.title(title)
     if smoothing_n is not None:
+        if labels is None:
+            labels = [None] * len(amp)
         # fake line for extra legend entry
         ax.plot([], [], '*', color='black')
         labels.append(r"$\frac{%d}{8}$ octave smoothing" % smoothing_n)
@@ -360,6 +362,7 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, lim_m=1):
     ax.set_xlim(-lim_m, lim_m)
     ax.set_ylim(-lim_m, lim_m)
     ax.set_zlim(-lim_m, lim_m)
+    ax.view_init(25, 230)
     if title is not None:
         plt.title(title)
 
@@ -417,6 +420,7 @@ def hull_normals(hull, plot_face_normals=True, plot_vertex_normals=True):
     ax.set_ylim(-1, 1)
     ax.set_zlim(-1, 1)
     plt.legend(loc='best')
+    ax.view_init(25, 230)
 
 
 def polar(theta, a, title=None, rlim=(-40, 0), ax=None):
@@ -509,7 +513,7 @@ def decoder_performance(hull, renderer_type, azi_steps=5, el_steps=3,
     plt.subplots_adjust(wspace = 0.25)
 
 
-def doa(azi, colat, fs, p=None, size=200):
+def doa(azi, colat, fs, p=None, size=300):
     """Direction of Arrival, with optional p(t) scaling the size."""
     # t in ms
     t_ms = np.linspace(0, len(azi) / fs, len(azi), endpoint=False) * 1000
@@ -533,10 +537,10 @@ def doa(azi, colat, fs, p=None, size=200):
     ax.set_xlabel("Azimuth in rad")
     ax.set_ylabel("Elevation in rad")
     ax.set_xticks([-np.pi, -np.pi/2, 0, np.pi/2, np.pi])
-    ax.set_xticklabels([r'$-\pi$', r'$-\pi / 2$', r'$-0$',
+    ax.set_xticklabels([r'$-\pi$', r'$-\pi / 2$', r'$0$',
                        r'$\pi / 2$', r'$\pi$'])
     ax.set_yticks([-np.pi/2, 0, np.pi/2])
-    ax.set_yticklabels([r'$-\pi / 2$', r'$-0$', r'$\pi / 2$'])
+    ax.set_yticklabels([r'$-\pi / 2$', r'$0$', r'$\pi / 2$'])
 
     cbar = plt.colorbar(p)
     cbar.set_label("t in ms")
