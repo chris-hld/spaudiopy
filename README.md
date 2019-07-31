@@ -1,8 +1,8 @@
 # spaudiopy
 Spatial Audio Python Package.
 
-The focus (so far) is on spatial audio decoders.
-The package includes e.g. spherical harmonics processing and (binaural renderings of) loudspeaker decoders, such as VBAP and ALLRAD.
+The focus (so far) is on spatial audio encoders and decoders.
+The package includes e.g. spherical harmonics processing and (binaural renderings of) loudspeaker decoders, such as VBAP, ALLRAD and ALLRAD2.
 
 # Documentation
 You can find the latest package documentation here:  
