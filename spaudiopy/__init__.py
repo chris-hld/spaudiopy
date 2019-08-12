@@ -13,6 +13,7 @@
    utils
    grids
    sdm
+   plots
 
 """
 
