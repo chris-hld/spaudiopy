@@ -116,7 +116,7 @@ class LoudspeakerSetup:
         ----------
         normal_limit : float, optional
         aperture_limit : float, optional
-        opening_limit : flaot, optional
+        opening_limit : float, optional
         blacklist : list, optional
 
         """
@@ -136,24 +136,35 @@ class LoudspeakerSetup:
             raise ValueError
         return N_e
 
-    def setup_for_ambisonic(self, N_kernel=None):
-        """Prepare loudspeaker hull for ambisonic rendering."""
+    def setup_for_ambisonic(self, N_kernel=None, update_hull=True):
+        """Prepare loudspeaker hull for ambisonic rendering.
+        Sets the kernel_hull with N_kernel and updates the ambisonic hull with
+        additional imaginary loudspeaker if desired.
+        """
         self.characteristic_order = self.get_characteristic_order()
         if N_kernel is None:
             print('Setting Ambisonics order =', self.characteristic_order)
             N_kernel = self.characteristic_order
 
         ls = self.points
-        imaginary_loudspeaker_coordinates = find_imaginary_loudspeaker(self)
-        # add imaginary speaker to hull
-        new_ls = np.vstack([ls, imaginary_loudspeaker_coordinates])
-        # This new triangulation is now the rendering setup
-        ambisonics_hull = LoudspeakerSetup(new_ls[:, 0],
-                                           new_ls[:, 1],
-                                           new_ls[:, 2])
-        # mark imaginary speaker (last one)
-        ambisonics_hull.imaginary_speaker = new_ls.shape[0] - 1
-        # virtual optimal loudspeaker arrangement
+        if update_hull:
+            imaginary_loudspeaker_coordinates = find_imaginary_loudspeaker(self)
+            # add imaginary speaker to hull
+            new_ls = np.vstack([ls, imaginary_loudspeaker_coordinates])
+            # This new triangulation is now the rendering setup
+            ambisonics_hull = LoudspeakerSetup(new_ls[:, 0],
+                                               new_ls[:, 1],
+                                               new_ls[:, 2])
+            # mark imaginary speaker (last one)
+            ambisonics_hull.imaginary_speaker = new_ls.shape[0] - 1
+            # virtual optimal loudspeaker arrangement
+        else:
+            # Setup is also the rendering setup
+            ambisonics_hull = LoudspeakerSetup(ls[:, 0],
+                                               ls[:, 1],
+                                               ls[:, 2])
+            ambisonics_hull.imaginary_speaker = None
+
         virtual_speakers = grids.load_t_design(2 * N_kernel + 1)
         kernel_hull = LoudspeakerSetup(virtual_speakers[:, 0],
                                        virtual_speakers[:, 1],
@@ -417,6 +428,8 @@ def find_imaginary_loudspeaker(hull):
     unique, counts = np.unique(rim_edges, return_counts=True)
     if not (counts >= 2).all():
         raise NotImplementedError("More than one rim found.")
+    if (counts == 3).all():
+        raise RuntimeError("No rim detected.")
 
     # Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
     # Journal of Audio Engineering Society, sec. 1.1
@@ -567,7 +580,7 @@ def characteristic_ambisonic_order(hull):
     return int(np.ceil(N_e))
 
 
-def allrap(src, hull, N_sph=None):
+def allrap(src, hull, N_sph=None, jobs_count=1):
     """Loudspeaker gains for All-Round Ambisonic Panning.
     Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
     Journal of Audio Engineering Society, Sec. 4.
@@ -579,6 +592,8 @@ def allrap(src, hull, N_sph=None):
     hull : LoudspeakerSetup
     N_sph : int
         Decoding order, defaults to hull.characteristic_order.
+    jobs_count : int or None, optional
+        Number of parallel jobs, 'None' employs 'cpu_count'.
 
     Returns
     -------
@@ -598,6 +613,7 @@ def allrap(src, hull, N_sph=None):
         N_sph = hull.characteristic_order
 
     src = np.atleast_2d(src)
+    assert(src.shape[1] == 3)
     src_count = src.shape[0]
     ls_count = ambisonics_hull.valid_simplices.max() + 1
 
@@ -606,7 +622,8 @@ def allrap(src, hull, N_sph=None):
     # virtual t-design loudspeakers
     J = len(kernel_hull.points)
     # virtual speakers expressed as VBAP phantom sources
-    G = vbap(src=kernel_hull.points, hull=ambisonics_hull)
+    G = vbap(src=kernel_hull.points, hull=ambisonics_hull,
+             jobs_count=jobs_count)
 
     # SH tapering coefficients
     a_n = sph.max_rE_weights(N_sph)
@@ -618,11 +635,12 @@ def allrap(src, hull, N_sph=None):
         g_l = sph.bandlimited_dirac(N_sph, d, a_n)
         gains[src_idx, :] = 4 * np.pi / J * G.T @ g_l
     # remove imaginary loudspeaker
-    gains = np.delete(gains, ambisonics_hull.imaginary_speaker, axis=1)
+    if ambisonics_hull.imaginary_speaker is not None:
+        gains = np.delete(gains, ambisonics_hull.imaginary_speaker, axis=1)
     return gains
 
 
-def allrap2(src, hull, N_sph=None):
+def allrap2(src, hull, N_sph=None, jobs_count=1):
     """Loudspeaker gains for All-Round Ambisonic Panning 2.
     Zotter, F., & Frank, M. (2018). Ambisonic decoding with panning-invariant
     loudness on small layouts (AllRAD2). In 144th AES Convention.
@@ -634,6 +652,8 @@ def allrap2(src, hull, N_sph=None):
     hull : LoudspeakerSetup
     N_sph : int
         Decoding order, defaults to hull.characteristic_order.
+    jobs_count : int or None, optional
+        Number of parallel jobs, 'None' employs 'cpu_count'.
 
     Returns
     -------
@@ -653,6 +673,7 @@ def allrap2(src, hull, N_sph=None):
         N_sph = hull.characteristic_order
 
     src = np.atleast_2d(src)
+    assert(src.shape[1] == 3)
     src_count = src.shape[0]
     # includes imaginary loudspeakers
     ls_count = ambisonics_hull.valid_simplices.max() + 1
@@ -662,7 +683,8 @@ def allrap2(src, hull, N_sph=None):
     # virtual t-design loudspeakers
     J = len(kernel_hull.points)
     # virtual speakers expressed as VBAP phantom sources
-    G = vbap(src=kernel_hull.points, hull=ambisonics_hull)
+    G = vbap(src=kernel_hull.points, hull=ambisonics_hull,
+             jobs_count=jobs_count)
 
     # SH tapering coefficients
     a_n = sph.max_rE_weights(N_sph)
@@ -678,11 +700,12 @@ def allrap2(src, hull, N_sph=None):
         g_l = sph.bandlimited_dirac(N_sph, d, a_n)
         gains[src_idx, :] = np.sqrt(4 * np.pi / J * G.T**2 @ g_l**2)
     # remove imaginary loudspeaker
-    gains = np.delete(gains, ambisonics_hull.imaginary_speaker, axis=1)
+    if ambisonics_hull.imaginary_speaker is not None:
+        gains = np.delete(gains, ambisonics_hull.imaginary_speaker, axis=1)
     return gains
 
 
-def allrad(F_nm, hull, N_sph=None):
+def allrad(F_nm, hull, N_sph=None, jobs_count=1):
     """Loudspeaker gains for All-Round Ambisonic Decoder.
     Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
     Journal of Audio Engineering Society, Sec. 6.
@@ -694,6 +717,8 @@ def allrad(F_nm, hull, N_sph=None):
     hull : LoudspeakerSetup
     N_sph : int
         Decoding order, defaults to hull.characteristic_order.
+    jobs_count : int or None, optional
+        Number of parallel jobs, 'None' employs 'cpu_count'.
 
     Returns
     -------
@@ -715,7 +740,8 @@ def allrad(F_nm, hull, N_sph=None):
     # virtual t-design loudspeakers
     J = len(kernel_hull.points)
     # virtual speakers expressed as VBAP phantom sources
-    G = vbap(src=kernel_hull.points, hull=ambisonics_hull)
+    G = vbap(src=kernel_hull.points, hull=ambisonics_hull,
+             jobs_count=jobs_count)
 
     # SH tapering coefficients
     a_n = sph.max_rE_weights(N_sph)
@@ -733,11 +759,12 @@ def allrad(F_nm, hull, N_sph=None):
     # loudspeaker output signals
     ls_sig = D @ F_nm
     # remove imaginary loudspeakers
-    ls_sig = np.delete(ls_sig, ambisonics_hull.imaginary_speaker, axis=0)
+    if ambisonics_hull.imaginary_speaker is not None:
+        ls_sig = np.delete(ls_sig, ambisonics_hull.imaginary_speaker, axis=0)
     return ls_sig
 
 
-def allrad2(F_nm, hull, N_sph=None):
+def allrad2(F_nm, hull, N_sph=None, jobs_count=1):
     """Loudspeaker gains for All-Round Ambisonic Decoder 2.
     Zotter, F., & Frank, M. (2018). Ambisonic decoding with panning-invariant
     loudness on small layouts (AllRAD2). In 144th AES Convention.
@@ -749,6 +776,8 @@ def allrad2(F_nm, hull, N_sph=None):
     hull : LoudspeakerSetup
     N_sph : int
         Decoding order, defaults to hull.characteristic_order.
+    jobs_count : int or None, optional
+        Number of parallel jobs, 'None' employs 'cpu_count'.
 
     Returns
     -------
@@ -770,7 +799,8 @@ def allrad2(F_nm, hull, N_sph=None):
     # virtual t-design loudspeakers
     J = len(kernel_hull.points)
     # virtual speakers expressed as VBAP phantom sources
-    G = vbap(src=kernel_hull.points, hull=ambisonics_hull)
+    G = vbap(src=kernel_hull.points, hull=ambisonics_hull,
+             jobs_count=jobs_count)
 
     # SH tapering coefficients
     a_n = sph.max_rE_weights(N_sph)
@@ -792,7 +822,8 @@ def allrad2(F_nm, hull, N_sph=None):
     ls_sig = np.sqrt(4 * np.pi / J * np.square(G.T) @ np.square(Y_k))
 
     # remove imaginary loudspeakers
-    ls_sig = np.delete(ls_sig, ambisonics_hull.imaginary_speaker, axis=0)
+    if ambisonics_hull.imaginary_speaker is not None:
+        ls_sig = np.delete(ls_sig, ambisonics_hull.imaginary_speaker, axis=0)
     return ls_sig
 
 

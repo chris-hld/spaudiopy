@@ -498,10 +498,10 @@ def decoder_performance(hull, renderer_type, azi_steps=5, el_steps=3,
         cbar = fig.colorbar(p, ax=ax, fraction=0.024, pad=0.04)
         cbar.outline.set_linewidth(0.5)
         if ip == 0:
-            ax.set_title(r'$\hat{E}$')
+            ax.set_title(r'$E$')
             cbar.set_ticks([0, 0.5, np.max([1.0, np.max(_data)])])
         elif ip == 1:
-            ax.set_title(r'$\hat{\sigma}_E$')
+            ax.set_title(r'$\sigma_E$')
             cbar.set_ticks([0, 45, 90])
             cbar.set_ticklabels([r'$0^{\circ}$', r'$45^{\circ}$',
                                  r'$90^{\circ}$'])
