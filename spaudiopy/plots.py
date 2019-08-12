@@ -496,8 +496,10 @@ def decoder_performance(hull, renderer_type, azi_steps=5, el_steps=3,
         ax.set_yticks(np.linspace(0, _data.shape[0] - 1, 3))
         ax.set_yticklabels([r'$0$', r'$\pi/2$', r'$\pi$'])
         cbar = fig.colorbar(p, ax=ax, fraction=0.024, pad=0.04)
+        cbar.outline.set_linewidth(0.5)
         if ip == 0:
             ax.set_title(r'$\hat{E}$')
+            cbar.set_ticks([0, 0.5, np.max([1.0, np.max(_data)])])
         elif ip == 1:
             ax.set_title(r'$\hat{\sigma}_E$')
             cbar.set_ticks([0, 45, 90])
