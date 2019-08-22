@@ -232,8 +232,8 @@ def frac_octave_filterbank(n, N_out, fs, f_low, f_high=None, mode='energy',
         Center frequency of first full band in Hz.
     f_high : int
         Cutoff frequency in Hz, above which no further bands are generated.
-    mode : 'energy' or 'pressure'
-        'energy' produces -3dB at crossover, 'pressure' -6dB.
+    mode : 'energy' or 'amplitude'
+        'energy' produces -3dB at crossover, 'amplitude' -6dB.
     overlap : float
         Band overlap, should be between [0, 0.5].
     l : int
@@ -328,7 +328,7 @@ def frac_octave_filterbank(n, N_out, fs, f_low, f_high=None, mode='energy',
             a = np.sin(np.pi / 2 * phi)
             b = np.cos(np.pi / 2 * phi)
 
-        if mode == 'pressure':
+        if mode in ['amplitude', 'pressure']:
             # This is not part of Antony (2010)
             a = np.sin(np.pi / 2 * phi)
             a = 0.5 * (a + 1)
