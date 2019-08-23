@@ -821,6 +821,7 @@ def allrad2(F_nm, hull, N_sph=None, jobs_count=1):
         Loudspeaker L output signal S.
 
     """
+    warn("ALLRAD2 currently rectifies the signal!!")
     if hull.ambisonics_hull:
         ambisonics_hull = hull.ambisonics_hull
     else:
