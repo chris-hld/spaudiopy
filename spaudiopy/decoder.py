@@ -555,6 +555,42 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
     return gains
 
 
+def vbip(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
+    """Loudspeaker gains for Vector Base Intensity Panning decoding.
+
+    Parameters
+    ----------
+    src : (n, 3) numpy.ndarray
+        Cartesian coordinates of n sources to be rendered.
+    hull : LoudspeakerSetup
+    valid_simplices : (nsimplex, 3) numpy.ndarray
+        Valid simplices employed for rendering, defaults hull.valid_simplices.
+    retain_outside : bool, optional
+        Render on the 'ambisonic hull', amplitude will not fade out with VBIP.
+    jobs_count : int or None, optional
+        Number of parallel jobs, 'None' employs 'cpu_count'.
+
+    Returns
+    -------
+    gains : (n, L) numpy.ndarray
+        Panning gains for L loudspeakers to render n sources.
+
+    """
+    src = np.atleast_2d(src)
+    assert(src.shape[1] == 3)
+    # Treat VBAP output as squared gains
+    g_sq = vbap(src, hull, valid_simplices=valid_simplices,
+                retain_outside=retain_outside, jobs_count=jobs_count)
+    # Get rid of potential numerical error
+    g_sq[g_sq < 0.] = 0.
+
+    # Renormalize
+    g = np.sqrt(g_sq)
+    g_norm = np.linalg.norm(g, axis=1)
+    g[g_norm > 0., :] /= (g_norm[g_norm > 0.][:, np.newaxis])
+    return g
+
+
 def characteristic_ambisonic_order(hull):
     """Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and
     Decoding. Journal of Audio Engineering Society, Sec. 7.
@@ -825,7 +861,6 @@ def allrad2(F_nm, hull, N_sph=None, jobs_count=1):
     if ambisonics_hull.imaginary_speaker is not None:
         ls_sig = np.delete(ls_sig, ambisonics_hull.imaginary_speaker, axis=0)
     return ls_sig
-
 
 def nearest_loudspeaker(src, hull):
     """Loudspeaker gains for nearest loudspeaker selection (NLS) decoding,
