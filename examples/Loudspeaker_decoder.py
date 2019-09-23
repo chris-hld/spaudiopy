@@ -108,6 +108,7 @@ input_F_nm = sph.sh_matrix(N_e, src_azi, src_colat, 'real').T  # SH dirac
 out_allrad = decoder.allrad(input_F_nm, ls_setup, N_sph=N_e)
 out_allrad2 = decoder.allrad2(input_F_nm, ls_setup, N_sph=N_e)
 
+
 utils.test_diff(gains_allrap, out_allrad, msg="ALLRAD and ALLRAP:")
 utils.test_diff(gains_allrap2, out_allrad2, msg="ALLRAD2 and ALLRAP2:")
 
@@ -119,12 +120,15 @@ _grid, _weights = grids.load_Fliege_Maier_nodes(10)
 G_vbap = decoder.vbap(_grid, ls_setup)
 G_allrap = decoder.allrap(_grid, ls_setup)
 G_allrap2 = decoder.allrap2(_grid, ls_setup)
+G_vbip = decoder.vbip(_grid, ls_setup)
 
-# %% Look at some measures
+# %% Look at some performance measures
 plots.decoder_performance(ls_setup, 'NLS')
 plots.decoder_performance(ls_setup, 'VBAP')
 plots.decoder_performance(ls_setup, 'VBAP', retain_outside=True)
 plt.suptitle('VBAP with imaginary loudspeaker')
+plots.decoder_performance(ls_setup, 'VBIP', retain_outside=True)
+plt.suptitle('VBIP with imaginary loudspeaker')
 plots.decoder_performance(ls_setup, 'ALLRAP')
 plots.decoder_performance(ls_setup, 'ALLRAP2')
 

@@ -457,6 +457,8 @@ def decoder_performance(hull, renderer_type, azi_steps=5, el_steps=3,
     # Switch renderer
     if renderer_type.lower() == 'vbap':
         G = decoder.vbap(np.c_[_grid_x, _grid_y, grid_z], hull, **kwargs)
+    if renderer_type.lower() == 'vbip':
+        G = decoder.vbip(np.c_[_grid_x, _grid_y, grid_z], hull, **kwargs)
     if renderer_type.lower() == 'allrap':
         G = decoder.allrap(np.c_[_grid_x, _grid_y, grid_z], hull, N_sph=N_sph,
                            **kwargs)

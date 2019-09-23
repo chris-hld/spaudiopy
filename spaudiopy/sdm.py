@@ -314,7 +314,7 @@ def post_equalization(ls_sigs, sdm_p, fs, ls_setup, soft_clip=True):
     # prepare filterbank
     filter_gs, ff = pcs.frac_octave_filterbank(n=1, N_out=2**16,
                                                fs=fs, f_low=62.5, f_high=16000,
-                                               mode='pressure')
+                                               mode='amplitude')
 
 
     # band dependent block size
