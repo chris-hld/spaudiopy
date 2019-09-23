@@ -530,7 +530,7 @@ def doa(azi, colat, fs, p=None, size=300):
     if p is not None:
         s_plot = np.clip(p / np.max(p), 10e-15, None)
     else:
-        s_plot = 1
+        s_plot = np.ones_like(azi)
 
     fig, ax = plt.subplots()
     ax.set_aspect('equal')
