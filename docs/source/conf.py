@@ -54,7 +54,9 @@ autodoc_default_options = {
     'undoc-members': None,
     'member-order': 'bysource',
     'special-members': '__init__',
-    'exclude-members': '__weakref__'
+    'exclude-members': '__weakref__',
+    'show-inheritance': 'True',
+    'inherited-members': 'True'
 }
 
 # Mock import soundfile and sounddevice, because they depend on external C lib
