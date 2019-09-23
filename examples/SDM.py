@@ -48,15 +48,15 @@ s_in.trim(2.6, 6)
 
 # Convolve with the omnidirectional IR
 s_out_p = s_in.copy()
-s_out_p.filter(sdm_p)
+s_out_p.conv(sdm_p)
 
 # Convolve with the stereo SDM IR
 s_out_SDM_stereo = sig.MultiSignal([s_in.signal, s_in.signal], fs=fs)
-s_out_SDM_stereo.filter([ir_st_l, ir_st_r])
+s_out_SDM_stereo.conv([ir_st_l, ir_st_r])
 
 # Convolve with the loudspeaker SDM IR
 s_out_SDM_ls = sig.MultiSignal([s_in.signal, s_in.signal], fs=fs)
-s_out_SDM_ls.filter([ir_ls_l, ir_ls_r])
+s_out_SDM_ls.conv([ir_ls_l, ir_ls_r])
 
 
 if LISTEN:

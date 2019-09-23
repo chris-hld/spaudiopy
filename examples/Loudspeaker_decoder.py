@@ -173,41 +173,31 @@ plt.tight_layout()
 s_in = sig.MonoSignal.from_file('../data/piano_mono.flac', fs)
 s_in.trim(2.6, 6)
 
-s_out_vbap = sig.MultiSignal([s_in.filter(l_vbap_ir),
-                              s_in.filter(r_vbap_ir)],
-                             fs=fs)
-s_out_allrap = sig.MultiSignal([s_in.filter(l_allrap_ir),
-                                s_in.filter(r_allrap_ir)],
-                               fs=fs)
-s_out_allrap2 = sig.MultiSignal([s_in.filter(l_allrap2_ir),
-                                s_in.filter(r_allrap2_ir)],
-                                fs=fs)
-s_out_hrir = sig.MultiSignal([s_in.filter(
-                                  hrirs.nearest_hrirs(src_azi, src_colat)[0]),
-                              s_in.filter(
-                                  hrirs.nearest_hrirs(src_azi, src_colat)[1])],
-                             fs=fs)
+s_out_vbap = sig.MultiSignal(2*[s_in.signal], fs=fs)
+s_out_vbap = s_out_vbap.conv([l_vbap_ir, r_vbap_ir])
+
+s_out_allrap = sig.MultiSignal(2*[s_in.signal], fs=fs)
+s_out_allrap = s_out_allrap.conv([l_allrap_ir, r_allrap_ir])
+
+s_out_allrap2 = sig.MultiSignal(2*[s_in.signal], fs=fs)
+s_out_allrap2 = s_out_allrap2.conv([l_allrap2_ir, r_allrap2_ir])
+
+s_out_hrir = sig.MultiSignal(2*[s_in.signal], fs=fs)
+s_out_hrir = s_out_hrir.conv([hrirs.nearest_hrirs(src_azi, src_colat)[0],
+                              hrirs.nearest_hrirs(src_azi, src_colat)[1]])
+
+
 if LISTEN:
     print("input")
-    sd.play(s_in.signal,
-            int(s_in.fs))
-    sd.wait()
+    s_in.play()
     print("hrir")
-    sd.play(s_out_hrir.get_signals().T,
-            int(s_in.fs))
-    sd.wait()
+    s_out_hrir.play()
     print("vbap")
-    sd.play(s_out_vbap.get_signals().T,
-            int(s_in.fs))
-    sd.wait()
+    s_out_vbap.play()
     print("allrap")
-    sd.play(s_out_allrap.get_signals().T,
-            int(s_in.fs))
-    sd.wait()
+    s_out_allrap.play()
     print("allrap2")
-    sd.play(s_out_allrap2.get_signals().T,
-            int(s_in.fs))
-    sd.wait()
+    s_out_allrap2.play()
 
     fig = plt.figure()
     fig.add_subplot(5, 1, 1)

@@ -78,10 +78,11 @@ class MonoSignal:
         """Apply function 'func' to signal, arguments are forwarded."""
         self.signal = func(*args, **kwargs)
 
-    def filter(self, h, **kwargs):
+    def conv(self, h, **kwargs):
         """Convolve signal, kwargs are forwarded to signal.convolve."""
         h = utils.asarray_1d(h)
         self.signal = scysig.convolve(self.signal, h, **kwargs)
+        return self
 
     def play(self, gain=1, wait=True):
         """Play sound signal. Adjust gain and wait until finished."""
@@ -148,10 +149,11 @@ class MultiSignal(MonoSignal):
         for c in self.channel:
             c.signal = func(*args, **kwargs)
 
-    def filter(self, irs, **kwargs):
+    def conv(self, irs, **kwargs):
         for c, h in zip(self.channel, irs):
             h = utils.asarray_1d(h)
             c.signal = scysig.convolve(c, h, **kwargs)
+        return self
 
     def play(self, gain=1, wait=True):
         """Play sound signal. Adjust gain and wait until finished."""
