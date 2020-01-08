@@ -364,17 +364,15 @@ def bandlimited_dirac(N, d, w_n=None):
 
 
 def max_rE_weights(N):
-    """Return max rE window coefficients for order N.
+    """Return max-rE modal weight coefficients for spherical harmonics order N.
 
     References
     ----------
     Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
     Journal of Audio Engineering Society, eq. (10).
     """
-    a_n = np.zeros(N + 1)
-    for n, i in enumerate(range(N + 1)):
-        a_n[i] = scyspecial.eval_legendre(n, np.cos(np.deg2rad(137.9 /
-                                                               (N + 1.51))))
+    theta = np.deg2rad(137.9 / (N + 1.51))
+    a_n = scyspecial.eval_legendre(np.arange(N + 1), np.cos(theta))
     return a_n
 
 
@@ -444,8 +442,35 @@ def repeat_order_coeffs(c):
     return c_reshaped
 
 
+def spherical_hn2(n, z, derivative=False):
+    """Spherical Hankel function of the second kind.
+
+    Parameters
+    ----------
+    n : int, array_like
+        Order of the spherical Hankel function (n >= 0).
+    z : complex or float, array_like
+        Argument of the spherical Hankel function.
+    derivative : bool, optional
+        If True, the value of the derivative (rather than the function
+        itself) is returned.
+
+    Returns
+    -------
+    hn2 : array_like
+
+
+    References
+    ----------
+    http://mathworld.wolfram.com/SphericalHankelFunctionoftheSecondKind.html
+    """
+    with np.errstate(invalid='ignore'):
+        yi = 1j * scyspecial.spherical_yn(n, z, derivative)
+    return scyspecial.spherical_jn(n, z, derivative) - yi
+
+
 def mode_strength(n, kr, sphere_type='rigid'):
-    """Calculate mode strength b_n(kr) for an incident plane wave on sphere.
+    """Mode strength b_n(kr) for an incident plane wave on sphere.
 
     Parameters
     ----------
@@ -453,27 +478,25 @@ def mode_strength(n, kr, sphere_type='rigid'):
         Degree.
     kr : array_like
         kr vector, product of wavenumber k and radius r_0.
+    sphere_type : 'rigid' or 'open'
 
     Returns
     -------
     b_n : array_like
         Mode strength b_n(kr).
+
+    References
+    ----------
+    Rafaely, B. (2015). Fundamentals of Spherical Array Processing. Springer.
+    eq. (4.4) and (4.5).
     """
-    def spherical_h2(n, z):
-        with np.errstate(divide='ignore'):
-            return scyspecial.spherical_jn(n, z) + \
-                        1j * scyspecial.spherical_yn(n, z)
-
-    def spherical_h2_d(n, z):
-        with np.errstate(divide='ignore'):
-            return -spherical_h2(n+1, z) + n/z * spherical_h2(n, z)
-
     if sphere_type == 'open':
         b_n = 4*np.pi*1j**n * scyspecial.spherical_jn(n, kr)
     elif sphere_type == 'rigid':
         b_n = 4*np.pi*1j**n * (scyspecial.spherical_jn(n, kr) -
                                (scyspecial.spherical_jn(n, kr, True) /
-                                spherical_h2_d(n, kr)) * spherical_h2(n, kr))
+                                spherical_hn2(n, kr, True)) *
+                               spherical_hn2(n, kr))
     else:
         raise ValueError('sphere_type Not implemented.')
     return b_n
@@ -527,19 +550,20 @@ def binaural_coloration_compensation(N, f, r_0=0.0875, w_taper=None):
     r_0 : radius
         Rigid sphere radius (approx. human head).
     w_taper : (N+1,) array_like
-        SH order weights for tapering.
+        SH order weights for tapering. See e.g. 'process.half_sided_Hann'.
 
     Returns
     -------
     gain : array_like
-        Filter gain(kr).
+        Filter gain(kr). See also 'process.gain_clipping'.
 
     References
     ----------
     Hold, C., Gamper, H., Pulkki, V., Raghuvanshi, N., & Tashev, I. J. (2019).
     Improving Binaural Ambisonics Decoding by Spherical Harmonics Domain
     Tapering and Coloration Compensation.
-    In IEEE International Conference on Acoustics, Speech and Signal Processing.
+    In IEEE International Conference on Acoustics, Speech and Signal
+    Processing.
     """
     c = 343  # speed of sound (m/s)
     k = (2 * np.pi * f) / c
@@ -550,5 +574,5 @@ def binaural_coloration_compensation(N, f, r_0=0.0875, w_taper=None):
     gain = pressure_on_sphere(N_full, kr) / \
            pressure_on_sphere(N, kr, weights=w_taper)
     # catch NaNs
-    gain[np.isnan(gain)] = 1
+    gain[np.isnan(gain)] = 1.
     return gain
