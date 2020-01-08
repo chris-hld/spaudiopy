@@ -381,7 +381,7 @@ def energy_decay(p):
 
 
 def half_sided_Hann(N):
-    """Design half-sided Hann tapering window of order N."""
+    """Design half-sided Hann tapering window of order N (>=3)."""
     assert (N >= 3)
     w_full = signal.hann(2 * ((N + 1) // 2) + 1)
     # get half sided window
@@ -389,3 +389,20 @@ def half_sided_Hann(N):
     w_taper[-((N - 1) // 2):] = w_full[-((N + 1) // 2):-1]
     return w_taper
 
+
+def gain_clipping(gain, threshold):
+    """Limit gain factor by soft clipping function. Limits gain factor to +6dB
+    beyond threshold point. (Pass values as factors/ratios, not dB!)
+
+    Parameters
+    ----------
+    gain : array_like
+    threshold : float
+
+    Returns
+    -------
+    gain_clipped : array_like
+    """
+    gain = gain / threshold  # offset by threshold
+    gain[gain > 1] = 1 + np.tanh(gain[gain > 1] - 1)  # soft clipping to 2
+    return gain * threshold

@@ -316,7 +316,6 @@ def post_equalization(ls_sigs, sdm_p, fs, ls_setup, soft_clip=True):
                                                fs=fs, f_low=62.5, f_high=16000,
                                                mode='amplitude')
 
-
     # band dependent block size
     band_blocksizes = np.zeros(ff.shape[0])
     # proposed by Tervo
@@ -333,7 +332,6 @@ def post_equalization(ls_sigs, sdm_p, fs, ls_setup, soft_clip=True):
     for ir_idx, g_b in enumerate(filter_gs):
         irs[ir_idx, :] = signal.firwin2(ntaps, np.linspace(0, 1, len(g_b)),
                                         g_b)
-
 
     # prepare Input
     pad = np.zeros([ls_sigs.shape[0], padsize])
@@ -390,8 +388,7 @@ def post_equalization(ls_sigs, sdm_p, fs, ls_setup, soft_clip=True):
                                                  None)
             # soft clip gain
             if soft_clip:
-                mag_diff[mag_diff > 1] = 1 + \
-                                          np.tanh(mag_diff[mag_diff > 1] - 1)
+                mag_diff = pcs.gain_clipping(mag_diff, 1)
 
             # apply to ls input
             Y = H_sdm * mag_diff[np.newaxis, :]

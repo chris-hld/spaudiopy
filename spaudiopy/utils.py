@@ -98,7 +98,7 @@ def area_triangle(p1, p2, p3):
 
 
 def db(x, power=False):
-    """Convert *x* to decibel.
+    """Convert ratio *x* to decibel.
 
     Parameters
     ----------
@@ -110,6 +110,19 @@ def db(x, power=False):
     """
     with np.errstate(divide='ignore'):
         return (10 if power else 20) * np.log10(np.abs(x))
+
+
+def from_db(db, power=False):
+    """Convert decibel back to ratio.
+
+    Parameters
+    ----------
+    db : array_like
+        Input data.
+    power : bool, optional
+        If ``power=False`` (the default), was used for conversion to dB.
+    """
+    return 10 ** (db / (10 if power else 20))
 
 
 def rms(x, axis=-1):
