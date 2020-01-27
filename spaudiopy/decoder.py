@@ -70,7 +70,7 @@ class LoudspeakerSetup:
         self.x -= listener_position[0]
         self.y -= listener_position[1]
         self.z -= listener_position[2]
-        # TODO: Better handling of this:
+        # TODO: Better handling of this, e.g. not effective when updating hull:
         self.listener_position -= self.listener_position
         _, _, self.d = utils.cart2sph(self.x, self.y, self.z)
 
@@ -128,9 +128,10 @@ class LoudspeakerSetup:
         in_s = np.isin(self.valid_simplices, simplex).sum(axis=-1) == 3
         return np.any(in_s)
 
-    def pop_triangles(self, normal_limit=None, aperture_limit=None,
+    def pop_triangles(self, normal_limit=85, aperture_limit=None,
                       opening_limit=None, blacklist=None):
         """Refine triangulation by removing them from valid simplices.
+        Bypass by passing 'None'.
 
         Parameters
         ----------
@@ -157,7 +158,7 @@ class LoudspeakerSetup:
         return N_e
 
     def ambisonics_setup(self, N_kernel=None, update_hull=True,
-                            imaginary_ls=None):
+                         imaginary_ls=None):
         """Prepare loudspeaker hull for ambisonic rendering.
         Sets the kernel_hull with N_kernel and updates the ambisonic hull with
         additional imaginary loudspeaker if desired.
