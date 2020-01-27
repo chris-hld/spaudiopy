@@ -48,7 +48,7 @@ def test_vbap(test_jobs):
 def test_allrap(test_jobs):
     vecs = spa.grids.load_t_design(degree=5)
     hull = spa.decoder.LoudspeakerSetup(*vecs.T)
-    hull.setup_for_ambisonic(update_hull=False)
+    hull.ambisonics_setup(update_hull=False)
     src = np.random.randn(1000, 3)
     gains_r = spa.decoder.allrap(src, hull, jobs_count=1)
     gains_t = spa.decoder.allrap(src, hull, jobs_count=test_jobs)
@@ -58,7 +58,7 @@ def test_allrap(test_jobs):
 def test_allrap2(test_jobs):
     vecs = spa.grids.load_t_design(degree=5)
     hull = spa.decoder.LoudspeakerSetup(*vecs.T)
-    hull.setup_for_ambisonic(update_hull=False)
+    hull.ambisonics_setup(update_hull=False)
     src = np.random.randn(1000, 3)
     gains_r = spa.decoder.allrap2(src, hull, jobs_count=1)
     gains_t = spa.decoder.allrap2(src, hull, jobs_count=test_jobs)

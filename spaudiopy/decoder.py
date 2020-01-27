@@ -96,7 +96,7 @@ class LoudspeakerSetup:
                                                         self.listener_position)
         self.valid_simplices = self._encloses_listener
 
-        # see 'setup_for_ambisonic()'
+        # see 'ambisonics_setup()'
         self.ambisonics_hull = []
         self.kernel_hull = []
         self.characteristic_order = None
@@ -156,7 +156,7 @@ class LoudspeakerSetup:
             raise ValueError
         return N_e
 
-    def setup_for_ambisonic(self, N_kernel=None, update_hull=True,
+    def ambisonics_setup(self, N_kernel=None, update_hull=True,
                             imaginary_ls=None):
         """Prepare loudspeaker hull for ambisonic rendering.
         Sets the kernel_hull with N_kernel and updates the ambisonic hull with
@@ -541,7 +541,7 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
         if hull.ambisonics_hull:
             hull = hull.ambisonics_hull
         else:
-            raise ValueError('Run hull.setup_for_ambisonic() first!')
+            raise ValueError('Run hull.ambisonics_setup() first!')
 
     if valid_simplices is None:
         valid_simplices = hull.valid_simplices
@@ -679,11 +679,11 @@ def allrap(src, hull, N_sph=None, jobs_count=1):
     if hull.ambisonics_hull:
         ambisonics_hull = hull.ambisonics_hull
     else:
-        raise ValueError('Run hull.setup_for_ambisonic() first!')
+        raise ValueError('Run hull.ambisonics_setup() first!')
     if hull.kernel_hull:
         kernel_hull = hull.kernel_hull
     else:
-        raise ValueError('Run hull.setup_for_ambisonic() first!')
+        raise ValueError('Run hull.ambisonics_setup() first!')
     if N_sph is None:
         N_sph = hull.characteristic_order
 
@@ -739,11 +739,11 @@ def allrap2(src, hull, N_sph=None, jobs_count=1):
     if hull.ambisonics_hull:
         ambisonics_hull = hull.ambisonics_hull
     else:
-        raise ValueError('Run hull.setup_for_ambisonic() first!')
+        raise ValueError('Run hull.ambisonics_setup() first!')
     if hull.kernel_hull:
         kernel_hull = hull.kernel_hull
     else:
-        raise ValueError('Run hull.setup_for_ambisonic() first!')
+        raise ValueError('Run hull.ambisonics_setup() first!')
     if N_sph is None:
         N_sph = hull.characteristic_order
 
@@ -804,11 +804,11 @@ def allrad(F_nm, hull, N_sph=None, jobs_count=1):
     if hull.ambisonics_hull:
         ambisonics_hull = hull.ambisonics_hull
     else:
-        raise ValueError('Run hull.setup_for_ambisonic() first!')
+        raise ValueError('Run hull.ambisonics_setup() first!')
     if hull.kernel_hull:
         kernel_hull = hull.kernel_hull
     else:
-        raise ValueError('Run hull.setup_for_ambisonic() first!')
+        raise ValueError('Run hull.ambisonics_setup() first!')
     if N_sph is None:
         N_sph = hull.characteristic_order
 
@@ -864,11 +864,11 @@ def allrad2(F_nm, hull, N_sph=None, jobs_count=1):
     if hull.ambisonics_hull:
         ambisonics_hull = hull.ambisonics_hull
     else:
-        raise ValueError('Run hull.setup_for_ambisonic() first!')
+        raise ValueError('Run hull.ambisonics_setup() first!')
     if hull.kernel_hull:
         kernel_hull = hull.kernel_hull
     else:
-        raise ValueError('Run hull.setup_for_ambisonic() first!')
+        raise ValueError('Run hull.ambisonics_setup() first!')
     if N_sph is None:
         N_sph = hull.characteristic_order
 
