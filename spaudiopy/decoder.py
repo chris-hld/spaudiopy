@@ -55,7 +55,7 @@ class LoudspeakerSetup:
         x : array_like
         y : array_like
         z : array_like
-        listener_position : (3,), optional
+        listener_position : (3,), cartesian, optional
             Offset, will be substracted from the loudspeaker positions.
 
         """
@@ -64,7 +64,7 @@ class LoudspeakerSetup:
         self.z = utils.asarray_1d(z)
         if listener_position is None:
             listener_position = [0, 0, 0]
-        self.listener_position = np.asarray(listener_position)
+        self.listener_position = utils.asarray_1d(listener_position)
 
         # Listener position as origin
         self.x -= listener_position[0]
@@ -136,35 +136,46 @@ class LoudspeakerSetup:
             raise ValueError
         return N_e
 
-    def setup_for_ambisonic(self, N_kernel=None, update_hull=True):
+    def setup_for_ambisonic(self, N_kernel=None, update_hull=True,
+                            imaginary_ls=None):
         """Prepare loudspeaker hull for ambisonic rendering.
         Sets the kernel_hull with N_kernel and updates the ambisonic hull with
         additional imaginary loudspeaker if desired.
+
+        Parameters
+        ----------
+        N_kernel : int
+        update_hull : bool, optional
+        imaginary_ls : int, optional
+            Index of imaginary loudspeaker, if 'None' calls
+            'find_imaginary_loudspeaker()'.
         """
         self.characteristic_order = self.get_characteristic_order()
         if N_kernel is None:
             print('Setting Ambisonics order =', self.characteristic_order)
             N_kernel = self.characteristic_order
 
-        ls = self.points
+        ambi_ls = self.points
         if update_hull:
-            imaginary_loudspeaker_coordinates = find_imaginary_loudspeaker(self)
-            # add imaginary speaker to hull
-            new_ls = np.vstack([ls, imaginary_loudspeaker_coordinates])
-            # This new triangulation is now the rendering setup
-            ambisonics_hull = LoudspeakerSetup(new_ls[:, 0],
-                                               new_ls[:, 1],
-                                               new_ls[:, 2])
-            # mark imaginary speaker (last one)
-            ambisonics_hull.imaginary_speaker = new_ls.shape[0] - 1
-            # virtual optimal loudspeaker arrangement
-        else:
-            # Setup is also the rendering setup
-            ambisonics_hull = LoudspeakerSetup(ls[:, 0],
-                                               ls[:, 1],
-                                               ls[:, 2])
-            ambisonics_hull.imaginary_speaker = None
+            if imaginary_ls is None:
+                imaginary_loudspeaker_coordinates = \
+                    find_imaginary_loudspeaker(self)
+                # add imaginary speaker to hull
+                ambi_ls = np.vstack([ambi_ls,
+                                     imaginary_loudspeaker_coordinates])
+                # mark imaginary speaker (last one)
+                imaginary_ls = ambi_ls.shape[0] - 1
 
+        else:
+            imaginary_ls = None
+
+        # This new triangulation is now the rendering setup
+        ambisonics_hull = LoudspeakerSetup(ambi_ls[:, 0],
+                                           ambi_ls[:, 1],
+                                           ambi_ls[:, 2])
+        # mark imaginary speaker index
+        ambisonics_hull.imaginary_ls = imaginary_ls
+        # discretization hull
         virtual_speakers = grids.load_t_design(2 * N_kernel + 1)
         kernel_hull = LoudspeakerSetup(virtual_speakers[:, 0],
                                        virtual_speakers[:, 1],
@@ -392,6 +403,8 @@ def apply_blacklist(hull, blacklist=None):
         for face in hull.valid_simplices:
             if not all(elem in face for elem in blacklist):
                 valid_simplices.append(face)
+            else:
+                print("Blacklist face: " + str(face))
     return np.array(valid_simplices)
 
 
@@ -551,7 +564,7 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
     gains = (hull.d[np.newaxis, :] ** hull.a) * gains
     if retain_outside:
         # remove imaginary loudspeaker
-        gains = np.delete(gains, hull.imaginary_speaker, axis=1)
+        gains = np.delete(gains, hull.imaginary_ls, axis=1)
     return gains
 
 
@@ -671,8 +684,8 @@ def allrap(src, hull, N_sph=None, jobs_count=1):
         g_l = sph.bandlimited_dirac(N_sph, d, a_n)
         gains[src_idx, :] = 4 * np.pi / J * G.T @ g_l
     # remove imaginary loudspeaker
-    if ambisonics_hull.imaginary_speaker is not None:
-        gains = np.delete(gains, ambisonics_hull.imaginary_speaker, axis=1)
+    if ambisonics_hull.imaginary_ls is not None:
+        gains = np.delete(gains, ambisonics_hull.imaginary_ls, axis=1)
     return gains
 
 
@@ -736,8 +749,8 @@ def allrap2(src, hull, N_sph=None, jobs_count=1):
         g_l = sph.bandlimited_dirac(N_sph, d, a_n)
         gains[src_idx, :] = np.sqrt(4 * np.pi / J * G.T**2 @ g_l**2)
     # remove imaginary loudspeaker
-    if ambisonics_hull.imaginary_speaker is not None:
-        gains = np.delete(gains, ambisonics_hull.imaginary_speaker, axis=1)
+    if ambisonics_hull.imaginary_ls is not None:
+        gains = np.delete(gains, ambisonics_hull.imaginary_ls, axis=1)
     return gains
 
 
@@ -795,8 +808,8 @@ def allrad(F_nm, hull, N_sph=None, jobs_count=1):
     # loudspeaker output signals
     ls_sig = D @ F_nm
     # remove imaginary loudspeakers
-    if ambisonics_hull.imaginary_speaker is not None:
-        ls_sig = np.delete(ls_sig, ambisonics_hull.imaginary_speaker, axis=0)
+    if ambisonics_hull.imaginary_ls is not None:
+        ls_sig = np.delete(ls_sig, ambisonics_hull.imaginary_ls, axis=0)
     return ls_sig
 
 
@@ -859,8 +872,8 @@ def allrad2(F_nm, hull, N_sph=None, jobs_count=1):
     ls_sig = np.sqrt(4 * np.pi / J * np.square(G.T) @ np.square(Y_k))
 
     # remove imaginary loudspeakers
-    if ambisonics_hull.imaginary_speaker is not None:
-        ls_sig = np.delete(ls_sig, ambisonics_hull.imaginary_speaker, axis=0)
+    if ambisonics_hull.imaginary_ls is not None:
+        ls_sig = np.delete(ls_sig, ambisonics_hull.imaginary_ls, axis=0)
     return ls_sig
 
 def nearest_loudspeaker(src, hull):
