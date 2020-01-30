@@ -318,8 +318,23 @@ def subplot_sph_coeffs(F_l, SH_type=None, azi_steps=5, el_steps=3, title=None):
     cbar.set_ticklabels([r'$-\pi$', r'$0$', r'$\pi$'])
 
 
-def hull(hull, simplices=None, mark_invalid=True, title=None, lim_m=1):
-    """Plot loudspeaker setup and valid simplices from its hull object."""
+def hull(hull, simplices=None, mark_invalid=True, title=None, lim_m=1,
+         color=None):
+    """Plot loudspeaker setup and valid simplices from its hull object.
+
+    Parameters
+    ----------
+    hull : decoder.LoudspeakerSetup
+    simplices : optional
+    mark_invalid : bool, optional
+        mark invalid simplices from hull object.
+    title : string, optional
+    lim_m : float, optional
+        Axis limits in m.
+    color : array_like, optional
+        Custom colors for simplices.
+
+    """
     if simplices is None:
         simplices = hull.simplices
 
@@ -333,17 +348,30 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, lim_m=1):
     else:
         valid_s = simplices
 
+    if color is not None:
+        color = utils.asarray_1d(color)
+        m = cm.ScalarMappable(cmap=cm.Spectral)
+        m.set_array(color)
+        colset = m.to_rgba(color)
+    else:
+        colset = None
+
+    # extract data
     x = hull.points[:, 0]
     y = hull.points[:, 1]
     z = hull.points[:, 2]
 
     fig = plt.figure()
     ax = fig.gca(projection='3d', aspect='equal')
+
     # valid
-    ax.plot_trisurf(x, y, z,
-                    triangles=valid_s,
-                    edgecolor='black', linewidth=0.3,
-                    cmap=plt.cm.Spectral, alpha=0.6, zorder=2)
+    polyc = ax.plot_trisurf(x, y, z,
+                            triangles=valid_s,
+                            cmap=cm.Spectral if color is None else None,
+                            edgecolor='black', linewidth=0.3, alpha=0.6,
+                            zorder=2)
+    # apply colors if given
+    polyc.set_facecolors(colset)
     # invalid
     if mark_invalid:
         ax.plot_trisurf(x, y, z,
@@ -363,6 +391,8 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, lim_m=1):
     ax.set_ylim(-lim_m, lim_m)
     ax.set_zlim(-lim_m, lim_m)
     ax.view_init(25, 230)
+    if color is not None:
+        fig.colorbar(m, ax=ax, fraction=0.024, pad=0.04)
     if title is not None:
         plt.title(title)
 
