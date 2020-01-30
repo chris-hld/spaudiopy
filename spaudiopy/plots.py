@@ -350,6 +350,7 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, lim_m=1,
 
     if color is not None:
         color = utils.asarray_1d(color)
+        assert(len(color) == simplices.shape[0])
         m = cm.ScalarMappable(cmap=cm.Spectral)
         m.set_array(color)
         colset = m.to_rgba(color)
