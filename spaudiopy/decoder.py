@@ -101,6 +101,9 @@ class LoudspeakerSetup:
         self.kernel_hull = []
         self.characteristic_order = None
 
+        # some checks
+        assert(len(self.d) == self.npoints)
+
     @classmethod
     def from_sph(cls, azi, colat, r=1, listener_orientation=None):
         """ Alternative constructor, using spherical coordinates in rad.
@@ -157,17 +160,17 @@ class LoudspeakerSetup:
             raise ValueError
         return N_e
 
-    def ambisonics_setup(self, N_kernel=None, update_hull=True,
+    def ambisonics_setup(self, N_kernel=10, update_hull=True,
                          imaginary_ls=None):
         """Prepare loudspeaker hull for ambisonic rendering.
-        Sets the kernel_hull with N_kernel and updates the ambisonic hull with
-        additional imaginary loudspeaker if desired.
+        Sets the kernel_hull as t-design for order N_kernel and updates the 
+        ambisonic hull with additional imaginary loudspeaker if desired.
 
         Parameters
         ----------
         N_kernel : int
         update_hull : bool, optional
-        imaginary_ls : (L, 3,), optional
+        imaginary_ls : (L, 3), cartesian, optional
             Imaginary loudspeaker positions, if set to 'None' calls
             'find_imaginary_loudspeaker()' for 'update_hull'.
         """
@@ -195,6 +198,8 @@ class LoudspeakerSetup:
                 imaginary_ls_idx = np.arange(ambi_ls.shape[0] -
                                              imaginary_ls.shape[0],
                                              ambi_ls.shape[0])
+        else:
+            imaginary_ls_idx = None
 
         # This new triangulation is now the rendering setup
         ambisonics_hull = LoudspeakerSetup(ambi_ls[:, 0],
@@ -280,9 +285,9 @@ class LoudspeakerSetup:
             'Provide gain per speaker!'
         return (sig_in[:, np.newaxis] * ls_gains).T
 
-    def show(self):
+    def show(self, title='Loudspeaker Setup'):
         """Plot hull object."""
-        plots.hull(self, title='Loudspeaker Setup')
+        plots.hull(self, title=title)
 
 
 def get_hull(x, y, z):
@@ -469,7 +474,7 @@ def find_imaginary_loudspeaker(hull):
     if not (counts >= 2).all():
         raise NotImplementedError("More than one rim found.")
     if (counts == 3).all():
-        raise RuntimeError("No rim detected.")
+        raise RuntimeError("No rim detected. Consider not updating the hull.")
 
     # Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
     # Journal of Audio Engineering Society, sec. 1.1
@@ -551,7 +556,7 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
     assert(src.shape[1] == 3)
     src_count = src.shape[0]
 
-    ls_count = valid_simplices.max() + 1  # includes zero
+    ls_count = hull.npoints
     # Base
     inverted_ls_triplets = _invert_triplets(valid_simplices, hull.points)
 
@@ -691,7 +696,7 @@ def allrap(src, hull, N_sph=None, jobs_count=1):
     src = np.atleast_2d(src)
     assert(src.shape[1] == 3)
     src_count = src.shape[0]
-    ls_count = ambisonics_hull.valid_simplices.max() + 1
+    ls_count = ambisonics_hull.npoints
 
     # normalize direction
     src = src / np.linalg.norm(src, axis=1)[:, np.newaxis]
@@ -752,7 +757,7 @@ def allrap2(src, hull, N_sph=None, jobs_count=1):
     assert(src.shape[1] == 3)
     src_count = src.shape[0]
     # includes imaginary loudspeakers
-    ls_count = ambisonics_hull.valid_simplices.max() + 1
+    ls_count = ambisonics_hull.npoints
 
     # normalize direction
     src = src / np.linalg.norm(src, axis=1)[:, np.newaxis]
@@ -792,7 +797,7 @@ def allrad(F_nm, hull, N_sph=None, jobs_count=1):
         Matrix of spherical harmonics coefficients of spherical function(S).
     hull : LoudspeakerSetup
     N_sph : int
-        Decoding order, defaults to hull.characteristic_order.
+        Decoding order.
     jobs_count : int or None, optional
         Number of parallel jobs, 'None' employs 'cpu_count'.
 
@@ -812,6 +817,11 @@ def allrad(F_nm, hull, N_sph=None, jobs_count=1):
         raise ValueError('Run hull.ambisonics_setup() first!')
     if N_sph is None:
         N_sph = hull.characteristic_order
+
+    N_sph_in = int(np.sqrt(F_nm.shape[0]) - 1)
+    assert(N_sph == N_sph_in)  # for now
+    if N_sph_in > 10:
+        warn("Undersampling the sphere. Needs higher N_Kernel.")
 
     # virtual t-design loudspeakers
     J = len(kernel_hull.points)

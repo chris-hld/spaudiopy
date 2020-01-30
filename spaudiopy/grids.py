@@ -36,7 +36,7 @@ def load_t_design(degree):
     Parameters
     ----------
     degree : int
-        T-design degree between 1 and 21.
+        T-design degree between 1 and 21. (degree = 2 * SH_order + 1)
 
     Returns
     -------
@@ -48,7 +48,7 @@ def load_t_design(degree):
     .. plot::
         :context: close-figs
 
-        vecs = spa.grids.load_t_design(degree=5)
+        vecs = spa.grids.load_t_design(degree=2*5+1)
         hull = spa.decoder.get_hull(*vecs.T)
         spa.plots.hull(hull, mark_invalid=False)
 
