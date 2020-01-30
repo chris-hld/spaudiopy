@@ -15,6 +15,7 @@
 import os
 from warnings import warn
 import multiprocessing
+import json
 
 import numpy as np
 import pandas as pd
@@ -417,3 +418,45 @@ def write_ssr_brirs_sdm(filename, sdm_p, sdm_phi, sdm_theta, fs, bitdepth=32,
         wavfile.write(filename, fs, (32767 * ssr_brirs).astype(np.int16).T)
     else:
         raise ValueError('Only 16 or 32 bit.')
+
+
+def load_layout(filename):
+    """Load loudspeaker layout from json configuration file."""
+
+    with open(filename, 'r') as f:
+        in_data = json.load(f)
+
+    layout = in_data['LoudspeakerLayout']
+    ls_data = layout['Loudspeakers']
+
+    azi = np.array([ls['Azimuth'] for ls in ls_data])
+    ele = np.array([ls['Elevation'] for ls in ls_data])
+    r = np.array([ls['Radius'] for ls in ls_data])
+    try:
+        gain = np.array([ls['Gain'] for ls in ls_data])
+        if np.any(gain != 1.):
+            warn('Additional gain handling not implemented.')
+    except KeyError as e:
+        warn('KeyError : {}, will return empty!'.format(e))
+        gain = []
+    try:
+        isImaginary = np.array([ls['IsImaginary'] for ls in ls_data])
+    except KeyError as e:
+        warn('KeyError : {}, will return empty!'.format(e))
+        isImaginary = []
+
+    # first extract real loudspeakers
+    ls_x, ls_y, ls_z = utils.sph2cart(utils.deg2rad(azi[~isImaginary]),
+                                      utils.deg2rad(90-ele[~isImaginary]),
+                                      r[~isImaginary])
+
+    ls_layout = decoder.LoudspeakerSetup(ls_x, ls_y, ls_z)
+    # then add imaginary loudspeakers to ambisonics setup
+    imag_x, imag_y, imag_z = utils.sph2cart(utils.deg2rad(azi[isImaginary]),
+                                            utils.deg2rad(90-ele[isImaginary]),
+                                            r[isImaginary])
+    imag_pos = np.c_[imag_x, imag_y, imag_z]
+    N_kernel = 10  # should be as high as possible
+    ls_layout.ambisonics_setup(N_kernel=N_kernel, update_hull=True,
+                               imaginary_ls=imag_pos)
+    return ls_layout
