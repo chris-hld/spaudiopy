@@ -18,6 +18,7 @@ setuptools.setup(name='spaudiopy',
                  license='MIT',
                  packages=setuptools.find_packages(),
                  package_data={'spaudiopy': ['t_designs_1_21.mat',
+                                             'n_designs_1_124.mat',
                                              'fliegeMaierNodes_1_30.mat'
                                              ]},
                  install_requires=[
