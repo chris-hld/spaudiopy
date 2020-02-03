@@ -30,9 +30,10 @@ setuptools.setup(name='spaudiopy',
                  package_data={'spaudiopy': ['t_designs_1_21.mat',
                                              'n_designs_1_124.mat',
                                              'fliegeMaierNodes_1_30.mat'
-                                             ],
-                               'data/ls_layouts': ['*.json']
+                                             ]
                                },
+                 data_files=[('config', ['data/ls_layouts/MCC_subsetC.json',
+                                         'data/ls_layouts/Graz.json'])],
                  install_requires=[
                                    'numpy',
                                    'scipy',

@@ -17,7 +17,7 @@
 
 """
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 from . import decoder
 from . import grids
@@ -28,4 +28,3 @@ from . import sdm
 from . import sph
 from . import sig
 from . import utils
-
