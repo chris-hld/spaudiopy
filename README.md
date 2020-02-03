@@ -3,7 +3,7 @@
 Spatial Audio Python Package.
 
 The focus (so far) is on spatial audio encoders and decoders.
-The package includes e.g. spherical harmonics processing and (binaural renderings of) loudspeaker decoders, such as VBAP, ALLRAD and ALLRAD2.
+The package includes e.g. spherical harmonics processing and (binaural renderings of) loudspeaker decoders, such as VBAP and AllRAD.
 
 ## Documentation
 
