@@ -15,6 +15,8 @@
 import os
 from warnings import warn
 import multiprocessing
+import json
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -23,7 +25,7 @@ import h5py
 
 import soundfile as sf
 
-from . import utils, sig, decoder, sdm, grids, sph, process
+from . import utils, sig, decoder, sdm, grids, sph, process, __version__
 
 
 def load_audio(filenames, fs=None):
@@ -368,7 +370,6 @@ def write_ssr_brirs_loudspeaker(filename, ls_irs, hull, fs, bitdepth=32,
 
 def write_ssr_brirs_sdm(filename, sdm_p, sdm_phi, sdm_theta, fs, bitdepth=32,
                         hrirs=None):
-
     """Write binaural room impulse responses (BRIRs) and save as wav file.
 
     The azimuth resolution is one degree. The channels are interleaved and
@@ -417,3 +418,77 @@ def write_ssr_brirs_sdm(filename, sdm_p, sdm_phi, sdm_theta, fs, bitdepth=32,
         wavfile.write(filename, fs, (32767 * ssr_brirs).astype(np.int16).T)
     else:
         raise ValueError('Only 16 or 32 bit.')
+
+
+def load_layout(filename):
+    """Load loudspeaker layout from json configuration file."""
+
+    with open(filename, 'r') as f:
+        in_data = json.load(f)
+
+    layout = in_data['LoudspeakerLayout']
+    ls_data = layout['Loudspeakers']
+
+    azi = np.array([ls['Azimuth'] for ls in ls_data])
+    ele = np.array([ls['Elevation'] for ls in ls_data])
+    r = np.array([ls['Radius'] for ls in ls_data])
+    try:
+        gain = np.array([ls['Gain'] for ls in ls_data])
+        if np.any(gain != 1.):
+            warn('Additional gain handling not implemented.')
+    except KeyError as e:
+        warn('KeyError : {}, will return empty!'.format(e))
+        gain = []
+    try:
+        isImaginary = np.array([ls['IsImaginary'] for ls in ls_data])
+    except KeyError as e:
+        warn('KeyError : {}, will return empty!'.format(e))
+        isImaginary = []
+
+    # first extract real loudspeakers
+    ls_x, ls_y, ls_z = utils.sph2cart(utils.deg2rad(azi[~isImaginary]),
+                                      utils.deg2rad(90-ele[~isImaginary]),
+                                      r[~isImaginary])
+
+    ls_layout = decoder.LoudspeakerSetup(ls_x, ls_y, ls_z)
+    # then add imaginary loudspeakers to ambisonics setup
+    imag_x, imag_y, imag_z = utils.sph2cart(utils.deg2rad(azi[isImaginary]),
+                                            utils.deg2rad(90-ele[isImaginary]),
+                                            r[isImaginary])
+    imag_pos = np.c_[imag_x, imag_y, imag_z]
+    N_kernel = 10  # should be as high as possible
+    ls_layout.ambisonics_setup(N_kernel=N_kernel, update_hull=True,
+                               imaginary_ls=imag_pos)
+    return ls_layout
+
+
+def save_layout(filename, ls_layout, name='unknown', description='unknown'):
+    """Save loudspeaker layout to json configuration file."""
+    out_data = {}
+    out_data['Name'] = name
+    out_data['Description'] = 'This configuration file was created with ' +\
+                              'spaudiopy (v' + str(__version__) + '), ' + \
+                              str(datetime.now())
+
+    out_data['LoudspeakerLayout'] = {}
+    out_data['LoudspeakerLayout']['Name'] = name
+    out_data['LoudspeakerLayout']['Description'] = description
+    out_data['LoudspeakerLayout']['Loudspeakers'] = []
+
+    for ls_idx in range(ls_layout.ambisonics_hull.npoints):
+        ls_dirs = utils.cart2sph(ls_layout.ambisonics_hull.x[ls_idx],
+                                 ls_layout.ambisonics_hull.y[ls_idx],
+                                 ls_layout.ambisonics_hull.z[ls_idx])
+        ls_dict = {}
+        ls_dict['Azimuth'] = float(utils.rad2deg(ls_dirs[0]))
+        ls_dict['Elevation'] = float(utils.rad2deg(ls_dirs[1]))
+        ls_dict['Radius'] = float(ls_dirs[2])
+        ls_dict['IsImaginary'] = ls_idx in np.asarray(
+                                    ls_layout.ambisonics_hull.imaginary_ls_idx)
+        ls_dict['Channel'] = ls_idx + 1
+        ls_dict['Gain'] = 0. if ls_idx in np.asarray(
+                            ls_layout.ambisonics_hull.imaginary_ls_idx) else 1.
+        out_data['LoudspeakerLayout']['Loudspeakers'].append(ls_dict)
+
+    with open(filename, 'w') as outfile:
+        json.dump(out_data, outfile, indent=4)

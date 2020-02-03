@@ -1,14 +1,24 @@
 import setuptools
+from os import path
+
+__version__ = "unknown"
+
+
+# "import" __version__
+for line in open("spaudiopy/__init__.py"):
+    if line.startswith("__version__"):
+        exec(line)
+        break
 
 # read the contents of your README file
-from os import path
 this_directory = path.abspath(path.dirname(__file__))
 with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 
+
 setuptools.setup(name='spaudiopy',
-                 version='0.1.1',
+                 version=__version__,
                  description='Spatial Audio Python Package',
                  long_description=long_description,
                  long_description_content_type='text/markdown',
@@ -36,15 +46,15 @@ setuptools.setup(name='spaudiopy',
                  platforms='any',
                  python_requires='>=3.6',
                  classifiers=[
-                 "Development Status :: 3 - Alpha",
-                 "License :: OSI Approved :: MIT License",
-                 "Operating System :: OS Independent",
-                 "Programming Language :: Python",
-                 "Programming Language :: Python :: 3",
-                 "Programming Language :: Python :: 3.6",
-                 "Programming Language :: Python :: 3.7",
-                 "Programming Language :: Python :: 3 :: Only",
-                 "Topic :: Scientific/Engineering",
+                     "Development Status :: 3 - Alpha",
+                     "License :: OSI Approved :: MIT License",
+                     "Operating System :: OS Independent",
+                     "Programming Language :: Python",
+                     "Programming Language :: Python :: 3",
+                     "Programming Language :: Python :: 3.6",
+                     "Programming Language :: Python :: 3.7",
+                     "Programming Language :: Python :: 3 :: Only",
+                     "Topic :: Scientific/Engineering",
                  ],
                  zip_safe=True,
                  )

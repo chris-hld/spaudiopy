@@ -137,8 +137,6 @@ def transfer_function(freq, H, title=None, xlim=(10, 25000)):
     lines1, labels1 = ax1.get_legend_handles_labels()
     lines2, labels2 = ax2.get_legend_handles_labels()
     ax2.legend(lines1 + lines2, labels1 + labels2, loc=0)
-
-    #fig.tight_layout()
     if title is not None:
         plt.title(title)
 
@@ -318,8 +316,25 @@ def subplot_sph_coeffs(F_l, SH_type=None, azi_steps=5, el_steps=3, title=None):
     cbar.set_ticklabels([r'$-\pi$', r'$0$', r'$\pi$'])
 
 
-def hull(hull, simplices=None, mark_invalid=True, title=None, lim_m=1):
-    """Plot loudspeaker setup and valid simplices from its hull object."""
+def hull(hull, simplices=None, mark_invalid=True, title=None, lim_m=1,
+         color=None, clim=None):
+    """Plot loudspeaker setup and valid simplices from its hull object.
+
+    Parameters
+    ----------
+    hull : decoder.LoudspeakerSetup
+    simplices : optional
+    mark_invalid : bool, optional
+        mark invalid simplices from hull object.
+    title : string, optional
+    lim_m : float, optional
+        Axis limits in m.
+    color : array_like, optional
+        Custom colors for simplices.
+    clim : (2,), optional
+        `vmin` and `vmax` for colors.
+
+    """
     if simplices is None:
         simplices = hull.simplices
 
@@ -333,17 +348,35 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, lim_m=1):
     else:
         valid_s = simplices
 
+    if color is not None:
+        if clim is None:
+            clim = (None, None)
+        color = utils.asarray_1d(color)
+        assert(len(color) == simplices.shape[0])
+        m = cm.ScalarMappable(cmap=cm.Spectral,
+                              norm=colors.Normalize(vmin=clim[0],
+                                                    vmax=clim[1]))
+        m.set_array(color)
+        colset = m.to_rgba(color)
+    else:
+        colset = None
+
+    # extract data
     x = hull.points[:, 0]
     y = hull.points[:, 1]
     z = hull.points[:, 2]
 
     fig = plt.figure()
     ax = fig.gca(projection='3d', aspect='equal')
+
     # valid
-    ax.plot_trisurf(x, y, z,
-                    triangles=valid_s,
-                    edgecolor='black', linewidth=0.3,
-                    cmap=plt.cm.Spectral, alpha=0.6, zorder=2)
+    polyc = ax.plot_trisurf(x, y, z,
+                            triangles=valid_s,
+                            cmap=cm.Spectral if color is None else None,
+                            edgecolor='black', linewidth=0.3, alpha=0.6,
+                            zorder=2)
+    # apply colors if given
+    polyc.set_facecolors(colset)
     # invalid
     if mark_invalid:
         ax.plot_trisurf(x, y, z,
@@ -363,6 +396,8 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, lim_m=1):
     ax.set_ylim(-lim_m, lim_m)
     ax.set_zlim(-lim_m, lim_m)
     ax.view_init(25, 230)
+    if color is not None:
+        fig.colorbar(m, ax=ax, fraction=0.024, pad=0.04)
     if title is not None:
         plt.title(title)
 
@@ -437,37 +472,38 @@ def polar(theta, a, title=None, rlim=(-40, 0), ax=None):
         plt.title(title)
 
 
-def decoder_performance(hull, renderer_type, azi_steps=5, el_steps=3,
-                        N_sph=None, **kwargs):
+def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
+                        show_ls=True, **kwargs):
     """Currently rE_mag, E and spread measures.
-    For renderer_type='VBAP', 'ALLRAP' or 'NLS.
+    For renderer_type='VBAP', 'VBIP', 'ALLRAP' or 'NLS'.
 
     Zotter, F., & Frank, M. (2019). Ambisonics.
     Springer Topics in Signal Processing.
     """
     azi_steps = np.deg2rad(azi_steps)
-    el_steps = np.deg2rad(el_steps)
-    phi_plot, theta_plot = np.meshgrid(np.arange(0., 2 * np.pi + azi_steps,
-                                                 azi_steps),
-                                       np.arange(0., np.pi + el_steps,
-                                                 el_steps))
+    ele_steps = np.deg2rad(ele_steps)
+    phi_vec = np.arange(-np.pi, np.pi + 2*azi_steps, azi_steps)
+    theta_vec = np.arange(0., np.pi + 2*ele_steps, ele_steps)
+    phi_plot, theta_plot = np.meshgrid(phi_vec, theta_vec)
     _grid_x, _grid_y, grid_z = utils.sph2cart(phi_plot.ravel(),
                                               theta_plot.ravel())
 
     # Switch renderer
     if renderer_type.lower() == 'vbap':
         G = decoder.vbap(np.c_[_grid_x, _grid_y, grid_z], hull, **kwargs)
-    if renderer_type.lower() == 'vbip':
+    elif renderer_type.lower() == 'vbip':
         G = decoder.vbip(np.c_[_grid_x, _grid_y, grid_z], hull, **kwargs)
-    if renderer_type.lower() == 'allrap':
-        G = decoder.allrap(np.c_[_grid_x, _grid_y, grid_z], hull, N_sph=N_sph,
+    elif renderer_type.lower() == 'allrap':
+        G = decoder.allrap(np.c_[_grid_x, _grid_y, grid_z], hull,
                            **kwargs)
-    if renderer_type.lower() == 'allrap2':
-        G = decoder.allrap2(np.c_[_grid_x, _grid_y, grid_z], hull, N_sph=N_sph,
+    elif renderer_type.lower() == 'allrap2':
+        G = decoder.allrap2(np.c_[_grid_x, _grid_y, grid_z], hull,
                             **kwargs)
-    if renderer_type.lower() == 'nls':
+    elif renderer_type.lower() == 'nls':
         G = decoder.nearest_loudspeaker(np.c_[_grid_x, _grid_y, grid_z], hull,
                                         **kwargs)
+    else:
+        raise ValueError('Unknown renderer_type')
 
     # Measures
     E = np.sum(G**2, axis=1)  # * (4 * np.pi / G.shape[1])  # (eq. 15)
@@ -483,23 +519,36 @@ def decoder_performance(hull, renderer_type, azi_steps=5, el_steps=3,
 
     # Show them
     fig, axes = plt.subplots(1, 3, sharex='all', sharey='all',
-                             figsize=plt.figaspect(1/3))
+                             figsize=(10, 2.2))  # works for nb
     for ip, _data in enumerate([E, spread, ang_error]):
         _data = _data.reshape(phi_plot.shape)
-        # shift 0 azi to middle
-        _data = np.roll(_data, - int(_data.shape[1]/2), axis=1)
         ax = axes[ip]
-        p = ax.imshow(_data, vmin=0, vmax=90 if ip == 1 or
-                                                ip == 2 else
-                      np.max([1.0, np.max(_data)]))
-        ax.set_xticks(np.linspace(0, _data.shape[1] - 1, 5))
+        ax.set_aspect('equal')
+        # draw mesh, value corresponds to center of mesh
+        p = ax.pcolormesh(phi_plot-azi_steps/2, theta_plot-ele_steps/2,
+                          _data, vmin=0, vmax=90 if ip == 1 or ip == 2
+                          else np.max([1.0, np.max(_data)]))
+        # draw loudspeakers
+        if show_ls:
+            for s, co in enumerate(ls_points):
+                # map to pixels grid
+                _azi_ls, _colat_ls, _ = utils.cart2sph(*co)
+                ax.plot(_azi_ls, _colat_ls, marker='2', color='grey')
+                # ax.text(_x_plot, _y_plot, s)  # LS Number
+        # Labeling etc
+        ax.set_xlim([-np.pi - azi_steps/2, np.pi + azi_steps/2])
+        ax.set_ylim([0 - ele_steps/2, np.pi + ele_steps/2])
+        ax.invert_yaxis()
+        ax.set_xticks(np.linspace(-np.pi, np.pi, 5))
         ax.set_xticklabels([r'$-\pi$', r'$-\pi/2$', r'$0$',
                             r'$\pi/2$', r'$\pi$'])
-        ax.set_yticks(np.linspace(0, _data.shape[0] - 1, 3))
+        ax.set_yticks(np.linspace(0, np.pi, 3))
         ax.set_yticklabels([r'$0$', r'$\pi/2$', r'$\pi$'])
         cbar = fig.colorbar(p, ax=ax, fraction=0.024, pad=0.04)
         cbar.outline.set_linewidth(0.5)
         if ip == 0:
+            ax.set_xlabel('Azimuth')
+            ax.set_ylabel('Colatitude')
             ax.set_title(r'$E$')
             cbar.set_ticks([0, 0.5, np.max([1.0, np.max(_data)])])
         elif ip == 1:
@@ -514,7 +563,7 @@ def decoder_performance(hull, renderer_type, azi_steps=5, el_steps=3,
                                  r'$90^{\circ}$'])
 
     plt.suptitle(renderer_type)
-    plt.subplots_adjust(wspace = 0.25)
+    plt.subplots_adjust(wspace=0.25)
 
 
 def doa(azi, colat, fs, p=None, size=300):

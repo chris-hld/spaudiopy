@@ -55,7 +55,7 @@ class LoudspeakerSetup:
         x : array_like
         y : array_like
         z : array_like
-        listener_position : (3,), optional
+        listener_position : (3,), cartesian, optional
             Offset, will be substracted from the loudspeaker positions.
 
         """
@@ -64,13 +64,13 @@ class LoudspeakerSetup:
         self.z = utils.asarray_1d(z)
         if listener_position is None:
             listener_position = [0, 0, 0]
-        self.listener_position = np.asarray(listener_position)
+        self.listener_position = utils.asarray_1d(listener_position)
 
         # Listener position as origin
         self.x -= listener_position[0]
         self.y -= listener_position[1]
         self.z -= listener_position[2]
-        # TODO: Better handling of this:
+        # TODO: Better handling of this, e.g. not effective when updating hull:
         self.listener_position -= self.listener_position
         _, _, self.d = utils.cart2sph(self.x, self.y, self.z)
 
@@ -96,10 +96,33 @@ class LoudspeakerSetup:
                                                         self.listener_position)
         self.valid_simplices = self._encloses_listener
 
-        # see 'setup_for_ambisonic()'
+        # see 'ambisonics_setup()'
         self.ambisonics_hull = []
         self.kernel_hull = []
         self.characteristic_order = None
+
+        # some checks
+        assert(len(self.d) == self.npoints)
+
+    @classmethod
+    def from_sph(cls, azi, colat, r=1, listener_orientation=None):
+        """ Alternative constructor, using spherical coordinates in rad.
+
+        Parameters
+        ----------
+        azi : array_like, spherical
+        colat : array_like, spherical
+        r : array_like, spherical
+        listener_orientation : (azi, colat, r), spherical, optional
+            Offset, will be substracted from the loudspeaker positions.
+
+        """
+        x, y, z = utils.sph2cart(azi, colat, r)
+        if listener_orientation is None:
+            listener_orientation = [0, 0, 0]
+        listener_orientation = utils.asarray_1d(listener_orientation)
+        listener_position = utils.sph2cart(*listener_orientation)
+        return cls(x, y, z, listener_position=listener_position)
 
     def is_simplex_valid(self, simplex):
         """Tests if simplex is in valid simplices (independent of orientation).
@@ -108,9 +131,10 @@ class LoudspeakerSetup:
         in_s = np.isin(self.valid_simplices, simplex).sum(axis=-1) == 3
         return np.any(in_s)
 
-    def pop_triangles(self, normal_limit=None, aperture_limit=None,
+    def pop_triangles(self, normal_limit=85, aperture_limit=None,
                       opening_limit=None, blacklist=None):
         """Refine triangulation by removing them from valid simplices.
+        Bypass by passing 'None'.
 
         Parameters
         ----------
@@ -136,35 +160,54 @@ class LoudspeakerSetup:
             raise ValueError
         return N_e
 
-    def setup_for_ambisonic(self, N_kernel=None, update_hull=True):
+    def ambisonics_setup(self, N_kernel=10, update_hull=True,
+                         imaginary_ls=None):
         """Prepare loudspeaker hull for ambisonic rendering.
-        Sets the kernel_hull with N_kernel and updates the ambisonic hull with
-        additional imaginary loudspeaker if desired.
+        Sets the kernel_hull as t-design for order N_kernel and updates the 
+        ambisonic hull with additional imaginary loudspeaker if desired.
+
+        Parameters
+        ----------
+        N_kernel : int
+        update_hull : bool, optional
+        imaginary_ls : (L, 3), cartesian, optional
+            Imaginary loudspeaker positions, if set to 'None' calls
+            'find_imaginary_loudspeaker()' for 'update_hull'.
         """
         self.characteristic_order = self.get_characteristic_order()
         if N_kernel is None:
             print('Setting Ambisonics order =', self.characteristic_order)
             N_kernel = self.characteristic_order
+        if(not update_hull and imaginary_ls is not None):
+            warn('Not updating hull but imaginary_ls position given.')
 
-        ls = self.points
+        ambi_ls = self.points
         if update_hull:
-            imaginary_loudspeaker_coordinates = find_imaginary_loudspeaker(self)
-            # add imaginary speaker to hull
-            new_ls = np.vstack([ls, imaginary_loudspeaker_coordinates])
-            # This new triangulation is now the rendering setup
-            ambisonics_hull = LoudspeakerSetup(new_ls[:, 0],
-                                               new_ls[:, 1],
-                                               new_ls[:, 2])
-            # mark imaginary speaker (last one)
-            ambisonics_hull.imaginary_speaker = new_ls.shape[0] - 1
-            # virtual optimal loudspeaker arrangement
+            if imaginary_ls is None:
+                new_imaginary_ls = find_imaginary_loudspeaker(self)
+                # add imaginary speaker to hull
+                ambi_ls = np.vstack([ambi_ls, new_imaginary_ls])
+                # mark imaginary speaker (last one)
+                imaginary_ls_idx = ambi_ls.shape[0] - 1
+            else:
+                imaginary_ls = np.atleast_2d(imaginary_ls)
+                assert(imaginary_ls.shape[1] == 3)
+                # add imaginary loudspeaker(s) to hull
+                ambi_ls = np.vstack([ambi_ls, imaginary_ls])
+                # mark imaginary speaker (last one(s))
+                imaginary_ls_idx = np.arange(ambi_ls.shape[0] -
+                                             imaginary_ls.shape[0],
+                                             ambi_ls.shape[0])
         else:
-            # Setup is also the rendering setup
-            ambisonics_hull = LoudspeakerSetup(ls[:, 0],
-                                               ls[:, 1],
-                                               ls[:, 2])
-            ambisonics_hull.imaginary_speaker = None
+            imaginary_ls_idx = None
 
+        # This new triangulation is now the rendering setup
+        ambisonics_hull = LoudspeakerSetup(ambi_ls[:, 0],
+                                           ambi_ls[:, 1],
+                                           ambi_ls[:, 2])
+        # mark imaginary speaker index
+        ambisonics_hull.imaginary_ls_idx = imaginary_ls_idx
+        # discretization hull
         virtual_speakers = grids.load_t_design(2 * N_kernel + 1)
         kernel_hull = LoudspeakerSetup(virtual_speakers[:, 0],
                                        virtual_speakers[:, 1],
@@ -242,9 +285,9 @@ class LoudspeakerSetup:
             'Provide gain per speaker!'
         return (sig_in[:, np.newaxis] * ls_gains).T
 
-    def show(self):
+    def show(self, title='Loudspeaker Setup'):
         """Plot hull object."""
-        plots.hull(self, title='Loudspeaker Setup')
+        plots.hull(self, title=title)
 
 
 def get_hull(x, y, z):
@@ -392,6 +435,8 @@ def apply_blacklist(hull, blacklist=None):
         for face in hull.valid_simplices:
             if not all(elem in face for elem in blacklist):
                 valid_simplices.append(face)
+            else:
+                print("Blacklist face: " + str(face))
     return np.array(valid_simplices)
 
 
@@ -429,7 +474,7 @@ def find_imaginary_loudspeaker(hull):
     if not (counts >= 2).all():
         raise NotImplementedError("More than one rim found.")
     if (counts == 3).all():
-        raise RuntimeError("No rim detected.")
+        raise RuntimeError("No rim detected. Consider not updating the hull.")
 
     # Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
     # Journal of Audio Engineering Society, sec. 1.1
@@ -502,7 +547,7 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
         if hull.ambisonics_hull:
             hull = hull.ambisonics_hull
         else:
-            raise ValueError('Run hull.setup_for_ambisonic() first!')
+            raise ValueError('Run hull.ambisonics_setup() first!')
 
     if valid_simplices is None:
         valid_simplices = hull.valid_simplices
@@ -511,7 +556,7 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
     assert(src.shape[1] == 3)
     src_count = src.shape[0]
 
-    ls_count = valid_simplices.max() + 1  # includes zero
+    ls_count = hull.npoints
     # Base
     inverted_ls_triplets = _invert_triplets(valid_simplices, hull.points)
 
@@ -551,7 +596,7 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
     gains = (hull.d[np.newaxis, :] ** hull.a) * gains
     if retain_outside:
         # remove imaginary loudspeaker
-        gains = np.delete(gains, hull.imaginary_speaker, axis=1)
+        gains = np.delete(gains, hull.imaginary_ls_idx, axis=1)
     return gains
 
 
@@ -640,18 +685,18 @@ def allrap(src, hull, N_sph=None, jobs_count=1):
     if hull.ambisonics_hull:
         ambisonics_hull = hull.ambisonics_hull
     else:
-        raise ValueError('Run hull.setup_for_ambisonic() first!')
+        raise ValueError('Run hull.ambisonics_setup() first!')
     if hull.kernel_hull:
         kernel_hull = hull.kernel_hull
     else:
-        raise ValueError('Run hull.setup_for_ambisonic() first!')
+        raise ValueError('Run hull.ambisonics_setup() first!')
     if N_sph is None:
         N_sph = hull.characteristic_order
 
     src = np.atleast_2d(src)
     assert(src.shape[1] == 3)
     src_count = src.shape[0]
-    ls_count = ambisonics_hull.valid_simplices.max() + 1
+    ls_count = ambisonics_hull.npoints
 
     # normalize direction
     src = src / np.linalg.norm(src, axis=1)[:, np.newaxis]
@@ -671,8 +716,8 @@ def allrap(src, hull, N_sph=None, jobs_count=1):
         g_l = sph.bandlimited_dirac(N_sph, d, a_n)
         gains[src_idx, :] = 4 * np.pi / J * G.T @ g_l
     # remove imaginary loudspeaker
-    if ambisonics_hull.imaginary_speaker is not None:
-        gains = np.delete(gains, ambisonics_hull.imaginary_speaker, axis=1)
+    if ambisonics_hull.imaginary_ls_idx is not None:
+        gains = np.delete(gains, ambisonics_hull.imaginary_ls_idx, axis=1)
     return gains
 
 
@@ -700,11 +745,11 @@ def allrap2(src, hull, N_sph=None, jobs_count=1):
     if hull.ambisonics_hull:
         ambisonics_hull = hull.ambisonics_hull
     else:
-        raise ValueError('Run hull.setup_for_ambisonic() first!')
+        raise ValueError('Run hull.ambisonics_setup() first!')
     if hull.kernel_hull:
         kernel_hull = hull.kernel_hull
     else:
-        raise ValueError('Run hull.setup_for_ambisonic() first!')
+        raise ValueError('Run hull.ambisonics_setup() first!')
     if N_sph is None:
         N_sph = hull.characteristic_order
 
@@ -712,7 +757,7 @@ def allrap2(src, hull, N_sph=None, jobs_count=1):
     assert(src.shape[1] == 3)
     src_count = src.shape[0]
     # includes imaginary loudspeakers
-    ls_count = ambisonics_hull.valid_simplices.max() + 1
+    ls_count = ambisonics_hull.npoints
 
     # normalize direction
     src = src / np.linalg.norm(src, axis=1)[:, np.newaxis]
@@ -736,8 +781,8 @@ def allrap2(src, hull, N_sph=None, jobs_count=1):
         g_l = sph.bandlimited_dirac(N_sph, d, a_n)
         gains[src_idx, :] = np.sqrt(4 * np.pi / J * G.T**2 @ g_l**2)
     # remove imaginary loudspeaker
-    if ambisonics_hull.imaginary_speaker is not None:
-        gains = np.delete(gains, ambisonics_hull.imaginary_speaker, axis=1)
+    if ambisonics_hull.imaginary_ls_idx is not None:
+        gains = np.delete(gains, ambisonics_hull.imaginary_ls_idx, axis=1)
     return gains
 
 
@@ -752,7 +797,7 @@ def allrad(F_nm, hull, N_sph=None, jobs_count=1):
         Matrix of spherical harmonics coefficients of spherical function(S).
     hull : LoudspeakerSetup
     N_sph : int
-        Decoding order, defaults to hull.characteristic_order.
+        Decoding order.
     jobs_count : int or None, optional
         Number of parallel jobs, 'None' employs 'cpu_count'.
 
@@ -765,13 +810,18 @@ def allrad(F_nm, hull, N_sph=None, jobs_count=1):
     if hull.ambisonics_hull:
         ambisonics_hull = hull.ambisonics_hull
     else:
-        raise ValueError('Run hull.setup_for_ambisonic() first!')
+        raise ValueError('Run hull.ambisonics_setup() first!')
     if hull.kernel_hull:
         kernel_hull = hull.kernel_hull
     else:
-        raise ValueError('Run hull.setup_for_ambisonic() first!')
+        raise ValueError('Run hull.ambisonics_setup() first!')
     if N_sph is None:
         N_sph = hull.characteristic_order
+
+    N_sph_in = int(np.sqrt(F_nm.shape[0]) - 1)
+    assert(N_sph == N_sph_in)  # for now
+    if N_sph_in > 10:
+        warn("Undersampling the sphere. Needs higher N_Kernel.")
 
     # virtual t-design loudspeakers
     J = len(kernel_hull.points)
@@ -795,8 +845,8 @@ def allrad(F_nm, hull, N_sph=None, jobs_count=1):
     # loudspeaker output signals
     ls_sig = D @ F_nm
     # remove imaginary loudspeakers
-    if ambisonics_hull.imaginary_speaker is not None:
-        ls_sig = np.delete(ls_sig, ambisonics_hull.imaginary_speaker, axis=0)
+    if ambisonics_hull.imaginary_ls_idx is not None:
+        ls_sig = np.delete(ls_sig, ambisonics_hull.imaginary_ls_idx, axis=0)
     return ls_sig
 
 
@@ -825,11 +875,11 @@ def allrad2(F_nm, hull, N_sph=None, jobs_count=1):
     if hull.ambisonics_hull:
         ambisonics_hull = hull.ambisonics_hull
     else:
-        raise ValueError('Run hull.setup_for_ambisonic() first!')
+        raise ValueError('Run hull.ambisonics_setup() first!')
     if hull.kernel_hull:
         kernel_hull = hull.kernel_hull
     else:
-        raise ValueError('Run hull.setup_for_ambisonic() first!')
+        raise ValueError('Run hull.ambisonics_setup() first!')
     if N_sph is None:
         N_sph = hull.characteristic_order
 
@@ -859,9 +909,10 @@ def allrad2(F_nm, hull, N_sph=None, jobs_count=1):
     ls_sig = np.sqrt(4 * np.pi / J * np.square(G.T) @ np.square(Y_k))
 
     # remove imaginary loudspeakers
-    if ambisonics_hull.imaginary_speaker is not None:
-        ls_sig = np.delete(ls_sig, ambisonics_hull.imaginary_speaker, axis=0)
+    if ambisonics_hull.imaginary_ls_idx is not None:
+        ls_sig = np.delete(ls_sig, ambisonics_hull.imaginary_ls_idx, axis=0)
     return ls_sig
+
 
 def nearest_loudspeaker(src, hull):
     """Loudspeaker gains for nearest loudspeaker selection (NLS) decoding,
