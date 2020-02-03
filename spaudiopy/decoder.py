@@ -160,7 +160,7 @@ class LoudspeakerSetup:
             raise ValueError
         return N_e
 
-    def ambisonics_setup(self, N_kernel=50, update_hull=True,
+    def ambisonics_setup(self, N_kernel=50, update_hull=False,
                          imaginary_ls=None):
         """Prepare loudspeaker hull for ambisonic rendering.
         Sets the kernel_hull as t-design for order N_kernel and updates the 

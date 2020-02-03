@@ -464,6 +464,8 @@ def load_layout(filename):
 
 def save_layout(filename, ls_layout, name='unknown', description='unknown'):
     """Save loudspeaker layout to json configuration file."""
+    if not ls_layout.ambisonics_hull:
+        raise ValueError("No ambisonics_hull.")
     out_data = {}
     out_data['Name'] = name
     out_data['Description'] = 'This configuration file was created with ' +\

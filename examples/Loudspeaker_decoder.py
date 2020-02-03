@@ -93,7 +93,7 @@ gains_vbap = decoder.vbap(src, ls_setup)
 # %% Ambisonic decoding
 # Ambisonic setup
 N_e = ls_setup.get_characteristic_order()
-ls_setup.ambisonics_setup()
+ls_setup.ambisonics_setup(update_hull=True, N_kernel=20)
 
 # Show ALLRAP hulls
 plots.hull(ls_setup.ambisonics_hull, title='Ambisonic hull')
