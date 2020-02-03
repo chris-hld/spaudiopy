@@ -475,7 +475,7 @@ def polar(theta, a, title=None, rlim=(-40, 0), ax=None):
 def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
                         show_ls=True, **kwargs):
     """Currently rE_mag, E and spread measures.
-    For renderer_type='VBAP', 'ALLRAP' or 'NLS.
+    For renderer_type='VBAP', 'VBIP', 'ALLRAP' or 'NLS'.
 
     Zotter, F., & Frank, M. (2019). Ambisonics.
     Springer Topics in Signal Processing.
@@ -491,17 +491,19 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
     # Switch renderer
     if renderer_type.lower() == 'vbap':
         G = decoder.vbap(np.c_[_grid_x, _grid_y, grid_z], hull, **kwargs)
-    if renderer_type.lower() == 'vbip':
+    elif renderer_type.lower() == 'vbip':
         G = decoder.vbip(np.c_[_grid_x, _grid_y, grid_z], hull, **kwargs)
-    if renderer_type.lower() == 'allrap':
+    elif renderer_type.lower() == 'allrap':
         G = decoder.allrap(np.c_[_grid_x, _grid_y, grid_z], hull,
                            **kwargs)
-    if renderer_type.lower() == 'allrap2':
+    elif renderer_type.lower() == 'allrap2':
         G = decoder.allrap2(np.c_[_grid_x, _grid_y, grid_z], hull,
                             **kwargs)
-    if renderer_type.lower() == 'nls':
+    elif renderer_type.lower() == 'nls':
         G = decoder.nearest_loudspeaker(np.c_[_grid_x, _grid_y, grid_z], hull,
                                         **kwargs)
+    else:
+        raise ValueError('Unknown renderer_type')
 
     # Measures
     E = np.sum(G**2, axis=1)  # * (4 * np.pi / G.shape[1])  # (eq. 15)
