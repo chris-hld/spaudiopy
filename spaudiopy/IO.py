@@ -420,7 +420,7 @@ def write_ssr_brirs_sdm(filename, sdm_p, sdm_phi, sdm_theta, fs, bitdepth=32,
         raise ValueError('Only 16 or 32 bit.')
 
 
-def load_layout(filename):
+def load_layout(filename, N_kernel=50):
     """Load loudspeaker layout from json configuration file."""
 
     with open(filename, 'r') as f:
@@ -456,7 +456,6 @@ def load_layout(filename):
                                             utils.deg2rad(90-ele[isImaginary]),
                                             r[isImaginary])
     imag_pos = np.c_[imag_x, imag_y, imag_z]
-    N_kernel = 10  # should be as high as possible
     ls_layout.ambisonics_setup(N_kernel=N_kernel, update_hull=True,
                                imaginary_ls=imag_pos)
     return ls_layout

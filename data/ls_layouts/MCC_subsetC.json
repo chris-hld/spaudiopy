@@ -1,6 +1,6 @@
 {
     "Name": "MCC spherical subset C",
-    "Description": "This configuration file was created with spaudiopy (v0.1.1), 2020-02-03 15:50:49.218797",
+    "Description": "This configuration file was created with spaudiopy (v0.1.1), 2020-02-03 15:59:31.358671",
     "LoudspeakerLayout": {
         "Name": "MCC spherical subset C",
         "Description": "Symmetrical spherical loudspeaker layout.",

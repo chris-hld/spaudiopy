@@ -1,6 +1,6 @@
 {
     "Name": "Graz",
-    "Description": "This configuration file was created with spaudiopy (v0.1.1), 2020-02-03 15:50:49.330946",
+    "Description": "This configuration file was created with spaudiopy (v0.1.1), 2020-02-03 15:59:31.484458",
     "LoudspeakerLayout": {
         "Name": "Graz",
         "Description": "Layout from : Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding. Journal of the Audio Engineering Society, 60.",

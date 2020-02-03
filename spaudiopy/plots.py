@@ -474,8 +474,8 @@ def polar(theta, a, title=None, rlim=(-40, 0), ax=None):
 
 def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
                         show_ls=True, **kwargs):
-    """Currently rE_mag, E and spread measures.
-    For renderer_type='VBAP', 'VBIP', 'ALLRAP' or 'NLS'.
+    """Currently shows rE_mag, E and spread measures on grid.
+    For renderer_type='VBAP', 'VBIP', 'ALLRAP' or 'NLS', kwargs forwarded.
 
     Zotter, F., & Frank, M. (2019). Ambisonics.
     Springer Topics in Signal Processing.
@@ -536,6 +536,7 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
                 ax.plot(_azi_ls, _colat_ls, marker='2', color='grey')
                 # ax.text(_x_plot, _y_plot, s)  # LS Number
         # Labeling etc
+        ax.grid(True)
         ax.set_xlim([-np.pi - azi_steps/2, np.pi + azi_steps/2])
         ax.set_ylim([0 - ele_steps/2, np.pi + ele_steps/2])
         ax.invert_yaxis()

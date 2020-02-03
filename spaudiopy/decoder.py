@@ -11,11 +11,8 @@
     import spaudiopy as spa
 
     # Loudspeaker Setup
-    ls_dirs = np.array([[-18, -54, -90, -126, -162, -198, -234, -270, -306,
-                 -342, 0, -72, -144, -216, -288, -45, -135, -225,
-                 -315, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -10, -10, -10, -10, -10,
-                 45, 45, 45, 45, 90]])
+    ls_dirs = np.array([[-80, -45, 0, 45, 80, -60, -30, 30, 60],
+                        [0, 0, 0, 0, 0, 60, 60, 60, 60]])
     ls_x, ls_y, ls_z = spa.utils.sph2cart(spa.utils.deg2rad(ls_dirs[0, :]),
                                           spa.utils.deg2rad(90 - ls_dirs[1, :]))
 
@@ -173,6 +170,15 @@ class LoudspeakerSetup:
         imaginary_ls : (L, 3), cartesian, optional
             Imaginary loudspeaker positions, if set to 'None' calls
             'find_imaginary_loudspeaker()' for 'update_hull'.
+
+        Examples
+        --------
+        .. plot::
+            :context: close-figs
+
+            ls_setup.ambisonics_setup(update_hull=True)
+            ls_setup.ambisonics_hull.show(title='Ambisonic Hull')
+
         """
         self.characteristic_order = self.get_characteristic_order()
         if N_kernel is None:
@@ -539,6 +545,20 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
     gains : (n, L) numpy.ndarray
         Panning gains for L loudspeakers to render n sources.
 
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        ls_setup = spa.decoder.LoudspeakerSetup(ls_x, ls_y, ls_z)
+        ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
+                               opening_limit=150)
+        ls_setup.ambisonics_setup(update_hull=True)
+
+        spa.plots.decoder_performance(ls_setup, 'VBAP')
+        spa.plots.decoder_performance(ls_setup, 'VBAP', retain_outside=True)
+        plt.suptitle('VBAP with imaginary loudspeaker')
+
     """
     if jobs_count is None:
         jobs_count = multiprocessing.cpu_count()
@@ -546,6 +566,8 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
         assert(valid_simplices is None)
         if hull.ambisonics_hull:
             hull = hull.ambisonics_hull
+            if hull.imaginary_ls_idx is None:
+                raise ValueError('No imaginary loudspeaker. Update hull!')
         else:
             raise ValueError('Run hull.ambisonics_setup() first!')
 
@@ -620,6 +642,20 @@ def vbip(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
     gains : (n, L) numpy.ndarray
         Panning gains for L loudspeakers to render n sources.
 
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        ls_setup = spa.decoder.LoudspeakerSetup(ls_x, ls_y, ls_z)
+        ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
+                               opening_limit=150)
+        ls_setup.ambisonics_setup(update_hull=True)
+
+        spa.plots.decoder_performance(ls_setup, 'VBIP')
+        spa.plots.decoder_performance(ls_setup, 'VBIP', retain_outside=True)
+        plt.suptitle('VBIP with imaginary loudspeaker')
+
     """
     src = np.atleast_2d(src)
     assert(src.shape[1] == 3)
@@ -681,6 +717,18 @@ def allrap(src, hull, N_sph=None, jobs_count=1):
     gains : (N, L) numpy.ndarray
         Panning gains for L loudspeakers to render N sources.
 
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        ls_setup = spa.decoder.LoudspeakerSetup(ls_x, ls_y, ls_z)
+        ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
+                               opening_limit=150)
+        ls_setup.ambisonics_setup(update_hull=True)
+
+        spa.plots.decoder_performance(ls_setup, 'ALLRAP')
+
     """
     if hull.ambisonics_hull:
         ambisonics_hull = hull.ambisonics_hull
@@ -740,6 +788,18 @@ def allrap2(src, hull, N_sph=None, jobs_count=1):
     -------
     gains : (N, L) numpy.ndarray
         Panning gains for L loudspeakers to render N sources.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        ls_setup = spa.decoder.LoudspeakerSetup(ls_x, ls_y, ls_z)
+        ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
+                               opening_limit=150)
+        ls_setup.ambisonics_setup(update_hull=True)
+
+        spa.plots.decoder_performance(ls_setup, 'ALLRAP2')
 
     """
     if hull.ambisonics_hull:
@@ -933,6 +993,18 @@ def nearest_loudspeaker(src, hull):
     -------
     gains : (N, L) numpy.ndarray
         Panning gains for L loudspeakers to render N sources.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        ls_setup = spa.decoder.LoudspeakerSetup(ls_x, ls_y, ls_z)
+        ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
+                               opening_limit=150)
+        ls_setup.ambisonics_setup(update_hull=True)
+
+        spa.plots.decoder_performance(ls_setup, 'NLS')
 
     """
     src = np.atleast_2d(src)
