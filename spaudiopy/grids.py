@@ -36,7 +36,7 @@ def load_t_design(degree):
     Parameters
     ----------
     degree : int
-        T-design degree between 1 and 21. (degree = 2 * SH_order + 1)
+        T-design degree between 1 and 21. (degree >= 2 * SH_order)
 
     Returns
     -------
@@ -48,7 +48,7 @@ def load_t_design(degree):
     .. plot::
         :context: close-figs
 
-        vecs = spa.grids.load_t_design(degree=2*5+1)
+        vecs = spa.grids.load_t_design(degree=2*5)
         hull = spa.decoder.get_hull(*vecs.T)
         spa.plots.hull(hull, mark_invalid=False)
 
@@ -66,6 +66,50 @@ def load_t_design(degree):
     # degree t>=2N should be used for SHT
     vecs = t_designs[degree - 1]
     return vecs
+
+
+def load_n_design(degree):
+    """Return the unit coordinates of spherical N-design
+    (Chebyshev-type quadrature rules). Seem to be equivalent but more
+    modern t-designs.
+
+    The designs have been copied from:
+    https://homepage.univie.ac.at/manuel.graef/quadrature.php
+
+    Parameters
+    ----------
+    degree : int
+       Degree of exactness N between 1 and 124. (degree >= 2 * SH_order)
+
+    Returns
+    -------
+    vecs : (M, 3) numpy.ndarray
+        Coordinates of points.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        vecs = spa.grids.load_n_design(degree=2*5)
+        hull = spa.decoder.get_hull(*vecs.T)
+        spa.plots.hull(hull, mark_invalid=False)
+
+    """
+    if degree > 124:
+        raise ValueError('Designs of order > 124 are not implemented.')
+    elif degree < 1:
+        raise ValueError('Order should be at least 1.')
+    # extract
+    current_file_dir = os.path.dirname(__file__)
+    file_path = os.path.join(current_file_dir, 'n_designs_1_124.mat')
+    mat = loadmat(file_path)
+    try:
+        n_design = mat['N' + f'{degree:03}']
+    except KeyError:
+        warn("Degree not defined, trying the next...")
+        n_design = load_n_design(degree + 1)
+    return n_design
 
 
 def load_Fliege_Maier_nodes(grid_order):
