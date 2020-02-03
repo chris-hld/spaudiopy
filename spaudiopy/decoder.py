@@ -160,7 +160,7 @@ class LoudspeakerSetup:
             raise ValueError
         return N_e
 
-    def ambisonics_setup(self, N_kernel=10, update_hull=True,
+    def ambisonics_setup(self, N_kernel=50, update_hull=True,
                          imaginary_ls=None):
         """Prepare loudspeaker hull for ambisonic rendering.
         Sets the kernel_hull as t-design for order N_kernel and updates the 
@@ -208,17 +208,17 @@ class LoudspeakerSetup:
         # mark imaginary speaker index
         ambisonics_hull.imaginary_ls_idx = imaginary_ls_idx
         # discretization hull
-        virtual_speakers = grids.load_t_design(2 * N_kernel + 1)
-        kernel_hull = LoudspeakerSetup(virtual_speakers[:, 0],
-                                       virtual_speakers[:, 1],
-                                       virtual_speakers[:, 2])
+        virtual_speakers = grids.load_n_design(2 * N_kernel)
+        # Avoid any extra calculation on this dense grid
+        kernel_hull = get_hull(virtual_speakers[:, 0],
+                               virtual_speakers[:, 1],
+                               virtual_speakers[:, 2])
 
         del ambisonics_hull.ambisonics_hull
         del ambisonics_hull.kernel_hull
         self.ambisonics_hull = ambisonics_hull
-        del kernel_hull.ambisonics_hull
-        del kernel_hull.kernel_hull
         self.kernel_hull = kernel_hull
+        self.kernel_hull.N_kernel = N_kernel
 
     def binauralize(self, ls_signals, fs, orientation=(0, 0), hrirs=None):
         """Create binaural signals that the loudspeaker signals produce on this
@@ -820,7 +820,7 @@ def allrad(F_nm, hull, N_sph=None, jobs_count=1):
 
     N_sph_in = int(np.sqrt(F_nm.shape[0]) - 1)
     assert(N_sph == N_sph_in)  # for now
-    if N_sph_in > 10:
+    if N_sph_in > kernel_hull.N_kernel:
         warn("Undersampling the sphere. Needs higher N_Kernel.")
 
     # virtual t-design loudspeakers
@@ -882,6 +882,11 @@ def allrad2(F_nm, hull, N_sph=None, jobs_count=1):
         raise ValueError('Run hull.ambisonics_setup() first!')
     if N_sph is None:
         N_sph = hull.characteristic_order
+
+    N_sph_in = int(np.sqrt(F_nm.shape[0]) - 1)
+    assert(N_sph == N_sph_in)  # for now
+    if N_sph_in > kernel_hull.N_kernel:
+        warn("Undersampling the sphere. Needs higher N_Kernel.")
 
     # virtual t-design loudspeakers
     J = len(kernel_hull.points)
