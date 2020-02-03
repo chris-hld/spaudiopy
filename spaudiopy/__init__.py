@@ -17,6 +17,8 @@
 
 """
 
+__version__ = "0.1.1"
+
 from . import decoder
 from . import grids
 from . import IO
