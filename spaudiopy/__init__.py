@@ -17,7 +17,7 @@
 
 """
 
-__version__ = "0.1.2"
+__version__ = "0.1.2-dirty"
 
 from . import decoder
 from . import grids
