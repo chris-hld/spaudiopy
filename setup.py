@@ -29,7 +29,8 @@ setuptools.setup(name='spaudiopy',
                  packages=setuptools.find_packages(),
                  package_data={'spaudiopy': ['t_designs_1_21.mat',
                                              'n_designs_1_124.mat',
-                                             'fliegeMaierNodes_1_30.mat'
+                                             'fliegeMaierNodes_1_30.mat',
+                                             'lebedevQuadratures_3_131.mat'
                                              ]
                                },
                  data_files=[('config', ['data/ls_layouts/MCC_subsetC.json',
@@ -43,8 +44,7 @@ setuptools.setup(name='spaudiopy',
                                    'soundfile',
                                    'sounddevice',
                                    'resampy',
-                                   'h5py',
-                                   'quadpy<0.13.0'  # API change
+                                   'h5py'
                                    ],
                  platforms='any',
                  python_requires='>=3.6',
