@@ -65,6 +65,9 @@ autodoc_mock_imports = ['soundfile', 'sounddevice']
 # autosummary
 autosummary_generate = ['api']
 
+# autosummary
+autosummary_generate = ['api']
+
 # napoleon
 napoleon_google_docstring = False
 napoleon_numpy_docstring = True
