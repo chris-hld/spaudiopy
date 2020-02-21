@@ -16,10 +16,7 @@ import os
 import numpy as np
 from warnings import warn
 from scipy.io import loadmat
-try:
-    import quadpy  # only for grid_lebedev()
-except (ImportError, IOError):
-    warn("Lebedev grid not available.")
+from . import utils
 
 
 def load_t_design(degree):
@@ -36,7 +33,7 @@ def load_t_design(degree):
     Parameters
     ----------
     degree : int
-        T-design degree between 1 and 21.
+        T-design degree between 1 and 21. (degree >= 2 * SH_order)
 
     Returns
     -------
@@ -48,7 +45,7 @@ def load_t_design(degree):
     .. plot::
         :context: close-figs
 
-        vecs = spa.grids.load_t_design(degree=5)
+        vecs = spa.grids.load_t_design(degree=2*5)
         hull = spa.decoder.get_hull(*vecs.T)
         spa.plots.hull(hull, mark_invalid=False)
 
@@ -66,6 +63,97 @@ def load_t_design(degree):
     # degree t>=2N should be used for SHT
     vecs = t_designs[degree - 1]
     return vecs
+
+
+def load_n_design(degree):
+    """Return the unit coordinates of spherical N-design
+    (Chebyshev-type quadrature rules). Seem to be equivalent but more
+    modern t-designs.
+
+    The designs have been copied from:
+    https://homepage.univie.ac.at/manuel.graef/quadrature.php
+
+    Parameters
+    ----------
+    degree : int
+       Degree of exactness N between 1 and 124. (degree >= 2 * SH_order)
+
+    Returns
+    -------
+    vecs : (M, 3) numpy.ndarray
+        Coordinates of points.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        vecs = spa.grids.load_n_design(degree=2*5)
+        hull = spa.decoder.get_hull(*vecs.T)
+        spa.plots.hull(hull, mark_invalid=False)
+
+    """
+    if degree > 124:
+        raise ValueError('Designs of order > 124 are not implemented.')
+    elif degree < 1:
+        raise ValueError('Order should be at least 1.')
+    # extract
+    current_file_dir = os.path.dirname(__file__)
+    file_path = os.path.join(current_file_dir, 'n_designs_1_124.mat')
+    mat = loadmat(file_path)
+    try:
+        n_design = mat['N' + f'{degree:03}']
+    except KeyError:
+        warn(f"Degree {degree} not defined, trying one higher...")
+        n_design = load_n_design(degree + 1)
+    return n_design
+
+
+def load_lebedev(degree):
+    """Return the unit coordinates of Lebedev grid.
+
+    The designs have been copied from:
+    https://people.sc.fsu.edu/~jburkardt/datasets/sphere_lebedev_rule/sphere_lebedev_rule.html
+
+    Parameters
+    ----------
+    degree : int
+       Degree of precision p between 3 and 131. (degree >= 2 * SH_order)
+
+    Returns
+    -------
+    vecs : (M, 3) numpy.ndarray
+        Coordinates of points.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        vecs, weights = spa.grids.load_lebedev(degree=2*5)
+        hull = spa.decoder.get_hull(*vecs.T)
+        spa.plots.hull(hull, mark_invalid=False)
+
+    """
+    if degree > 131:
+        raise ValueError('Designs of order > 131 are not implemented.')
+    elif degree < 3:
+        raise ValueError('Order should be at least 3.')
+    # extract
+    current_file_dir = os.path.dirname(__file__)
+    file_path = os.path.join(current_file_dir,
+                             'lebedevQuadratures_3_131.mat')
+    mat = loadmat(file_path)
+    try:
+        design = mat['lebedev_' + f'{degree:03}']
+        vecs = design[:, :3]
+        weights = 4*np.pi * design[:, 3]
+        if np.any(weights < 0):
+            warn(f"Lebedev grid {degree} has negative weights.")
+    except KeyError:
+        warn(f"Degree {degree} not defined, trying one higher...")
+        vecs, weights = load_lebedev(degree + 1)
+    return vecs, weights
 
 
 def load_Fliege_Maier_nodes(grid_order):
@@ -112,7 +200,7 @@ def load_Fliege_Maier_nodes(grid_order):
     fliege_maier_nodes = np.squeeze(mat['fliegeNodes'])
     # grid_order >= N+1 should be used for SHT
     vecs = fliege_maier_nodes[grid_order - 1][:, :-1]
-    weights = fliege_maier_nodes[grid_order - 1][:, -1]
+    weights = fliege_maier_nodes[grid_order - 1][:, -1]  # sum(weights) == 4pi
     return vecs, weights
 
 
@@ -221,7 +309,7 @@ def equal_polar_angle(n):
     return pol, weights
 
 
-def lebedev(n):
+def dd_lebedev(n):
     """Lebedev sampling points on sphere.
 
     (Maximum n is 65. We use what is available in quadpy, some n may not be

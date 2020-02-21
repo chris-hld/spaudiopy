@@ -93,11 +93,11 @@ gains_vbap = decoder.vbap(src, ls_setup)
 # %% Ambisonic decoding
 # Ambisonic setup
 N_e = ls_setup.get_characteristic_order()
-ls_setup.setup_for_ambisonic(N_kernel=10)
+ls_setup.ambisonics_setup(update_hull=True, N_kernel=20)
 
 # Show ALLRAP hulls
 plots.hull(ls_setup.ambisonics_hull, title='Ambisonic hull')
-plots.hull(ls_setup.kernel_hull, title='Kernel hull')
+plots.hull(ls_setup.kernel_hull, mark_invalid=False, title='Kernel hull')
 
 # ALLRAP
 gains_allrap = decoder.allrap(src, ls_setup, N_sph=N_e)
@@ -107,6 +107,7 @@ gains_allrap2 = decoder.allrap2(src, ls_setup, N_sph=N_e)
 input_F_nm = sph.sh_matrix(N_e, src_azi, src_colat, 'real').T  # SH dirac
 out_allrad = decoder.allrad(input_F_nm, ls_setup, N_sph=N_e)
 out_allrad2 = decoder.allrad2(input_F_nm, ls_setup, N_sph=N_e)
+
 
 utils.test_diff(gains_allrap, out_allrad, msg="ALLRAD and ALLRAP:")
 utils.test_diff(gains_allrap2, out_allrad2, msg="ALLRAD2 and ALLRAP2:")
@@ -119,12 +120,15 @@ _grid, _weights = grids.load_Fliege_Maier_nodes(10)
 G_vbap = decoder.vbap(_grid, ls_setup)
 G_allrap = decoder.allrap(_grid, ls_setup)
 G_allrap2 = decoder.allrap2(_grid, ls_setup)
+G_vbip = decoder.vbip(_grid, ls_setup)
 
-# %% Look at some measures
+# %% Look at some performance measures
 plots.decoder_performance(ls_setup, 'NLS')
 plots.decoder_performance(ls_setup, 'VBAP')
 plots.decoder_performance(ls_setup, 'VBAP', retain_outside=True)
 plt.suptitle('VBAP with imaginary loudspeaker')
+plots.decoder_performance(ls_setup, 'VBIP', retain_outside=True)
+plt.suptitle('VBIP with imaginary loudspeaker')
 plots.decoder_performance(ls_setup, 'ALLRAP')
 plots.decoder_performance(ls_setup, 'ALLRAP2')
 
@@ -169,41 +173,31 @@ plt.tight_layout()
 s_in = sig.MonoSignal.from_file('../data/piano_mono.flac', fs)
 s_in.trim(2.6, 6)
 
-s_out_vbap = sig.MultiSignal([s_in.filter(l_vbap_ir),
-                              s_in.filter(r_vbap_ir)],
-                             fs=fs)
-s_out_allrap = sig.MultiSignal([s_in.filter(l_allrap_ir),
-                                s_in.filter(r_allrap_ir)],
-                               fs=fs)
-s_out_allrap2 = sig.MultiSignal([s_in.filter(l_allrap2_ir),
-                                s_in.filter(r_allrap2_ir)],
-                                fs=fs)
-s_out_hrir = sig.MultiSignal([s_in.filter(
-                                  hrirs.nearest_hrirs(src_azi, src_colat)[0]),
-                              s_in.filter(
-                                  hrirs.nearest_hrirs(src_azi, src_colat)[1])],
-                             fs=fs)
+s_out_vbap = sig.MultiSignal(2*[s_in.signal], fs=fs)
+s_out_vbap = s_out_vbap.conv([l_vbap_ir, r_vbap_ir])
+
+s_out_allrap = sig.MultiSignal(2*[s_in.signal], fs=fs)
+s_out_allrap = s_out_allrap.conv([l_allrap_ir, r_allrap_ir])
+
+s_out_allrap2 = sig.MultiSignal(2*[s_in.signal], fs=fs)
+s_out_allrap2 = s_out_allrap2.conv([l_allrap2_ir, r_allrap2_ir])
+
+s_out_hrir = sig.MultiSignal(2*[s_in.signal], fs=fs)
+s_out_hrir = s_out_hrir.conv([hrirs.nearest_hrirs(src_azi, src_colat)[0],
+                              hrirs.nearest_hrirs(src_azi, src_colat)[1]])
+
+
 if LISTEN:
     print("input")
-    sd.play(s_in.signal,
-            int(s_in.fs))
-    sd.wait()
+    s_in.play()
     print("hrir")
-    sd.play(s_out_hrir.get_signals().T,
-            int(s_in.fs))
-    sd.wait()
+    s_out_hrir.play()
     print("vbap")
-    sd.play(s_out_vbap.get_signals().T,
-            int(s_in.fs))
-    sd.wait()
+    s_out_vbap.play()
     print("allrap")
-    sd.play(s_out_allrap.get_signals().T,
-            int(s_in.fs))
-    sd.wait()
+    s_out_allrap.play()
     print("allrap2")
-    sd.play(s_out_allrap2.get_signals().T,
-            int(s_in.fs))
-    sd.wait()
+    s_out_allrap2.play()
 
     fig = plt.figure()
     fig.add_subplot(5, 1, 1)

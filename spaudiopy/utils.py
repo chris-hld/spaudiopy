@@ -6,9 +6,9 @@
 
     import numpy as np
     import matplotlib.pyplot as plt
-    import spaudiopy as spa
-    plt.rcParams['figure.figsize'] = 8, 4.5  # inch
     plt.rcParams['axes.grid'] = True
+
+    import spaudiopy as spa
 
 """
 import numpy as np
@@ -40,14 +40,15 @@ def rad2deg(rad):
     return rad / np.pi * 180 % 360
 
 
-def cart2sph(x, y, z):
+def cart2sph(x, y, z, steady_colat=False):
     """Vectorized conversion of cartesian to spherical coordinates."""
     x = asarray_1d(x)
     y = asarray_1d(y)
     z = asarray_1d(z)
     r = np.sqrt(x**2 + y**2 + z**2)
     azi = np.arctan2(y, x)
-    colat = np.arccos(z / r)
+    colat = np.arccos(z / r) if not steady_colat else \
+            np.arccos(z / np.clip(r, 10e-15, None))
     return azi, colat, r
 
 
@@ -97,7 +98,7 @@ def area_triangle(p1, p2, p3):
 
 
 def db(x, power=False):
-    """Convert *x* to decibel.
+    """Convert ratio *x* to decibel.
 
     Parameters
     ----------
@@ -109,6 +110,19 @@ def db(x, power=False):
     """
     with np.errstate(divide='ignore'):
         return (10 if power else 20) * np.log10(np.abs(x))
+
+
+def from_db(db, power=False):
+    """Convert decibel back to ratio.
+
+    Parameters
+    ----------
+    db : array_like
+        Input data.
+    power : bool, optional
+        If ``power=False`` (the default), was used for conversion to dB.
+    """
+    return 10 ** (db / (10 if power else 20))
 
 
 def rms(x, axis=-1):

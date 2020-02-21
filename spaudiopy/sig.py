@@ -7,9 +7,9 @@ Avoid code duplications (and errors) by defining a few custom classes here.
 
     import numpy as np
     import matplotlib.pyplot as plt
-    import spaudiopy as spa
-    plt.rcParams['figure.figsize'] = 8, 4.5  # inch
     plt.rcParams['axes.grid'] = True
+
+    import spaudiopy as spa
 
 """
 
@@ -18,6 +18,7 @@ import copy
 import numpy as np
 from scipy import signal as scysig
 import soundfile as sf
+import sounddevice as sd
 
 from . import utils, IO, sph
 from . import process as pcs
@@ -60,7 +61,12 @@ class MonoSignal:
             raise ValueError("Signal must be mono. Try MultiSignal.")
         return cls(sig, fs)
 
+    def copy(self):
+        """Return an independent (deep) copy of the signal."""
+        return copy.deepcopy(self)
+
     def save(self, filename):
+        """Save to file."""
         IO.save_audio(self, filename)
 
     def trim(self, start, stop):
@@ -72,10 +78,17 @@ class MonoSignal:
         """Apply function 'func' to signal, arguments are forwarded."""
         self.signal = func(*args, **kwargs)
 
-    def filter(self, h, **kwargs):
+    def conv(self, h, **kwargs):
         """Convolve signal, kwargs are forwarded to signal.convolve."""
         h = utils.asarray_1d(h)
-        return scysig.convolve(self.signal, h, **kwargs)
+        self.signal = scysig.convolve(self.signal, h, **kwargs)
+        return self
+
+    def play(self, gain=1, wait=True):
+        """Play sound signal. Adjust gain and wait until finished."""
+        sd.play(gain * self.signal, int(self.fs))
+        if wait:
+            sd.wait()
 
 
 class MultiSignal(MonoSignal):
@@ -136,8 +149,17 @@ class MultiSignal(MonoSignal):
         for c in self.channel:
             c.signal = func(*args, **kwargs)
 
-    def filter(self, h, **kwargs):
-        raise NotImplementedError
+    def conv(self, irs, **kwargs):
+        for c, h in zip(self.channel, irs):
+            h = utils.asarray_1d(h)
+            c.signal = scysig.convolve(c, h, **kwargs)
+        return self
+
+    def play(self, gain=1, wait=True):
+        """Play sound signal. Adjust gain and wait until finished."""
+        sd.play(gain * self.get_signals().T, int(self.fs))
+        if wait:
+            sd.wait()
 
 
 class AmbiBSignal(MultiSignal):
@@ -152,19 +174,17 @@ class AmbiBSignal(MultiSignal):
 
     @classmethod
     def from_file(cls, filename, fs=None):
+        """Alternative constructor, load signal from filename."""
         return super().from_file(filename, fs=fs)
 
-    def sh_to_b(self):
-        # Assume signals are in ACN
-        _B = sph.sh_to_b(self.get_signals())
-        self.channel[0].signal = _B[0, :]
-        self.channel[1].signal = _B[1, :]
-        self.channel[2].signal = _B[2, :]
-        self.channel[3].signal = _B[3, :]
-        self.W = utils.asarray_1d(self.channel[0].signal)
-        self.X = utils.asarray_1d(self.channel[1].signal)
-        self.Y = utils.asarray_1d(self.channel[2].signal)
-        self.Z = utils.asarray_1d(self.channel[3].signal)
+    @classmethod
+    def sh_to_b(cls, multisig):
+        """Alternative constructor, convert from sig.Multisignal.
+        Assumes ACN channel order.
+        """
+        assert isinstance(multisig, MultiSignal)
+        _B = sph.sh_to_b(multisig.copy().get_signals())
+        return cls([*_B], fs=multisig.fs)
 
 
 class HRIRs:

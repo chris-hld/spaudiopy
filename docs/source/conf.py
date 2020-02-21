@@ -54,11 +54,16 @@ autodoc_default_options = {
     'undoc-members': None,
     'member-order': 'bysource',
     'special-members': '__init__',
-    'exclude-members': '__weakref__'
+    'exclude-members': '__weakref__',
+    'show-inheritance': 'True',
+    'inherited-members': 'True'
 }
 
-# Mock import soundfile, because it  depends on external C lib
-autodoc_mock_imports = ['soundfile']
+# Mock import soundfile and sounddevice, because they depend on external C lib
+autodoc_mock_imports = ['soundfile', 'sounddevice']
+
+# autosummary
+autosummary_generate = ['api']
 
 # autosummary
 autosummary_generate = ['api']
@@ -80,7 +85,7 @@ plot_include_source = True
 plot_html_show_source_link = False
 plot_html_show_formats = False
 plot_pre_code = ''
-#plot_rcparams = {'savefig.bbox': 'tight', }
+plot_rcparams = {'figure.figsize': (8, 4.5), }
 plot_formats = ['svg', 'pdf', ('png', 96)]
 
 # Add any paths that contain templates here, relative to this directory.

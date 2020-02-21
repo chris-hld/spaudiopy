@@ -45,17 +45,24 @@ dirac_tapered = 4 * np.pi / (N + 1) ** 2 * \
 compensation_untapered = sph.binaural_coloration_compensation(N, f)
 compensation_tapered = sph.binaural_coloration_compensation(N, f,
                                                             w_taper=w_taper)
-
+compensation_tapered_lim = pcs.gain_clipping(compensation_tapered,
+                                             utils.from_db(12))
 # Get an FIR filter
 ntaps = 128 + 1
 assert (ntaps % 2), "Does not produce uneven number of filter taps."
 filter_taps_untapered = firwin2(ntaps, f / (fs // 2), compensation_untapered)
 filter_taps_tapered = firwin2(ntaps, f / (fs // 2), compensation_tapered)
+filter_taps_tapered_lim = firwin2(ntaps, f / (fs // 2),
+                                  compensation_tapered_lim)
+# Now you can e.g. save the filter taps as a wav file...
+
 
 # %% --- PLOTS ---
 plots.polar(azi, dirac_untapered, title='Dirac untapered')
 plots.polar(azi, dirac_tapered, title='Dirac tapered')
-plots.spectrum([filter_taps_untapered, filter_taps_tapered], fs, scale_mag=True,
-               title='Coloration Equalization', labels=['untapered', 'tapered'])
+plots.spectrum([filter_taps_untapered, filter_taps_tapered,
+                filter_taps_tapered_lim], fs, scale_mag=True,
+               title='Coloration Equalization',
+               labels=['untapered', 'tapered', 'tapered + soft clip'])
 
 plt.show()

@@ -2,6 +2,8 @@
 """
 pytest
 @author: chris
+
+Test values against references.
 """
 import os
 import sys
@@ -20,8 +22,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(
 
 # SH Order
 N = 8
-# dict from matlab to compare against
-ref_struct = loadmat(os.path.join(current_file_dir, 'matlab_test.mat'))
+# dict with results from reference implementations
+ref_struct = loadmat(os.path.join(current_file_dir, 'reference.mat'))
 
 # More data to compare against
 cart_sph_data = [
@@ -75,6 +77,8 @@ def test_cpxSH(expected_Ynm):
 def test_cart2sph(coord, polar):
     x, y, z = coord
     a = spa.utils.cart2sph(x, y, z)
+    a_steady = spa.utils.cart2sph(x, y, z, steady_colat=True)
+    assert_allclose(a_steady, a)
     assert_allclose(np.squeeze(a), polar)
 
 
