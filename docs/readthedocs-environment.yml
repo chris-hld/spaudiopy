@@ -4,8 +4,6 @@ dependencies:
   - python=3.6
   - sphinx>=1.8.5
   - sphinx_rtd_theme
-  - sphinxcontrib-bibtex
   - numpy
-  - scipy
   - matplotlib<3.1.0
 
