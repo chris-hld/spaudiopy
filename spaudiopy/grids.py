@@ -37,7 +37,7 @@ def load_t_design(degree):
 
     Returns
     -------
-    vecs : numpy.ndarray
+    vecs : (M, 3) numpy.ndarray
         Coordinates of points.
 
     Examples
@@ -104,7 +104,7 @@ def load_n_design(degree):
     try:
         n_design = mat['N' + f'{degree:03}']
     except KeyError:
-        warn(f"Degree {degree} not defined, trying one higher...")
+        warn(f"Degree {degree} not defined, trying {degree+1} ...")
         n_design = load_n_design(degree + 1)
     return n_design
 
@@ -124,6 +124,8 @@ def load_lebedev(degree):
     -------
     vecs : (M, 3) numpy.ndarray
         Coordinates of points.
+    weights : array_like
+        Quadrature weights.
 
     Examples
     --------
@@ -151,7 +153,7 @@ def load_lebedev(degree):
         if np.any(weights < 0):
             warn(f"Lebedev grid {degree} has negative weights.")
     except KeyError:
-        warn(f"Degree {degree} not defined, trying one higher...")
+        warn(f"Degree {degree} not defined, trying {degree+1} ...")
         vecs, weights = load_lebedev(degree + 1)
     return vecs, weights
 
@@ -174,7 +176,7 @@ def load_Fliege_Maier_nodes(grid_order):
 
     Returns
     -------
-    vecs : numpy.ndarray
+    vecs : (M, 3) numpy.ndarray
         Coordinates of points.
     weights : array_like
         Quadrature weights.
