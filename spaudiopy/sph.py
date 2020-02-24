@@ -368,7 +368,7 @@ def bandlimited_dirac(N, d, w_n=None):
 
         # Bandlimited Dirac pulse
         dirac_untapered = 4 * np.pi / (N + 1) ** 2 * \
-                        spa.sph.bandlimited_dirac(N, azi - dirac_azi)
+                           spa.sph.bandlimited_dirac(N, azi - dirac_azi)
 
         spa.plots.polar(azi, dirac_untapered)
 
@@ -603,7 +603,7 @@ def binaural_coloration_compensation(N, f, r_0=0.0875, w_taper=None):
                                                              spa.utils.from_db(12))
         spa.plots.freq_resp(f, [compensation_tapered, compensation_tapered_lim],
                             ylim=(-5, 25),
-                            labels=[r'$N=5, max_{RE}$', 'with soft lim'])
+                            labels=[r'$N=5, max_{rE}$', 'with soft lim'])
 
     """
     c = 343  # speed of sound (m/s)
