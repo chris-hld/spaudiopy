@@ -352,6 +352,26 @@ def bandlimited_dirac(N, d, w_n=None):
     ----------
     Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
     Journal of Audio Engineering Society, eq. (7).
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        dirac_azi = np.deg2rad(90)
+        dirac_colat = np.deg2rad(90)
+        N = 5
+
+        # cross section
+        azi = np.linspace(0, 2 * np.pi, 720, endpoint=True)
+        colat = np.pi / 2 * np.ones_like(azi)
+
+        # Bandlimited Dirac pulse
+        dirac_untapered = 4 * np.pi / (N + 1) ** 2 * \
+                        spa.sph.bandlimited_dirac(N, azi - dirac_azi)
+
+        spa.plots.polar(azi, dirac_untapered)
+
     """
     if w_n is None:
         w_n = np.ones(N + 1)

@@ -467,7 +467,8 @@ def polar(theta, a, title=None, rlim=(-40, 0), ax=None):
     ax.plot(theta, utils.db(abs(np.clip(a, None, 0))), label='neg')
     ax.set_rmin(rlim[0])
     ax.set_rmax(rlim[1])
-    plt.legend(loc='upper left')
+    ax.set_rticks(np.linspace(rlim[0], rlim[1], 5))
+    plt.legend(loc='lower right')
     if title is not None:
         plt.title(title)
 
