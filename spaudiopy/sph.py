@@ -564,6 +564,27 @@ def binaural_coloration_compensation(N, f, r_0=0.0875, w_taper=None):
     Tapering and Coloration Compensation.
     In IEEE International Conference on Acoustics, Speech and Signal
     Processing.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        fs = 48000
+        f = np.linspace(0, fs / 2, 1000)
+        # target spherical harmonics order N (>= 3)
+        N = 5
+        # tapering window
+        w_rE = spa.sph.max_rE_weights(N)
+
+        compensation_tapered = spa.sph.binaural_coloration_compensation(N, f,
+                                                                        w_taper=w_rE)
+        compensation_tapered_lim = spa.process.gain_clipping(compensation_tapered,
+                                                             spa.utils.from_db(12))
+        spa.plots.freq_resp(f, [compensation_tapered, compensation_tapered_lim],
+                            ylim=(-5, 25),
+                            labels=[r'$N=5, max_{RE}$', 'with soft lim'])
+
     """
     c = 343  # speed of sound (m/s)
     k = (2 * np.pi * f) / c
