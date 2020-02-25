@@ -847,7 +847,7 @@ def allrap2(src, hull, N_sph=None, jobs_count=1):
 
 
 def allrad(F_nm, hull, N_sph=None, jobs_count=1):
-    """Loudspeaker gains for All-Round Ambisonic Decoder.
+    """Loudspeaker signals of All-Round Ambisonic Decoder.
     Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
     Journal of Audio Engineering Society, Sec. 6.
 
@@ -911,7 +911,7 @@ def allrad(F_nm, hull, N_sph=None, jobs_count=1):
 
 
 def allrad2(F_nm, hull, N_sph=None, jobs_count=1):
-    """Loudspeaker gains for All-Round Ambisonic Decoder 2.
+    """Loudspeaker signals of All-Round Ambisonic Decoder 2.
     Zotter, F., & Frank, M. (2018). Ambisonic decoding with panning-invariant
     loudness on small layouts (AllRAD2). In 144th AES Convention.
 
@@ -976,6 +976,60 @@ def allrad2(F_nm, hull, N_sph=None, jobs_count=1):
     # remove imaginary loudspeakers
     if ambisonics_hull.imaginary_ls_idx is not None:
         ls_sig = np.delete(ls_sig, ambisonics_hull.imaginary_ls_idx, axis=0)
+    return ls_sig
+
+
+def epad(F_nm, hull, N_sph=None, jobs_count=1):
+    """Loudspeaker signals of Energy-Preserving Ambisonic Decoder.
+
+    Parameters
+    ----------
+    F_nm : ((N_sph+1)**2, S) numpy.ndarray
+        Matrix of spherical harmonics coefficients of spherical function(S).
+    hull : LoudspeakerSetup
+    N_sph : int
+        Decoding order.
+    jobs_count : int or None, optional
+        Number of parallel jobs, 'None' employs 'cpu_count'.
+
+    Returns
+    -------
+    ls_sig : (L, S) numpy.ndarray
+        Loudspeaker L output signal S.
+
+    References
+    ----------
+    Zotter, F., Pomberger, H., & Noisternig, M. (2012). Energy-preserving 
+    ambisonic decoding. Acta Acustica United with Acustica, 98(1), 37–47.
+
+    """
+    if N_sph is None:
+        if hull.characteristic_order:
+            N_sph = hull.characteristic_order
+        else:
+            N_sph = hull.get_characteristic_order()
+
+    if (hull.points < (N_sph+1)**2):
+        raise ValueError('Not enough loudspeakers!')
+
+    N_sph_in = int(np.sqrt(F_nm.shape[0]) - 1)
+    assert(N_sph_in >= N_sph)  # for now
+
+    # SVD of LS base
+    ls_azi, ls_colat, ls_r = utils.cart2sph(*hull.points.T)
+    Y_ls = sph.sh_matrix(N_sph, ls_azi, ls_colat, SH_type='real')
+    U, S, VH = np.linalg.svd(Y_ls)
+    # Set singular values to identity and truncate
+    S_new = np.eye(hull.npoints, (N_sph+1)**2)
+    D = U @ S_new @ VH
+
+    # SH tapering coefficients
+    a_n = sph.max_rE_weights(N_sph)
+    a_n = sph.repeat_order_coeffs(a_n)
+    # apply tapering to decoder matrix
+    D = D @ np.diag(a_n)
+    # loudspeaker output signals
+    ls_sig = D @ F_nm[:(N_sph+1)**2, :]
     return ls_sig
 
 
