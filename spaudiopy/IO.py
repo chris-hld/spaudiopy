@@ -71,7 +71,7 @@ def load_audio(filenames, fs=None):
         return sig.MultiSignal([*loaded_data], fs=fs)
 
 
-def save_audio(signal, filename, fs=None):
+def save_audio(signal, filename, fs=None, subtype='FLOAT'):
     """Save signal to audio file.
 
     Parameters
@@ -82,6 +82,7 @@ def save_audio(signal, filename, fs=None):
         Audio file name.
     fs : int
         fs(t).
+    subtype : optional
 
     """
     # assert(isinstance(signal, (sig.MonoSignal, sig.MultiSignal)))
@@ -101,7 +102,7 @@ def save_audio(signal, filename, fs=None):
     else:
         raise NotImplementedError('Data type not supported.')
 
-    sf.write(filename, data, data_fs)
+    sf.write(filename, data, data_fs, subtype=subtype)
 
 
 def load_hrirs(fs, filename=None, dummy=False):
