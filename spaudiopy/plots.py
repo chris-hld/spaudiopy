@@ -544,7 +544,9 @@ def polar(theta, r, title=None, rlim=(-40, 0), ax=None):
 def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
                         show_ls=True, **kwargs):
     """Currently shows rE_mag, E and spread measures on grid.
-    For renderer_type='VBAP', 'VBIP', 'ALLRAP' or 'NLS', kwargs forwarded.
+    For renderer_type={'VBAP', 'VBIP', 'ALLRAP', 'NLS'},
+    as well as {'ALLRAD', 'EPAD'}.
+    All kwargs are forwarded to the decoder function.
 
     Zotter, F., & Frank, M. (2019). Ambisonics.
     Springer Topics in Signal Processing.
@@ -556,6 +558,15 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
     phi_plot, theta_plot = np.meshgrid(phi_vec, theta_vec)
     _grid_x, _grid_y, grid_z = utils.sph2cart(phi_plot.ravel(),
                                               theta_plot.ravel())
+
+    # Prepare for SH based rendering
+    if renderer_type.lower() in ['allrad', 'epad']:
+        if 'N_sph' in kwargs:
+            N_sph = kwargs['N_sph']
+        else:
+            N_sph = hull.get_characteristic_order()
+        Y_in = sph.sh_matrix(N_sph, phi_plot.flatten(), theta_plot.flatten(),
+                             SH_type='real').T
 
     # Switch renderer
     if renderer_type.lower() == 'vbap':
@@ -571,6 +582,10 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
     elif renderer_type.lower() == 'nls':
         G = decoder.nearest_loudspeaker(np.c_[_grid_x, _grid_y, grid_z], hull,
                                         **kwargs)
+    elif renderer_type.lower() == 'allrad':
+        G = decoder.allrad(Y_in, hull, **kwargs).T
+    elif renderer_type.lower() == 'epad':
+        G = decoder.epad(Y_in, hull, **kwargs).T
     else:
         raise ValueError('Unknown renderer_type')
 
