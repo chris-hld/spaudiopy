@@ -481,9 +481,9 @@ def save_layout(filename, ls_layout, name='unknown', description='unknown'):
                                  ls_layout.ambisonics_hull.y[ls_idx],
                                  ls_layout.ambisonics_hull.z[ls_idx])
         ls_dict = {}
-        ls_dict['Azimuth'] = float(utils.rad2deg(ls_dirs[0]))
-        ls_dict['Elevation'] = float(90 - utils.rad2deg(ls_dirs[1]))
-        ls_dict['Radius'] = float(ls_dirs[2])
+        ls_dict['Azimuth'] = round(float(utils.rad2deg(ls_dirs[0])), 2)
+        ls_dict['Elevation'] = round(float(90 - utils.rad2deg(ls_dirs[1])), 2)
+        ls_dict['Radius'] = round(float(ls_dirs[2]), 2)
         ls_dict['IsImaginary'] = ls_idx in np.asarray(
                                     ls_layout.ambisonics_hull.imaginary_ls_idx)
         ls_dict['Channel'] = ls_idx + 1
