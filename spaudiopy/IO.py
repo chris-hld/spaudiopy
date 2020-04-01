@@ -132,8 +132,9 @@ def load_hrirs(fs, filename=None, dummy=False):
 
     """
     if filename is None:
-        if fs not in [44100, 48000]:
-            raise NotImplementedError('44100 or 48000 default available.')
+        if fs not in [44100, 48000, 96000]:
+            raise NotImplementedError('44100, 48000, 96000'
+                                      ' default available.')
         default_file = '../data/' + 'HRTF_default_' + str(fs) + '.mat'
         current_file_dir = os.path.dirname(__file__)
         filename = os.path.join(current_file_dir, default_file)
@@ -222,22 +223,31 @@ def get_default_hrirs(grid_azi=None, grid_colat=None):
     hrir_r = np.fft.irfft(HRTF_r)  # creates 256 samples(t)
     assert hrir_l.shape == hrir_r.shape
 
-    # %% Resample to 48k
+    # %% Resample
     fs_target = 48000
     hrir_l_48k, hrir_r_48k, _ = process.resample_hrirs(hrir_l, hrir_r,
                                                        SamplingRate,
                                                        fs_target)
+    fs_target = 96000
+    hrir_l_96k, hrir_r_96k, _ = process.resample_hrirs(hrir_l, hrir_r,
+                                                       SamplingRate,
+                                                       fs_target)
 
-    savemat(os.path.join(current_file_dir, '../data/HRTF_default_44100'),
+    savemat(os.path.join(current_file_dir, '../data/HRTF_default_44100.mat'),
             {'hrir_l': hrir_l,
              'hrir_r': hrir_r,
              'azi': grid_azi, 'colat': grid_colat,
-             'fs': SamplingRate})
-    savemat(os.path.join(current_file_dir, '../data/HRTF_default_48000'),
+             'fs': 44100})
+    savemat(os.path.join(current_file_dir, '../data/HRTF_default_48000.mat'),
             {'hrir_l': hrir_l_48k,
              'hrir_r': hrir_r_48k,
              'azi': grid_azi, 'colat': grid_colat,
-             'fs': fs_target})
+             'fs': 48000})
+    savemat(os.path.join(current_file_dir, '../data/HRTF_default_48000.mat'),
+            {'hrir_l': hrir_l_96k,
+             'hrir_r': hrir_r_96k,
+             'azi': grid_azi, 'colat': grid_colat,
+             'fs': 96000})
     print("Saved new default HRIRs.")
 
 
@@ -297,7 +307,7 @@ def load_sofa_data(filename):
 
 
 def write_ssr_brirs_loudspeaker(filename, ls_irs, hull, fs, bitdepth=32,
-                                hrirs=None, jobs_count=None):
+                                hrirs=None, jobs_count=1):
     """Write binaural room impulse responses (BRIRs) and save as wav file.
 
     The azimuth resolution is one degree. The channels are interleaved and
