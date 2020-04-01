@@ -243,7 +243,7 @@ def get_default_hrirs(grid_azi=None, grid_colat=None):
              'hrir_r': hrir_r_48k,
              'azi': grid_azi, 'colat': grid_colat,
              'fs': 48000})
-    savemat(os.path.join(current_file_dir, '../data/HRTF_default_48000.mat'),
+    savemat(os.path.join(current_file_dir, '../data/HRTF_default_96000.mat'),
             {'hrir_l': hrir_l_96k,
              'hrir_r': hrir_r_96k,
              'azi': grid_azi, 'colat': grid_colat,
