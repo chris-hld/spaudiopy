@@ -1,4 +1,5 @@
 # spaudiopy
+ [![Documentation Status](https://readthedocs.org/projects/spaudiopy/badge/?version=latest)](https://spaudiopy.readthedocs.io/en/latest/?badge=latest)
 
 Spatial Audio Python Package.
 
