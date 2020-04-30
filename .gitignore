@@ -6,6 +6,9 @@ __pycache__/
 # data folder
 data/
 
+# joblib cache
+__cache_dir/
+
 # C extensions
 *.so
 
