@@ -50,7 +50,6 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',  # support for NumPy-style docstrings
-    'matplotlib.sphinxext.mathmpl',
     'matplotlib.sphinxext.plot_directive',
 ]
 
