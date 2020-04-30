@@ -445,6 +445,7 @@ def load_layout(filename, N_kernel=50):
     ele = np.array([ls['Elevation'] for ls in ls_data])
     r = np.array([ls['Radius'] for ls in ls_data])
     try:
+        # not actually used, yet
         gain = np.array([ls['Gain'] for ls in ls_data])
         if np.any(gain != 1.):
             warn('Additional gain handling not implemented.')
@@ -454,8 +455,8 @@ def load_layout(filename, N_kernel=50):
     try:
         isImaginary = np.array([ls['IsImaginary'] for ls in ls_data])
     except KeyError as e:
-        warn('KeyError : {}, will return empty!'.format(e))
-        isImaginary = []
+        warn('KeyError : {}, will return all False!'.format(e))
+        isImaginary = np.full_like(azi, False, dtype=bool)
 
     # first extract real loudspeakers
     ls_x, ls_y, ls_z = utils.sph2cart(utils.deg2rad(azi[~isImaginary]),
