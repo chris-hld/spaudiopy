@@ -136,7 +136,7 @@ def sht(f, N, azi, colat, SH_type, weights=None, Y_nm=None):
     if Y_nm is None:
         Y_nm = sh_matrix(N, azi, colat, SH_type)
     if weights is None:
-        Npoints = len(azi)
+        Npoints = Y_nm.shape[0]
         Y_nm_transform = (4*np.pi / Npoints) * Y_nm.conj()
     else:
         Y_nm_transform = Y_nm.conj()
