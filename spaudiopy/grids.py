@@ -47,8 +47,7 @@ def load_t_design(degree):
         :context: close-figs
 
         vecs = spa.grids.load_t_design(degree=2*5)
-        hull = spa.decoder.get_hull(*vecs.T)
-        spa.plots.hull(hull, mark_invalid=False)
+        spa.plots.hull(spa.decoder.get_hull(*vecs.T))
 
     """
     if degree > 21:
@@ -90,8 +89,7 @@ def load_n_design(degree):
         :context: close-figs
 
         vecs = spa.grids.load_n_design(degree=2*5)
-        hull = spa.decoder.get_hull(*vecs.T)
-        spa.plots.hull(hull, mark_invalid=False)
+        spa.plots.hull(spa.decoder.get_hull(*vecs.T))
 
     """
     if degree > 124:
@@ -134,8 +132,7 @@ def load_lebedev(degree):
         :context: close-figs
 
         vecs, weights = spa.grids.load_lebedev(degree=2*5)
-        hull = spa.decoder.get_hull(*vecs.T)
-        spa.plots.hull(hull, mark_invalid=False)
+        spa.plots.hull(spa.decoder.get_hull(*vecs.T))
 
     """
     if degree > 131:
@@ -188,8 +185,7 @@ def load_Fliege_Maier_nodes(grid_order):
         :context: close-figs
 
         vecs, weights = spa.grids.load_Fliege_Maier_nodes(grid_order=5)
-        hull = spa.decoder.get_hull(*vecs.T)
-        spa.plots.hull(hull, mark_invalid=False)
+        spa.plots.hull(spa.decoder.get_hull(*vecs.T))
 
     """
     if grid_order > 30:
@@ -232,8 +228,7 @@ def equal_angle(n):
         :context: close-figs
 
         azi, colat, weights = spa.grids.equal_angle(n=5)
-        hull = spa.decoder.get_hull(*spa.utils.sph2cart(azi, colat))
-        spa.plots.hull(hull, mark_invalid=False)
+        spa.plots.hull(spa.decoder.get_hull(*spa.utils.sph2cart(azi, colat)))
 
     """
     azi = np.linspace(0, 2*np.pi, 2*n+2, endpoint=False)
@@ -277,8 +272,7 @@ def gauss(n):
         :context: close-figs
 
         azi, colat, weights = spa.grids.gauss(n=5)
-        hull = spa.decoder.get_hull(*spa.utils.sph2cart(azi, colat))
-        spa.plots.hull(hull, mark_invalid=False)
+        spa.plots.hull(spa.decoder.get_hull(*spa.utils.sph2cart(azi, colat)))
 
     """
     azi = np.linspace(0, 2*np.pi, 2*n+2, endpoint=False)
