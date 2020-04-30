@@ -6,6 +6,9 @@ __pycache__/
 # data folder
 data/
 
+# joblib cache
+__cache_dir/
+
 # C extensions
 *.so
 
@@ -68,6 +71,7 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/source/spaudiopy.*.rst
 
 # PyBuilder
 target/

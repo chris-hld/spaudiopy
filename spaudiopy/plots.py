@@ -6,6 +6,7 @@
 
     import numpy as np
     import matplotlib.pyplot as plt
+    plt.rcParams['figure.constrained_layout.use'] = True
     plt.rcParams['axes.grid'] = True
 
     import spaudiopy as spa
@@ -339,12 +340,18 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, lim_m=1,
         simplices = hull.simplices
 
     if mark_invalid:
-        is_valid_s = np.array([hull.is_simplex_valid(s) for s in simplices])
-        valid_s = simplices[is_valid_s]
-        invalid_s = simplices[~is_valid_s]
-        if np.all(is_valid_s):
-            # nothing invalid to show
+        if not hasattr(hull, 'valid_simplices'):
+            # Can happen when not a LoudspeakerSetup but generic hull object
             mark_invalid = False
+            valid_s = simplices
+        else:
+            is_valid_s = np.array([hull.is_simplex_valid(s)
+                                  for s in simplices])
+            valid_s = simplices[is_valid_s]
+            invalid_s = simplices[~is_valid_s]
+            if np.all(is_valid_s):
+                # nothing invalid to show
+                mark_invalid = False
     else:
         valid_s = simplices
 
@@ -467,7 +474,8 @@ def polar(theta, a, title=None, rlim=(-40, 0), ax=None):
     ax.plot(theta, utils.db(abs(np.clip(a, None, 0))), label='neg')
     ax.set_rmin(rlim[0])
     ax.set_rmax(rlim[1])
-    plt.legend(loc='upper left')
+    ax.set_rticks(np.linspace(rlim[0], rlim[1], 5))
+    plt.legend(loc='lower right')
     if title is not None:
         plt.title(title)
 

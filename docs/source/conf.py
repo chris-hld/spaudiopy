@@ -14,6 +14,8 @@
 #
 import os
 import sys
+from subprocess import check_output
+
 
 sys.path.insert(0, os.path.abspath('../../'))
 #print('\n'.join(sys.path))
@@ -21,13 +23,17 @@ sys.path.insert(0, os.path.abspath('../../'))
 # -- Project information -----------------------------------------------------
 
 project = 'spaudiopy'
-copyright = '2019, Chris Hold'
+copyright = '2020, Chris Hold'
 author = 'Chris Hold'
 
-# The short X.Y version
-version = '0.1'
-# The full version, including alpha/beta/rc tags
-release = '0.0.1'
+# The short X.Y version.
+#version = '0.0.0'
+# The full version, including alpha/beta/rc tags.
+try:
+    release = check_output(['git', 'describe', '--tags', '--always'])
+    release = release.decode().strip()
+except Exception:
+    release = '<unknown>'
 
 
 # -- General configuration ---------------------------------------------------
@@ -44,7 +50,6 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',  # support for NumPy-style docstrings
-    'matplotlib.sphinxext.mathmpl',
     'matplotlib.sphinxext.plot_directive',
 ]
 
@@ -105,7 +110,7 @@ master_doc = 'index'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+#language = None
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -113,7 +118,7 @@ language = None
 exclude_patterns = []
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = None
+pygments_style = 'sphinx'
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -195,11 +200,11 @@ man_pages = [
 # Grouping the document tree into Texinfo files. List of tuples
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
-texinfo_documents = [
-    (master_doc, 'spaudiopy', 'spaudiopy Documentation',
-     author, 'spaudiopy', 'One line description of project.',
-     'Miscellaneous'),
-]
+#texinfo_documents = [
+#    (master_doc, 'spaudiopy', 'spaudiopy Documentation',
+#     author, 'spaudiopy', 'One line description of project.',
+#     'Miscellaneous'),
+#]
 
 
 # -- Options for Epub output -------------------------------------------------

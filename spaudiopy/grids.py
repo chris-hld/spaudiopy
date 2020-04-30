@@ -6,9 +6,10 @@
 
     import numpy as np
     import matplotlib.pyplot as plt
-    import spaudiopy as spa
-    plt.rcParams['figure.figsize'] = 8, 4.5  # inch
+    plt.rcParams['figure.constrained_layout.use'] = True
     plt.rcParams['axes.grid'] = True
+
+    import spaudiopy as spa
 
 """
 
@@ -37,7 +38,7 @@ def load_t_design(degree):
 
     Returns
     -------
-    vecs : numpy.ndarray
+    vecs : (M, 3) numpy.ndarray
         Coordinates of points.
 
     Examples
@@ -46,8 +47,7 @@ def load_t_design(degree):
         :context: close-figs
 
         vecs = spa.grids.load_t_design(degree=2*5)
-        hull = spa.decoder.get_hull(*vecs.T)
-        spa.plots.hull(hull, mark_invalid=False)
+        spa.plots.hull(spa.decoder.get_hull(*vecs.T))
 
     """
     if degree > 21:
@@ -89,8 +89,7 @@ def load_n_design(degree):
         :context: close-figs
 
         vecs = spa.grids.load_n_design(degree=2*5)
-        hull = spa.decoder.get_hull(*vecs.T)
-        spa.plots.hull(hull, mark_invalid=False)
+        spa.plots.hull(spa.decoder.get_hull(*vecs.T))
 
     """
     if degree > 124:
@@ -104,7 +103,7 @@ def load_n_design(degree):
     try:
         n_design = mat['N' + f'{degree:03}']
     except KeyError:
-        warn(f"Degree {degree} not defined, trying one higher...")
+        warn(f"Degree {degree} not defined, trying {degree+1} ...")
         n_design = load_n_design(degree + 1)
     return n_design
 
@@ -124,6 +123,8 @@ def load_lebedev(degree):
     -------
     vecs : (M, 3) numpy.ndarray
         Coordinates of points.
+    weights : array_like
+        Quadrature weights.
 
     Examples
     --------
@@ -131,8 +132,7 @@ def load_lebedev(degree):
         :context: close-figs
 
         vecs, weights = spa.grids.load_lebedev(degree=2*5)
-        hull = spa.decoder.get_hull(*vecs.T)
-        spa.plots.hull(hull, mark_invalid=False)
+        spa.plots.hull(spa.decoder.get_hull(*vecs.T))
 
     """
     if degree > 131:
@@ -151,7 +151,7 @@ def load_lebedev(degree):
         if np.any(weights < 0):
             warn(f"Lebedev grid {degree} has negative weights.")
     except KeyError:
-        warn(f"Degree {degree} not defined, trying one higher...")
+        warn(f"Degree {degree} not defined, trying {degree+1} ...")
         vecs, weights = load_lebedev(degree + 1)
     return vecs, weights
 
@@ -174,7 +174,7 @@ def load_Fliege_Maier_nodes(grid_order):
 
     Returns
     -------
-    vecs : numpy.ndarray
+    vecs : (M, 3) numpy.ndarray
         Coordinates of points.
     weights : array_like
         Quadrature weights.
@@ -185,8 +185,7 @@ def load_Fliege_Maier_nodes(grid_order):
         :context: close-figs
 
         vecs, weights = spa.grids.load_Fliege_Maier_nodes(grid_order=5)
-        hull = spa.decoder.get_hull(*vecs.T)
-        spa.plots.hull(hull, mark_invalid=False)
+        spa.plots.hull(spa.decoder.get_hull(*vecs.T))
 
     """
     if grid_order > 30:
@@ -229,8 +228,7 @@ def equal_angle(n):
         :context: close-figs
 
         azi, colat, weights = spa.grids.equal_angle(n=5)
-        hull = spa.decoder.get_hull(*spa.utils.sph2cart(azi, colat))
-        spa.plots.hull(hull, mark_invalid=False)
+        spa.plots.hull(spa.decoder.get_hull(*spa.utils.sph2cart(azi, colat)))
 
     """
     azi = np.linspace(0, 2*np.pi, 2*n+2, endpoint=False)
@@ -274,8 +272,7 @@ def gauss(n):
         :context: close-figs
 
         azi, colat, weights = spa.grids.gauss(n=5)
-        hull = spa.decoder.get_hull(*spa.utils.sph2cart(azi, colat))
-        spa.plots.hull(hull, mark_invalid=False)
+        spa.plots.hull(spa.decoder.get_hull(*spa.utils.sph2cart(azi, colat)))
 
     """
     azi = np.linspace(0, 2*np.pi, 2*n+2, endpoint=False)

@@ -6,6 +6,7 @@
 
     import numpy as np
     import matplotlib.pyplot as plt
+    plt.rcParams['figure.constrained_layout.use'] = True
     plt.rcParams['axes.grid'] = True
 
     import spaudiopy as spa
@@ -35,7 +36,7 @@ memory = Memory(cachedir)
 
 
 @memory.cache
-def resample_hrirs(hrir_l, hrir_r, fs_hrir, fs_target, jobs_count=None):
+def resample_hrirs(hrir_l, hrir_r, fs_hrir, fs_target, jobs_count=1):
     """
     Resample HRIRs to new SamplingRate(t), using multiprocessing.
 
@@ -402,6 +403,23 @@ def gain_clipping(gain, threshold):
     Returns
     -------
     gain_clipped : array_like
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        x = np.linspace(-10, 10, 1000)
+        lim_threshold = 2.5
+        y = spa.process.gain_clipping(x, lim_threshold)
+        plt.figure()
+        plt.plot(x, x, '--', label='In')
+        plt.plot(x, y, label='Out')
+        plt.legend()
+        plt.xlabel('In')
+        plt.ylabel('Out')
+        plt.grid(True)
+
     """
     gain = gain / threshold  # offset by threshold
     gain[gain > 1] = 1 + np.tanh(gain[gain > 1] - 1)  # soft clipping to 2

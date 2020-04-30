@@ -6,6 +6,7 @@
 
     import numpy as np
     import matplotlib.pyplot as plt
+    plt.rcParams['figure.constrained_layout.use'] = True
     plt.rcParams['axes.grid'] = True
 
     import spaudiopy as spa
@@ -250,7 +251,7 @@ def render_binaural_loudspeaker_sdm(sdm_p, ls_gains, ls_setup, fs,
         Post EQ applied to the loudspeaker signals. 'default' calls
         'sdm.post_equalization', 'None' disables (not recommended).
         You can also provide your custom post-eq-function with the signature
-        'post_eq_func(ls_sigs, sdm_p, fs, ls_setup, **kwargs)'.
+        `post_eq_func(ls_sigs, sdm_p, fs, ls_setup, **kwargs)`.
 
     Returns
     -------

@@ -6,6 +6,7 @@
 
     import numpy as np
     import matplotlib.pyplot as plt
+    plt.rcParams['figure.constrained_layout.use'] = True
     plt.rcParams['axes.grid'] = True
 
     import spaudiopy as spa
@@ -135,7 +136,7 @@ def sht(f, N, azi, colat, SH_type, weights=None, Y_nm=None):
     if Y_nm is None:
         Y_nm = sh_matrix(N, azi, colat, SH_type)
     if weights is None:
-        Npoints = len(azi)
+        Npoints = Y_nm.shape[0]
         Y_nm_transform = (4*np.pi / Npoints) * Y_nm.conj()
     else:
         Y_nm_transform = Y_nm.conj()
@@ -352,6 +353,26 @@ def bandlimited_dirac(N, d, w_n=None):
     ----------
     Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
     Journal of Audio Engineering Society, eq. (7).
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        dirac_azi = np.deg2rad(90)
+        dirac_colat = np.deg2rad(90)
+        N = 5
+
+        # cross section
+        azi = np.linspace(0, 2 * np.pi, 720, endpoint=True)
+        colat = np.pi / 2 * np.ones_like(azi)
+
+        # Bandlimited Dirac pulse
+        dirac_untapered = 4 * np.pi / (N + 1) ** 2 * \
+                           spa.sph.bandlimited_dirac(N, azi - dirac_azi)
+
+        spa.plots.polar(azi, dirac_untapered)
+
     """
     if w_n is None:
         w_n = np.ones(N + 1)
@@ -564,6 +585,27 @@ def binaural_coloration_compensation(N, f, r_0=0.0875, w_taper=None):
     Tapering and Coloration Compensation.
     In IEEE International Conference on Acoustics, Speech and Signal
     Processing.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        fs = 48000
+        f = np.linspace(0, fs / 2, 1000)
+        # target spherical harmonics order N (>= 3)
+        N = 5
+        # tapering window
+        w_rE = spa.sph.max_rE_weights(N)
+
+        compensation_tapered = spa.sph.binaural_coloration_compensation(N, f,
+                                                                        w_taper=w_rE)
+        compensation_tapered_lim = spa.process.gain_clipping(compensation_tapered,
+                                                             spa.utils.from_db(12))
+        spa.plots.freq_resp(f, [compensation_tapered, compensation_tapered_lim],
+                            ylim=(-5, 25),
+                            labels=[r'$N=5, max_{rE}$', 'with soft lim'])
+
     """
     c = 343  # speed of sound (m/s)
     k = (2 * np.pi * f) / c

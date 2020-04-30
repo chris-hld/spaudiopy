@@ -16,9 +16,6 @@ conda:
   environment: docs/readthedocs-environment.yml
 
 python:
-   version: 3.6
    install:
       - method: pip
         path: .
-
-   system_packages: false

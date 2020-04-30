@@ -6,6 +6,7 @@
 
     import numpy as np
     import matplotlib.pyplot as plt
+    plt.rcParams['figure.constrained_layout.use'] = True
     plt.rcParams['axes.grid'] = True
 
     import spaudiopy as spa
@@ -71,7 +72,7 @@ def load_audio(filenames, fs=None):
         return sig.MultiSignal([*loaded_data], fs=fs)
 
 
-def save_audio(signal, filename, fs=None):
+def save_audio(signal, filename, fs=None, subtype='FLOAT'):
     """Save signal to audio file.
 
     Parameters
@@ -82,6 +83,7 @@ def save_audio(signal, filename, fs=None):
         Audio file name.
     fs : int
         fs(t).
+    subtype : optional
 
     """
     # assert(isinstance(signal, (sig.MonoSignal, sig.MultiSignal)))
@@ -101,10 +103,10 @@ def save_audio(signal, filename, fs=None):
     else:
         raise NotImplementedError('Data type not supported.')
 
-    sf.write(filename, data, data_fs)
+    sf.write(filename, data, data_fs, subtype=subtype)
 
 
-def load_hrirs(fs, filename=None, dummy=False):
+def load_hrirs(fs, filename=None):
     """Convenience function to load 'HRTF.mat'.
     The file contains ['hrir_l', 'hrir_r', 'fs', 'azi', 'colat'].
 
@@ -113,9 +115,7 @@ def load_hrirs(fs, filename=None, dummy=False):
     fs : int
         fs(t).
     filename : string, optional
-        HRTF.mat file or default set.
-    dummy : bool, optional
-        Returns dummy hrirs (debugging).
+        HRTF.mat file or default set, or 'dummy' for debugging.
 
     Returns
     -------
@@ -130,9 +130,21 @@ def load_hrirs(fs, filename=None, dummy=False):
             fs(t).
 
     """
-    if filename is None:
-        if fs not in [44100, 48000]:
-            raise NotImplementedError('44100 or 48000 default available.')
+    if filename == 'dummy':
+        azi, colat, _ = grids.gauss(15)
+        grid = pd.DataFrame({'azi': azi, 'colat': colat})
+        # Create diracs as dummy
+        hrir_l = np.zeros([grid.shape[0], 256])
+        hrir_l[:, 0] = np.ones(hrir_l.shape[0])
+        hrir_r = np.zeros_like(hrir_l)
+        hrir_r[:, 0] = np.ones(hrir_r.shape[0])
+        hrir_fs = fs
+
+    elif filename is None:
+        # default
+        if fs not in [44100, 48000, 96000]:
+            raise NotImplementedError('44100, 48000, 96000'
+                                      ' default available.')
         default_file = '../data/' + 'HRTF_default_' + str(fs) + '.mat'
         current_file_dir = os.path.dirname(__file__)
         filename = os.path.join(current_file_dir, default_file)
@@ -146,22 +158,17 @@ def load_hrirs(fs, filename=None, dummy=False):
     else:
         mat = loadmat(filename)
 
-    hrir_l = np.array(np.squeeze(mat['hrir_l']), dtype=float)
-    hrir_r = np.array(np.squeeze(mat['hrir_r']), dtype=float)
-    try:
-        hrir_fs = int(mat['fs'])
-    except KeyError:
-        hrir_fs = int(mat['SamplingRate'])
+    if not filename == 'dummy':
+        hrir_l = np.array(np.squeeze(mat['hrir_l']), dtype=float)
+        hrir_r = np.array(np.squeeze(mat['hrir_r']), dtype=float)
+        try:
+            hrir_fs = int(mat['fs'])
+        except KeyError:
+            hrir_fs = int(mat['SamplingRate'])
 
-    azi = np.array(np.squeeze(mat['azi']), dtype=float)
-    colat = np.array(np.squeeze(mat['colat']), dtype=float)
-    grid = pd.DataFrame({'azi': azi, 'colat': colat})
-    if dummy is True:
-        # Create diracs as dummy
-        hrir_l = np.zeros_like(hrir_l)
-        hrir_l[:, 0] = np.ones(hrir_l.shape[0])
-        hrir_r = np.zeros_like(hrir_r)
-        hrir_r[:, 0] = np.ones(hrir_r.shape[0])
+        azi = np.array(np.squeeze(mat['azi']), dtype=float)
+        colat = np.array(np.squeeze(mat['colat']), dtype=float)
+        grid = pd.DataFrame({'azi': azi, 'colat': colat})
 
     HRIRs = sig.HRIRs(hrir_l, hrir_r, grid, hrir_fs)
     assert HRIRs.fs == fs
@@ -221,22 +228,31 @@ def get_default_hrirs(grid_azi=None, grid_colat=None):
     hrir_r = np.fft.irfft(HRTF_r)  # creates 256 samples(t)
     assert hrir_l.shape == hrir_r.shape
 
-    # %% Resample to 48k
+    # %% Resample
     fs_target = 48000
     hrir_l_48k, hrir_r_48k, _ = process.resample_hrirs(hrir_l, hrir_r,
                                                        SamplingRate,
                                                        fs_target)
+    fs_target = 96000
+    hrir_l_96k, hrir_r_96k, _ = process.resample_hrirs(hrir_l, hrir_r,
+                                                       SamplingRate,
+                                                       fs_target)
 
-    savemat(os.path.join(current_file_dir, '../data/HRTF_default_44100'),
+    savemat(os.path.join(current_file_dir, '../data/HRTF_default_44100.mat'),
             {'hrir_l': hrir_l,
              'hrir_r': hrir_r,
              'azi': grid_azi, 'colat': grid_colat,
-             'fs': SamplingRate})
-    savemat(os.path.join(current_file_dir, '../data/HRTF_default_48000'),
+             'fs': 44100})
+    savemat(os.path.join(current_file_dir, '../data/HRTF_default_48000.mat'),
             {'hrir_l': hrir_l_48k,
              'hrir_r': hrir_r_48k,
              'azi': grid_azi, 'colat': grid_colat,
-             'fs': fs_target})
+             'fs': 48000})
+    savemat(os.path.join(current_file_dir, '../data/HRTF_default_96000.mat'),
+            {'hrir_l': hrir_l_96k,
+             'hrir_r': hrir_r_96k,
+             'azi': grid_azi, 'colat': grid_colat,
+             'fs': 96000})
     print("Saved new default HRIRs.")
 
 
@@ -296,7 +312,7 @@ def load_sofa_data(filename):
 
 
 def write_ssr_brirs_loudspeaker(filename, ls_irs, hull, fs, bitdepth=32,
-                                hrirs=None, jobs_count=None):
+                                hrirs=None, jobs_count=1):
     """Write binaural room impulse responses (BRIRs) and save as wav file.
 
     The azimuth resolution is one degree. The channels are interleaved and
@@ -433,6 +449,7 @@ def load_layout(filename, N_kernel=50):
     ele = np.array([ls['Elevation'] for ls in ls_data])
     r = np.array([ls['Radius'] for ls in ls_data])
     try:
+        # not actually used, yet
         gain = np.array([ls['Gain'] for ls in ls_data])
         if np.any(gain != 1.):
             warn('Additional gain handling not implemented.')
@@ -442,8 +459,8 @@ def load_layout(filename, N_kernel=50):
     try:
         isImaginary = np.array([ls['IsImaginary'] for ls in ls_data])
     except KeyError as e:
-        warn('KeyError : {}, will return empty!'.format(e))
-        isImaginary = []
+        warn('KeyError : {}, will return all False!'.format(e))
+        isImaginary = np.full_like(azi, False, dtype=bool)
 
     # first extract real loudspeakers
     ls_x, ls_y, ls_z = utils.sph2cart(utils.deg2rad(azi[~isImaginary]),
@@ -481,9 +498,9 @@ def save_layout(filename, ls_layout, name='unknown', description='unknown'):
                                  ls_layout.ambisonics_hull.y[ls_idx],
                                  ls_layout.ambisonics_hull.z[ls_idx])
         ls_dict = {}
-        ls_dict['Azimuth'] = float(utils.rad2deg(ls_dirs[0]))
-        ls_dict['Elevation'] = float(90 - utils.rad2deg(ls_dirs[1]))
-        ls_dict['Radius'] = float(ls_dirs[2])
+        ls_dict['Azimuth'] = round(float(utils.rad2deg(ls_dirs[0])), 2)
+        ls_dict['Elevation'] = round(float(90 - utils.rad2deg(ls_dirs[1])), 2)
+        ls_dict['Radius'] = round(float(ls_dirs[2]), 2)
         ls_dict['IsImaginary'] = ls_idx in np.asarray(
                                     ls_layout.ambisonics_hull.imaginary_ls_idx)
         ls_dict['Channel'] = ls_idx + 1
