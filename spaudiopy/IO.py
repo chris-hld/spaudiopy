@@ -106,7 +106,7 @@ def save_audio(signal, filename, fs=None, subtype='FLOAT'):
     sf.write(filename, data, data_fs, subtype=subtype)
 
 
-def load_hrirs(fs, filename=None, dummy=False):
+def load_hrirs(fs, filename=None):
     """Convenience function to load 'HRTF.mat'.
     The file contains ['hrir_l', 'hrir_r', 'fs', 'azi', 'colat'].
 
@@ -115,9 +115,7 @@ def load_hrirs(fs, filename=None, dummy=False):
     fs : int
         fs(t).
     filename : string, optional
-        HRTF.mat file or default set.
-    dummy : bool, optional
-        Returns dummy hrirs (debugging).
+        HRTF.mat file or default set, or 'dummy' for debugging.
 
     Returns
     -------
@@ -132,7 +130,18 @@ def load_hrirs(fs, filename=None, dummy=False):
             fs(t).
 
     """
-    if filename is None:
+    if filename == 'dummy':
+        azi, colat, _ = grids.gauss(15)
+        grid = pd.DataFrame({'azi': azi, 'colat': colat})
+        # Create diracs as dummy
+        hrir_l = np.zeros([grid.shape[0], 256])
+        hrir_l[:, 0] = np.ones(hrir_l.shape[0])
+        hrir_r = np.zeros_like(hrir_l)
+        hrir_r[:, 0] = np.ones(hrir_r.shape[0])
+        hrir_fs = fs
+
+    elif filename is None:
+        # default
         if fs not in [44100, 48000, 96000]:
             raise NotImplementedError('44100, 48000, 96000'
                                       ' default available.')
@@ -149,22 +158,17 @@ def load_hrirs(fs, filename=None, dummy=False):
     else:
         mat = loadmat(filename)
 
-    hrir_l = np.array(np.squeeze(mat['hrir_l']), dtype=float)
-    hrir_r = np.array(np.squeeze(mat['hrir_r']), dtype=float)
-    try:
-        hrir_fs = int(mat['fs'])
-    except KeyError:
-        hrir_fs = int(mat['SamplingRate'])
+    if not filename == 'dummy':
+        hrir_l = np.array(np.squeeze(mat['hrir_l']), dtype=float)
+        hrir_r = np.array(np.squeeze(mat['hrir_r']), dtype=float)
+        try:
+            hrir_fs = int(mat['fs'])
+        except KeyError:
+            hrir_fs = int(mat['SamplingRate'])
 
-    azi = np.array(np.squeeze(mat['azi']), dtype=float)
-    colat = np.array(np.squeeze(mat['colat']), dtype=float)
-    grid = pd.DataFrame({'azi': azi, 'colat': colat})
-    if dummy is True:
-        # Create diracs as dummy
-        hrir_l = np.zeros_like(hrir_l)
-        hrir_l[:, 0] = np.ones(hrir_l.shape[0])
-        hrir_r = np.zeros_like(hrir_r)
-        hrir_r[:, 0] = np.ones(hrir_r.shape[0])
+        azi = np.array(np.squeeze(mat['azi']), dtype=float)
+        colat = np.array(np.squeeze(mat['colat']), dtype=float)
+        grid = pd.DataFrame({'azi': azi, 'colat': colat})
 
     HRIRs = sig.HRIRs(hrir_l, hrir_r, grid, hrir_fs)
     assert HRIRs.fs == fs
