@@ -485,7 +485,7 @@ def save_layout(filename, ls_layout, name='unknown', description='unknown'):
     out_data = {}
     out_data['Name'] = name
     out_data['Description'] = 'This configuration file was created with ' +\
-                              'spaudiopy (v' + str(__version__) + '), ' + \
+                              'spaudiopy (v-' + str(__version__) + '), ' + \
                               str(datetime.now())
 
     out_data['LoudspeakerLayout'] = {}
