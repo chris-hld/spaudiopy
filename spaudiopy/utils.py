@@ -187,3 +187,50 @@ def interleave_channels(left_channel, right_channel, style=None):
     output_data[1::2, :] = right_channel
 
     return output_data
+
+
+def pulsed_noise(t_noise, t_pause, fs, reps=10, t_fade=0.02, normalize=True):
+    """ Pulsed white noise train.
+
+    Parameters
+    ----------
+    t_noise : float
+        t in s for pulse.
+    t_pause : float
+        t in s between pulses.
+    fs : int
+        Sampling frequency.
+    reps : int, optional
+        Repetitions (independent). The default is 10.
+    t_fade : float, optional
+        t in s for fade in and out. The default is 0.02.
+    normalize : bool, optional
+        Normalize output. The default is True.
+
+    Returns
+    -------
+    s_out : array_like
+        output signal.
+
+    """
+    s_out = []
+
+    for rep in range(reps):
+        s_noise = np.random.randn(int(fs*t_noise))
+        s_pause = np.zeros(int(fs*t_noise))
+
+        # fades
+        mask_n = int(fs*t_fade)
+        mask_in = np.sin(np.linspace(0, np.pi/2, mask_n))**2
+        mask_out = np.cos(np.linspace(0, np.pi/2, mask_n))**2
+
+        # apply
+        s_noise[:mask_n] *= mask_in
+        s_noise[-mask_n:] *= mask_out
+
+        s_out = np.r_[s_out, s_noise, s_pause]
+
+    if normalize:
+        s_out /= np.max(s_out)
+
+    return s_out
