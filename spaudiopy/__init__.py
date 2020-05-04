@@ -16,8 +16,15 @@
    plots
 
 """
+from subprocess import check_output
 
-__version__ = "0.1.2-dirty"
+
+try:
+    release = check_output(['git', 'describe', '--tags', '--always'])
+    __version__ = release.decode().strip()
+except Exception:
+    __version__ = "0.1.2-dirty"
+
 
 from . import decoder
 from . import grids
@@ -28,4 +35,3 @@ from . import sdm
 from . import sph
 from . import sig
 from . import utils
-
