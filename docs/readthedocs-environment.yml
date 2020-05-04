@@ -2,11 +2,11 @@ channels:
   - defaults
 dependencies:
   - python>=3.6
-  - sphinx>=1.8.5
+  - sphinx<3.0
   - sphinx_rtd_theme
   - numpy
   - scipy
   - joblib
   - pandas
-  - matplotlib
+  - matplotlib<3.1.0
 
