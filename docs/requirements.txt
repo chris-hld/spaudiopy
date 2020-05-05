@@ -1,4 +1,4 @@
-Sphinx>=2.4,<=3.0
+Sphinx>=2.4,<3.0
 Sphinx-RTD-Theme
 
 NumPy
