@@ -2,7 +2,7 @@ channels:
   - defaults
 dependencies:
   - python>=3.6
-  - sphinx<3.0
+  - sphinx=2.4.4
   - sphinx_rtd_theme
   - numpy
   - scipy
