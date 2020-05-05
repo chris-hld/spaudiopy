@@ -6,10 +6,9 @@
 
     import numpy as np
     import matplotlib.pyplot as plt
-    plt.rcParams['figure.constrained_layout.use'] = True
-    plt.rcParams['axes.grid'] = True
-
     import spaudiopy as spa
+    plt.rcParams['figure.figsize'] = 8, 4.5  # inch
+    plt.rcParams['axes.grid'] = True
 
 """
 
