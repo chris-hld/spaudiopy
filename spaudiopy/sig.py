@@ -21,7 +21,8 @@ from scipy import signal as scysig
 import soundfile as sf
 try:
     import sounddevice as sd
-except (ImportError, OSError):
+except (ImportError, OSError) as e:
+    print(str(e))
     warn("Sounddevice not available.")
 
 from . import utils, IO, sph
