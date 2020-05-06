@@ -414,7 +414,7 @@ def hull_normals(hull, plot_face_normals=True, plot_vertex_normals=True):
     y = hull.points[:, 1]
     z = hull.points[:, 2]
 
-    fig = plt.figure()
+    fig = plt.figure(constrained_layout=True)
     ax = fig.gca(projection='3d', aspect='equal')
     ax.plot_trisurf(x, y, z,
                     triangles=hull.simplices,
