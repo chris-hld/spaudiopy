@@ -39,7 +39,7 @@ except Exception:
 # -- General configuration ---------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
-needs_sphinx = '1.3' # for sphinx.ext.napoleon
+needs_sphinx = '1.3'  # for sphinx.ext.napoleon
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -55,7 +55,7 @@ extensions = [
 
 # autodoc
 autodoc_default_options = {
-    'members' : None,
+    'members': None,
     'undoc-members': None,
     'member-order': 'bysource',
     'special-members': '__init__',
@@ -88,7 +88,6 @@ plot_html_show_source_link = False
 #plot_html_show_formats = False
 #plot_pre_code = ''
 plot_rcparams = {'figure.figsize': (8, 4.5),
-                 'savefig.bbox': 'tight',
                  }
 #plot_formats = ['svg', 'pdf', ('png', 96)]
 
