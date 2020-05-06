@@ -7,7 +7,6 @@ Avoid code duplications (and errors) by defining a few custom classes here.
 
     import numpy as np
     import matplotlib.pyplot as plt
-    plt.rcParams['figure.constrained_layout.use'] = True
     plt.rcParams['axes.grid'] = True
 
     import spaudiopy as spa

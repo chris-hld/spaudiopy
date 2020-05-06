@@ -12,10 +12,13 @@ build:
 # Optionally build your docs in additional formats such as PDF and ePub
 formats: all
 
-conda:
-  environment: docs/readthedocs-environment.yml
+#conda:
+#  environment: docs/readthedocs-environment.yml
 
+# Optionally set the version of Python and requirements required to build your docs
 python:
-   install:
-      - method: pip
-        path: .
+  version: 3.6
+  install:
+    - requirements: docs/requirements.txt
+    - method: pip
+      path: .

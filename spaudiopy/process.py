@@ -6,7 +6,6 @@
 
     import numpy as np
     import matplotlib.pyplot as plt
-    plt.rcParams['figure.constrained_layout.use'] = True
     plt.rcParams['axes.grid'] = True
 
     import spaudiopy as spa
@@ -259,9 +258,10 @@ def frac_octave_filterbank(n, N_out, fs, f_low, f_high=None, mode='energy',
 
         fs = 44100
         N = 2**16
-        gs, ff = spa.process.frac_octave_filterbank(n=1, N_out=N, fs=fs, f_low=100, f_high=8000)
+        gs, ff = spa.process.frac_octave_filterbank(n=1, N_out=N, fs=fs,
+                                                    f_low=100, f_high=8000)
         f = np.linspace(0, fs//2, N)
-        fig, ax = plt.subplots(2, 1)
+        fig, ax = plt.subplots(2, 1, constrained_layout=True)
         ax[0].semilogx(f, gs.T)
         ax[0].set_title('Band gains')
         ax[1].semilogx(f, np.sum(np.abs(gs)**2, axis=0))
