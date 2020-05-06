@@ -575,7 +575,11 @@ def binaural_coloration_compensation(N, f, r_0=0.0875, w_taper=None):
     Returns
     -------
     gain : array_like
-        Filter gain(kr). See also 'process.gain_clipping'.
+        Filter gain(kr).
+
+    See Also
+    --------
+    process.gain_clipping : Limit maximum gain
 
     References
     ----------
