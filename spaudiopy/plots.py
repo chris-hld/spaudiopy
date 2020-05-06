@@ -372,7 +372,7 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, lim_m=1,
     y = hull.points[:, 1]
     z = hull.points[:, 2]
 
-    fig = plt.figure()
+    fig = plt.figure(constrained_layout=True)
     ax = fig.gca(projection='3d', aspect='equal')
 
     # valid
