@@ -14,11 +14,15 @@ Avoid code duplications (and errors) by defining a few custom classes here.
 """
 
 import copy
+from warnings import warn
 
 import numpy as np
 from scipy import signal as scysig
 import soundfile as sf
-import sounddevice as sd
+try:
+    import sounddevice as sd
+except (ImportError, OSError):
+    warn("Sounddevice not available.")
 
 from . import utils, IO, sph
 from . import process as pcs

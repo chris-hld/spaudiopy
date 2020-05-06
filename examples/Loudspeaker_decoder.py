@@ -26,7 +26,6 @@
 import numpy as np
 
 import matplotlib.pyplot as plt
-import sounddevice as sd
 
 from spaudiopy import utils, IO, sig, decoder, sph, plots, grids
 
