@@ -34,7 +34,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install flake8 pytest
-    #    if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Install system libraries
       if: ${{ contains( runner.os, 'Linux' ) }}
       run: |
@@ -52,10 +51,10 @@ jobs:
       if: ${{ contains( runner.os, 'macOS' ) }}
       run: |
         mkdir -p ~/.matplotlib/
-        echo "backend : TkAgg" > ~/.matplotlib/matplotlibrc or echo "backend : Agg" > ~/.matplotlib/matplotlibrc
+        echo "backend : TkAgg" > ~/.matplotlib/matplotlibrc
     - name: Import package
       run: |
         python -c 'import spaudiopy; print(spaudiopy.__version__)'
     - name: Test with pytest
       run: |
-        pytest -vvv
+        pytest -v
