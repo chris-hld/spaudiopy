@@ -12,9 +12,11 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    name: Test on node ${{ matrix.node_version }} and ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ubuntu-latest, macOS-latest, windows-latest]
         python-version: [3.6, 3.7, 3.8]
 
     steps:
