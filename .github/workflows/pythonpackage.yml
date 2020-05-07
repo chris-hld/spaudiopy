@@ -35,8 +35,8 @@ jobs:
       run: |
         sudo apt-get install libsndfile1
         #sudo apt-get install libportaudio2
-    - name: "Install in dev mode"
-      run: "python -m pip install -e .[dev]"
+    - name: Install package
+      run: python -m pip install -e .
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
