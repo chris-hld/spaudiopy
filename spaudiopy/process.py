@@ -424,3 +424,61 @@ def gain_clipping(gain, threshold):
     gain = gain / threshold  # offset by threshold
     gain[gain > 1] = 1 + np.tanh(gain[gain > 1] - 1)  # soft clipping to 2
     return gain * threshold
+
+
+def pulsed_noise(t_noise, t_pause, fs, reps=10, t_fade=0.02, pink_noise=True,
+                 normalize=True):
+    """Pulsed noise train, pink or white.
+
+    Parameters
+    ----------
+    t_noise : float
+        t in s for pulse.
+    t_pause : float
+        t in s between pulses.
+    fs : int
+        Sampling frequency.
+    reps : int, optional
+        Repetitions (independent). The default is 10.
+    t_fade : float, optional
+        t in s for fade in and out. The default is 0.02.
+    pink_noise : bool, optional
+        Use 'pink' (1/f) noise. The default is True
+    normalize : bool, optional
+        Normalize output. The default is True.
+
+    Returns
+    -------
+    s_out : array_like
+        output signal.
+
+    """
+    s_out = []
+
+    for _ in range(reps):
+        s_noise = np.random.randn(int(fs*t_noise))
+
+        if pink_noise:
+            X = np.fft.rfft(s_noise)
+            nbins = len(X)
+            # divide by sqrt(n), power spectrum
+            X_pink = X / np.sqrt(np.arange(nbins)+1)
+            s_noise = np.fft.irfft(X_pink)
+
+        s_pause = np.zeros(int(fs*t_noise))
+
+        # fades
+        mask_n = int(fs*t_fade)
+        mask_in = np.sin(np.linspace(0, np.pi/2, mask_n))**2
+        mask_out = np.cos(np.linspace(0, np.pi/2, mask_n))**2
+
+        # apply
+        s_noise[:mask_n] *= mask_in
+        s_noise[-mask_n:] *= mask_out
+
+        s_out = np.r_[s_out, s_noise, s_pause]
+
+    if normalize:
+        s_out /= np.max(abs(s_out))
+
+    return s_out
