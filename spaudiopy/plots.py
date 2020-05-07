@@ -589,7 +589,7 @@ def doa(azi, colat, fs, p=None, size=300):
     else:
         s_plot = np.ones_like(azi)
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(constrained_layout=True)
     ax.set_aspect('equal')
 
     # plot in reverse order so that first reflections are on top
@@ -603,5 +603,5 @@ def doa(azi, colat, fs, p=None, size=300):
     ax.set_yticks([-np.pi/2, 0, np.pi/2])
     ax.set_yticklabels([r'$-\pi / 2$', r'$0$', r'$\pi / 2$'])
 
-    cbar = plt.colorbar(p)
+    cbar = plt.colorbar(p, ax=ax, orientation='horizontal')
     cbar.set_label("t in ms")
