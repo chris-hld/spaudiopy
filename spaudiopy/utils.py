@@ -92,6 +92,43 @@ def angle_between(v1, v2, vi=None):
     return np.arccos(np.clip(a, -1.0, 1.0))
 
 
+def haversine(azi1, colat1, azi2, colat2, r=1):
+    """Calculate the spherical distance between two points on the sphere.
+    The spherical distance is central angle for r=1.
+
+    Parameters
+    ----------
+    azi1 : (n,) array_like
+    colat1 : (n,) array_like.
+    azi2 : (n,) array_like
+    colat2: (n,) array_like
+    r : float, optional.
+
+    Returns
+    -------
+    c : (n,) array_like
+        Haversine distance between pairs of points.
+
+    Reference
+    ---------
+    https://en.wikipedia.org/wiki/Haversine_formula
+
+    """
+    lat1 = np.pi / 2 - colat1
+    lat2 = np.pi / 2 - colat2
+
+    dlon = azi2 - azi1
+    dlat = lat2 - lat1
+
+    haversin_A = np.sin(dlat / 2) ** 2
+    haversin_B = np.sin(dlon / 2) ** 2
+
+    haversin_alpha = haversin_A + np.cos(lat1) * np.cos(lat2) * haversin_B
+
+    c = 2 * r * np.arcsin(np.sqrt(haversin_alpha))
+    return c
+
+
 def area_triangle(p1, p2, p3):
     """calculate area of any triangle given coordinates of its corners p."""
     return 0.5 * np.linalg.norm(np.cross((p2 - p1), (p3 - p1)))

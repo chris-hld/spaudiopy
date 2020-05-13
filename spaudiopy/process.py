@@ -88,9 +88,9 @@ def resample_hrirs(hrir_l, hrir_r, fs_hrir, fs_target, jobs_count=1):
     return hrir_l_resampled, hrir_r_resampled, fs_hrir
 
 
-def haversine_dist(azi1, colat1, azi2, colat2):
-    """
-    Calculate the great circle distance between two points on the sphere.
+def haversine(azi1, colat1, azi2, colat2, r=1):
+    """Calculate the spherical distance between two points on the sphere.
+    The spherical distance is central angle for r=1.
 
     Parameters
     ----------
@@ -98,11 +98,17 @@ def haversine_dist(azi1, colat1, azi2, colat2):
     colat1 : (n,) array_like.
     azi2 : (n,) array_like
     colat2: (n,) array_like
+    r : float, optional.
 
     Returns
     -------
     c : (n,) array_like
         Haversine distance between pairs of points.
+
+    Reference
+    ---------
+    https://en.wikipedia.org/wiki/Haversine_formula
+
     """
     lat1 = np.pi / 2 - colat1
     lat2 = np.pi / 2 - colat2
@@ -115,7 +121,7 @@ def haversine_dist(azi1, colat1, azi2, colat2):
 
     haversin_alpha = haversin_A + np.cos(lat1) * np.cos(lat2) * haversin_B
 
-    c = 2 * np.arcsin(np.sqrt(haversin_alpha))
+    c = 2 * r * np.arcsin(np.sqrt(haversin_alpha))
     return c
 
 
