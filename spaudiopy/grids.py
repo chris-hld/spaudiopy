@@ -33,12 +33,16 @@ def load_t_design(degree):
     Parameters
     ----------
     degree : int
-        T-design degree between 1 and 21. (degree >= 2 * SH_order)
+        T-design degree between 1 and 21.
 
     Returns
     -------
     vecs : (M, 3) numpy.ndarray
         Coordinates of points.
+
+    Notes
+    -----
+    Degree must be >= 2 * SH_order for spherical harmonic transform (SHT).
 
     Examples
     --------
@@ -75,7 +79,7 @@ def load_n_design(degree):
     Parameters
     ----------
     degree : int
-       Degree of exactness N between 1 and 124. (degree >= 2 * SH_order)
+       Degree of exactness N between 1 and 124.
 
     Returns
     -------
@@ -116,7 +120,7 @@ def load_lebedev(degree):
     Parameters
     ----------
     degree : int
-       Degree of precision p between 3 and 131. (degree >= 2 * SH_order)
+       Degree of precision p between 3 and 131.
 
     Returns
     -------
