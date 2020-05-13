@@ -10,11 +10,12 @@
 
     import spaudiopy as spa
 
-    spa.plots.subplot_sph_coeffs([ np.sqrt(4 * np.pi) * np.array([1, 0, 0, 0]),
-                                   np.sqrt(4/3 * np.pi) * np.array([0, 1, 0, 0]),
-                                   np.sqrt(4/3 * np.pi) * np.array([0, 0, 1, 0]),
-                                   np.sqrt(4/3 * np.pi) * np.array([0, 0, 0, 1])],
-                                 title=["$Y_{0, 0}$", "$Y_{1, -1}$", "$Y_{1, 0}$", "$Y_{1, 1}$"])
+    spa.plots.subplot_sph_coeffs([np.sqrt(4 * np.pi) * np.array([1, 0, 0, 0]),
+                                np.sqrt(4/3 * np.pi) * np.array([0, 1, 0, 0]),
+                                np.sqrt(4/3 * np.pi) * np.array([0, 0, 1, 0]),
+                                np.sqrt(4/3 * np.pi) * np.array([0, 0, 0, 1])],
+                                title=["$Y_{0, 0}$", "$Y_{1, -1}$",
+                                       "$Y_{1, 0}$", "$Y_{1, 1}$"])
 """
 
 import numpy as np
@@ -326,32 +327,32 @@ def check_cond_sht(N, azi, colat, SH_type, lim=None):
 
 
 def bandlimited_dirac(N, d, w_n=None):
-    r"""Order N spatially bandlimited Dirac pulse at angular distance d.
+    r"""Order N spatially bandlimited Dirac pulse at central angle d.
 
     Parameters
     ----------
     N : int
         SH order.
     d : (Q,) array_like
-        Angular distance in rad.
-    w_n : (N,) array_like
+        Central angle in rad.
+    w_n : (N,) array_like, optional. Default is None.
         Tapering window w_n.
 
     Returns
     -------
     dirac : (Q,) array_like
-        Amplitude at angular distance d.
+        Amplitude at central angle d.
 
     Notes
     -----
     Normalize with
 
-    .. math::  \frac{2N + 1}{4 \pi}
+    .. math::  \sum^N \frac{2N + 1}{4 \pi} = \frac{(N+1)^2}{4 \pi}
 
     References
     ----------
-    Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
-    Journal of Audio Engineering Society, eq. (7).
+    Rafaely, B. (2015). Fundamentals of Spherical Array Processing. Springer.,
+    eq. (1.60).
 
     Examples
     --------
@@ -364,7 +365,6 @@ def bandlimited_dirac(N, d, w_n=None):
 
         # cross section
         azi = np.linspace(0, 2 * np.pi, 720, endpoint=True)
-        colat = np.pi / 2 * np.ones_like(azi)
 
         # Bandlimited Dirac pulse
         dirac_untapered = 4 * np.pi / (N + 1) ** 2 * \
@@ -379,7 +379,7 @@ def bandlimited_dirac(N, d, w_n=None):
     for n, i in enumerate(range(N + 1)):
         g_n[i, :] = w_n[i] * (2 * n + 1) / (4 * np.pi) * \
                     scyspecial.eval_legendre(n, np.cos(d))
-    dirac = np.sum(g_n, 0)
+    dirac = np.sum(g_n, axis=0)
     return dirac
 
 
@@ -601,11 +601,13 @@ def binaural_coloration_compensation(N, f, r_0=0.0875, w_taper=None):
         # tapering window
         w_rE = spa.sph.max_rE_weights(N)
 
-        compensation_tapered = spa.sph.binaural_coloration_compensation(N, f,
-                                                                        w_taper=w_rE)
-        compensation_tapered_lim = spa.process.gain_clipping(compensation_tapered,
-                                                             spa.utils.from_db(12))
-        spa.plots.freq_resp(f, [compensation_tapered, compensation_tapered_lim],
+        compensation_tapered = spa.sph.binaural_coloration_compensation(
+                                N, f, w_taper=w_rE)
+        compensation_tapered_lim = spa.process.gain_clipping(
+                                    compensation_tapered,
+                                    spa.utils.from_db(12))
+        spa.plots.freq_resp(f, [compensation_tapered,
+                                compensation_tapered_lim],
                             ylim=(-5, 25),
                             labels=[r'$N=5, max_{rE}$', 'with soft lim'])
 
