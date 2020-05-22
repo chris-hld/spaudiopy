@@ -391,7 +391,7 @@ def max_rE_weights(N):
     Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
     Journal of Audio Engineering Society, eq. (10).
     """
-    theta = np.deg2rad(137.9 / (N + 1.51))
+    theta = np.deg2rad(137.9) / (N + 1.51)
     a_n = scyspecial.eval_legendre(np.arange(N + 1), np.cos(theta))
     return a_n
 
@@ -453,13 +453,7 @@ def repeat_order_coeffs(c):
     """
     c = utils.asarray_1d(c)
     N = len(c) - 1
-    c_reshaped = np.zeros((N + 1) ** 2)
-    idx = 0
-    for n in range(N+1):
-        for m in range(-n, n+1):
-            c_reshaped[idx] = c[n]
-            idx += 1
-    return c_reshaped
+    return np.repeat(c, 2*np.arange(N+1)+1)
 
 
 def spherical_hn2(n, z, derivative=False):
