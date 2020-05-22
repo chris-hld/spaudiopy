@@ -243,7 +243,7 @@ def sph_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None):
     ax.set_ylabel('y')
     ax.set_zlabel('z')
 
-    cb = plt.colorbar(m, ticks=[-np.pi, 0, np.pi], shrink=0.3, aspect=8)
+    cb = plt.colorbar(m, ticks=[-np.pi, 0, np.pi], shrink=0.33, aspect=10)
     cb.set_ticklabels([r'$-\pi$', r'$0$', r'$\pi$'])
 
     plt.grid(True)
@@ -251,11 +251,10 @@ def sph_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None):
     ax.view_init(25, 230)
     if title is not None:
         plt.title(title)
-    # fig.tight_layout()
 
 
 def subplot_sph_coeffs(F_l, SH_type=None, azi_steps=5, el_steps=3, title=None):
-    """Plot spherical harmonics coefficients as function on the sphere."""
+    """Plot spherical harmonics coefficients list as function on the sphere."""
     N_plots = len(F_l)
     azi_steps = np.deg2rad(azi_steps)
     el_steps = np.deg2rad(el_steps)
@@ -264,7 +263,8 @@ def subplot_sph_coeffs(F_l, SH_type=None, azi_steps=5, el_steps=3, title=None):
                                        np.arange(10e-3, np.pi + el_steps,
                                                  el_steps))
 
-    fig = plt.figure(figsize=plt.figaspect(1 / N_plots))
+    fig = plt.figure(figsize=plt.figaspect(1 / N_plots),
+                     constrained_layout=True)
     ax_l = []
     for i_p, ff in enumerate(F_l):
         F_nm = utils.asarray_1d(ff)
@@ -298,6 +298,14 @@ def subplot_sph_coeffs(F_l, SH_type=None, azi_steps=5, el_steps=3, title=None):
         ax.set_ylim(-1, 1)
         ax.set_zlim(-1, 1)
 
+        # Draw axis lines
+        x0 = np.array([1, 0, 0])
+        y0 = np.array([0, 1, 0])
+        z0 = np.array([0, 0, 1])
+        for i in range(3):
+            ax.plot([-x0[i], x0[i]], [-y0[i], y0[i]], [-z0[i], z0[i]], 'k',
+                    alpha=0.3)
+
         if i_p == 0:
             ax.set_xlabel('x')
             ax.set_ylabel('y')
@@ -310,8 +318,8 @@ def subplot_sph_coeffs(F_l, SH_type=None, azi_steps=5, el_steps=3, title=None):
         ax.set_aspect('equal')
         ax_l.append(ax)
 
-    cbar = plt.colorbar(m, shrink=0.3, aspect=8,
-                        ax=ax_l)
+    cbar = plt.colorbar(m, shrink=0.33, aspect=3,
+                        ax=ax_l, orientation='horizontal')
     cbar.set_ticks([-np.pi, 0, np.pi])
     cbar.set_ticklabels([r'$-\pi$', r'$0$', r'$\pi$'])
 
@@ -464,16 +472,17 @@ def hull_normals(hull, plot_face_normals=True, plot_vertex_normals=True):
     ax.view_init(25, 230)
 
 
-def polar(theta, a, title=None, rlim=(-40, 0), ax=None):
-    """Polar plot that allows negative values for 'a'."""
+def polar(theta, r, title=None, rlim=(-40, 0), ax=None):
+    """Polar plot in dB that allows negative values for 'r'."""
     if ax is None:
         fig = plt.figure()
         ax = fig.gca(projection='polar')
-    ax.plot(theta, utils.db(np.clip(a, 0, None)), label='pos')
-    ax.plot(theta, utils.db(abs(np.clip(a, None, 0))), label='neg')
+    ax.plot(theta, utils.db(np.clip(r, 0, None)), label='$+$')
+    ax.plot(theta, utils.db(abs(np.clip(r, None, 0))), label='$-$')
     ax.set_rmin(rlim[0])
     ax.set_rmax(rlim[1])
     ax.set_rticks(np.linspace(rlim[0], rlim[1], 5))
+    ax.text(np.pi/8, 5, 'dB', horizontalalignment='left')
     plt.legend(loc='lower right')
     if title is not None:
         plt.title(title)
@@ -603,5 +612,10 @@ def doa(azi, colat, fs, p=None, size=300):
     ax.set_yticks([-np.pi/2, 0, np.pi/2])
     ax.set_yticklabels([r'$-\pi / 2$', r'$0$', r'$\pi / 2$'])
 
+    # show t as colorbar
     cbar = plt.colorbar(p, ax=ax, orientation='horizontal')
     cbar.set_label("t in ms")
+
+    # produce a legend with a cross section of sizes from the scatter
+    # handles, labels = p.legend_elements(prop="sizes", alpha=0.6)
+    # ax.legend(handles, labels, loc="upper right", title="Sizes")
