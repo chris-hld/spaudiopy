@@ -10,7 +10,7 @@
 
     import spaudiopy as spa
 
-    spa.plots.subplot_sph_coeffs([np.sqrt(4 * np.pi) * np.array([1, 0, 0, 0]),
+    spa.plots.sh_coeffs_subplot([np.sqrt(4 * np.pi) * np.array([1, 0, 0, 0]),
                                 np.sqrt(4/3 * np.pi) * np.array([0, 1, 0, 0]),
                                 np.sqrt(4/3 * np.pi) * np.array([0, 0, 1, 0]),
                                 np.sqrt(4/3 * np.pi) * np.array([0, 0, 0, 1])],
@@ -33,19 +33,30 @@ def sh_matrix(N, azi, colat, SH_type='complex', weights=None):
 
     .. math::
 
-        \mathbf{Y} = \left[ \begin{array}{cccccc}
-        Y_0^0(\theta[0], \phi[0]) & Y_1^{-1}(\theta[0], \phi[0]) & Y_1^0(\theta[0], \phi[0]) & Y_1^1(\theta[0], \phi[0]) & \dots & Y_N^N(\theta[0], \phi[0])  \\
-        Y_0^0(\theta[1], \phi[1]) & Y_1^{-1}(\theta[1], \phi[1]) & Y_1^0(\theta[1], \phi[1]) & Y_1^1(\theta[1], \phi[1]) & \dots & Y_N^N(\theta[1], \phi[1])  \\
-        \vdots & \vdots & \vdots & \vdots & \vdots & \vdots \\
-        Y_0^0(\theta[Q-1], \phi[Q-1]) & Y_1^{-1}(\theta[Q-1], \phi[Q-1]) & Y_1^0(\theta[Q-1], \phi[Q-1]) & Y_1^1(\theta[Q-1], \phi[Q-1]) & \dots & Y_N^N(\theta[Q-1], \phi[Q-1])
+        \mathbf{Y} = \left[ \begin{array}{ccccc}
+        Y_0^0(\theta[0], \phi[0]) & Y_1^{-1}(\theta[0], \phi[0]) &
+        Y_1^0(\theta[0], \phi[0]) &
+        \dots & Y_N^N(\theta[0], \phi[0])  \\
+        Y_0^0(\theta[1], \phi[1]) & Y_1^{-1}(\theta[1], \phi[1]) &
+        Y_1^0(\theta[1], \phi[1]) &
+        \dots & Y_N^N(\theta[1], \phi[1])  \\
+        \vdots & \vdots & \vdots & \vdots & \vdots \\
+        Y_0^0(\theta[Q-1], \phi[Q-1]) & Y_1^{-1}(\theta[Q-1], \phi[Q-1]) &
+        Y_1^0(\theta[Q-1], \phi[Q-1]) &
+        \dots & Y_N^N(\theta[Q-1], \phi[Q-1])
         \end{array} \right]
 
     where
 
     .. math::
 
-        Y_n^m(\theta, \phi) = \sqrt{\frac{2n + 1}{4 \pi} \frac{(n-m)!}{(n+m)!}} P_n^m(\cos \theta) e^{i m \phi}
+        Y_n^m(\theta, \phi) = \sqrt{\frac{2n + 1}{4 \pi}
+                                    \frac{(n-m)!}{(n+m)!}} P_n^m(\cos \theta)
+                              e^{i m \phi}
 
+    When using `SH_type='real'`, the real spherical harmonics
+    :math:`Y_{n,m}(\theta, \phi)` are implemented as a relation to
+    :math:`Y_n^m(\theta, \phi)`.
 
     Parameters
     ----------
@@ -64,8 +75,9 @@ def sh_matrix(N, azi, colat, SH_type='complex', weights=None):
     Ymn : (Q, (N+1)**2) numpy.ndarray
         Matrix of spherical harmonics.
 
-    Examples
-    --------
+    Notes
+    -----
+    The convention used here is also known as N3D-ACN.
 
     """
     azi = utils.asarray_1d(azi)
@@ -196,7 +208,7 @@ def inverse_sht(F_nm, azi, colat, SH_type, N=None, Y_nm=None):
         Matrix of spherical harmonics.
 
     Returns
-    ----------
+    -------
     f : (Q, S)
         The spherical function(S) evaluated at Q directions 'azi/colat'.
     """
@@ -209,8 +221,60 @@ def inverse_sht(F_nm, azi, colat, SH_type, N=None, Y_nm=None):
     return np.matmul(Y_nm, F_nm[:(N + 1) ** 2, :])
 
 
+def N3D_to_SN3D(F_nm, sh_axis=0):
+    """Convert N3D (orthonormal) to SN3D (Schmidt semi-normalized) signals.
+
+    Parameters
+    ----------
+    F_nm : ((N_sph+1)**2, S) numpy.ndarray
+        Matrix of spherical harmonics coefficients of spherical function(S).
+    sh_axis : int, optional
+        SH axis. The default is 0.
+
+    Returns
+    -------
+    F_nm : ((N_sph+1)**2, S) numpy.ndarray
+        Matrix of spherical harmonics coefficients of spherical function(S).
+
+    """
+    assert(F_nm.ndim == 2)
+    # Input SH order
+    N = int(np.sqrt(F_nm.shape[sh_axis]) - 1)
+    # 1/sqrt(2n+1) conversion factor
+    n_norm = np.array([1/np.sqrt(2*n + 1) for n in range(N + 1)])
+    # Broadcast
+    n_norm = np.expand_dims(repeat_order_coeffs(n_norm), axis=sh_axis-1)
+    return n_norm * F_nm
+
+
+def SN3D_to_N3D(F_nm, sh_axis=0):
+    """Convert SN3D (Schmidt semi-normalized) to N3D (orthonormal) signals.
+
+    Parameters
+    ----------
+    F_nm : ((N_sph+1)**2, S) numpy.ndarray
+        Matrix of spherical harmonics coefficients of spherical function(S).
+    sh_axis : int, optional
+        SH axis. The default is 0.
+
+    Returns
+    -------
+    F_nm : ((N_sph+1)**2, S) numpy.ndarray
+        Matrix of spherical harmonics coefficients of spherical function(S).
+
+    """
+    assert(F_nm.ndim == 2)
+    # Input SH order
+    N = int(np.sqrt(F_nm.shape[sh_axis]) - 1)
+    # sqrt(2n+1) conversion factor
+    n_norm = np.array([np.sqrt(2*n + 1) for n in range(N + 1)])
+    # Broadcast
+    n_norm = np.expand_dims(repeat_order_coeffs(n_norm), axis=sh_axis-1)
+    return n_norm * F_nm
+
+
 def platonic_solid(shape):
-    """Returns coordinates of shape='tetrahedron' only, yet."""
+    """Return coordinates of shape='tetrahedron' only, yet."""
     if shape in ['tetra', 'tetrahedron']:
         u = np.array([[1, 1, 1],
                       [1, -1, -1],
@@ -401,7 +465,7 @@ def r_E(p, g):
     and their gains g.
 
     Parameters
-    -----------
+    ----------
     p : (Q, 3) numpy.ndarray
         Q loudspeaker position vectors.
     g : (S, Q) numpy.ndarray
