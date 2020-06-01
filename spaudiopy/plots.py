@@ -15,8 +15,8 @@
 import numpy as np
 
 import matplotlib.pyplot as plt
-from matplotlib import cm, colors
-from mpl_toolkits.mplot3d import Axes3D  # for (projection='3d')
+from matplotlib import cm, colors, tri
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 
 from . import utils
 from . import sph
@@ -191,7 +191,57 @@ def compare_ambi(Ambi_A, Ambi_B):
     plt.title('B-format')
 
 
-def sph_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None):
+def spherical_function(f, azi, colat, title=None):
+    """Plot function 1D vector f over azi and colat."""
+    f = utils.asarray_1d(np.real_if_close(f))
+    azi = utils.asarray_1d(azi)
+    colat = utils.asarray_1d(colat)
+    x, y, z = utils.sph2cart(azi, colat, r=abs(f))
+
+    # triangulate in the underlying parametrization
+    triang = tri.Triangulation(colat, azi)
+
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+    p_tri = ax.plot_trisurf(x, y, z,
+                            cmap=plt.cm.coolwarm,
+                            # antialiased=False,
+                            triangles=triang.triangles, shade=True,
+                            edgecolor='none', linewidth=0.06, alpha=0.25)
+
+    # Draw axis lines
+    x0 = np.array([1, 0, 0])
+    y0 = np.array([0, 1, 0])
+    z0 = np.array([0, 0, 1])
+    for i in range(3):
+        ax.plot([-x0[i], x0[i]], [-y0[i], y0[i]], [-z0[i], z0[i]], 'k',
+                alpha=0.3)
+
+    # overlay data points, radius as color
+    p_sc = ax.scatter(x, y, z, c=f, cmap=plt.cm.viridis,
+                      vmin=np.min([0, f.min()]),
+                      vmax=np.max([1, f.max()]))
+
+    ax.set_xlim(-1, 1)
+    ax.set_ylim(-1, 1)
+    ax.set_zlim(-1, 1)
+
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.set_zlabel('z')
+    ax.locator_params(nbins=5)
+
+    cbar = plt.colorbar(p_sc, ax=ax, shrink=0.5, aspect=10)
+    cbar.set_label(r"$f\,(\Omega)$")
+
+    plt.grid(True)
+    ax.set_aspect('equal')
+    ax.view_init(25, 230)
+    if title is not None:
+        plt.title(title)
+
+
+def sh_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None):
     """Plot spherical harmonics coefficients as function on the sphere."""
     F_nm = utils.asarray_1d(F_nm)
     F_nm = F_nm[:, np.newaxis]
@@ -242,8 +292,10 @@ def sph_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None):
     ax.set_xlabel('x')
     ax.set_ylabel('y')
     ax.set_zlabel('z')
+    ax.locator_params(nbins=5)
 
-    cb = plt.colorbar(m, ticks=[-np.pi, 0, np.pi], shrink=0.33, aspect=10)
+    cb = plt.colorbar(m, ticks=[-np.pi, 0, np.pi], shrink=0.5, aspect=10)
+    cb.set_label("Phase in rad")
     cb.set_ticklabels([r'$-\pi$', r'$0$', r'$\pi$'])
 
     plt.grid(True)
@@ -253,7 +305,7 @@ def sph_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None):
         plt.title(title)
 
 
-def subplot_sph_coeffs(F_l, SH_type=None, azi_steps=5, el_steps=3, title=None):
+def sh_coeffs_subplot(F_l, SH_type=None, azi_steps=5, el_steps=3, title=None):
     """Plot spherical harmonics coefficients list as function on the sphere."""
     N_plots = len(F_l)
     azi_steps = np.deg2rad(azi_steps)
@@ -311,6 +363,7 @@ def subplot_sph_coeffs(F_l, SH_type=None, azi_steps=5, el_steps=3, title=None):
             ax.set_ylabel('y')
             ax.set_zlabel('z')
 
+        ax.locator_params(nbins=3)
         plt.grid(True)
         ax.view_init(25, 230)
         if title is not None:

@@ -89,26 +89,26 @@ utils.test_diff(B_sig, B_sig_re)
 
 # %%
 # Some plots
-plots.sph_coeffs(F_nm, title="Ambeo: all channels max")
-plots.sph_coeffs(F_B, title="b_to_sh: W+X")
+plots.sh_coeffs(F_nm, title="Ambeo: all channels max")
+plots.sh_coeffs(F_B, title="b_to_sh: W+X")
 
 # %%
-plots.subplot_sph_coeffs([np.array([1, 0, 0, 0]),
-                          np.array([0, 1, 0, 0]),
-                          np.array([0, 0, 1, 0]),
-                          np.array([0, 0, 0, 1])],
-                         title=["0", "1, -1", "1, 0", "1, 1"])
+plots.sh_coeffs_subplot([np.array([1, 0, 0, 0]),
+                         np.array([0, 1, 0, 0]),
+                         np.array([0, 0, 1, 0]),
+                         np.array([0, 0, 0, 1])],
+                        title=["0", "1, -1", "1, 0", "1, 1"])
 
 # %%
-plots.sph_coeffs(np.sqrt(2) * np.array([1, 0, 0, -1]), 'complex',
-                 title="sqrt(2) * [1, 0, 0, -1] complex coeffs")
+plots.sh_coeffs(np.sqrt(2) * np.array([1, 0, 0, -1]), 'complex',
+                title="sqrt(2) * [1, 0, 0, -1] complex coeffs")
 
 # %%
 # Look at simple B format generator
 sig2 = np.ones(8)
 B = sph.src_to_B(sig2, np.pi / 4, np.pi / 4)
 B_nm = sph.b_to_sh(B)
-plots.sph_coeffs(B_nm[:, 0], title="Sig 2 B")
+plots.sh_coeffs(B_nm[:, 0], title="Sig 2 B")
 
 # %%
 plt.show()
