@@ -190,18 +190,20 @@ def stack(vector_1, vector_2):
     return np.squeeze(out)
 
 
-def test_diff(v1, v2, msg=None, VERBOSE=True):
-    """Test if the cumulative element-wise difference between v1 and v2
-    is greater 10-e8.
+def test_diff(v1, v2, msg=None, axis=None, test_lim=10e-8, VERBOSE=True):
+    """Test if the cumulative element-wise difference between v1 and v2.
+    Return difference and be verbose if is greater `test_lim`.
     """
-    d = np.sum(np.abs(v1.ravel() - v2.ravel()))
+    v1 = np.asarray(v1)
+    v2 = np.asarray(v2)
+    d = np.sum(np.abs(v1.ravel() - v2.ravel()), axis=axis)  # None is all
     if VERBOSE:
         if msg is not None:
             print(msg, '--', end=' ')
-        if np.any(d > 10e-8):
+        if np.any(d > test_lim):
             print('Diff: ', d)
         else:
-            print('Close enough')
+            print('Close enough.')
     return d
 
 
