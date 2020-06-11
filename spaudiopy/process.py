@@ -63,15 +63,13 @@ def resample_hrirs(hrir_l, hrir_r, fs_hrir, fs_target, jobs_count=1):
     """
     if jobs_count is None:
         jobs_count = multiprocessing.cpu_count()
-    print('Resample HRTFs')
     hrir_l_resampled = np.zeros([hrir_l.shape[0],
                                  int(hrir_l.shape[1] * fs_target / fs_hrir)])
     hrir_r_resampled = np.zeros_like(hrir_l_resampled)
 
     if jobs_count == 1:
-        for i, (l, r) in enumerate(zip(hrir_l, hrir_r)):
-            hrir_l_resampled[i, :] = resampy.resample(l, fs_hrir, fs_target)
-            hrir_r_resampled[i, :] = resampy.resample(r, fs_hrir, fs_target)
+        hrir_l_resampled = resampy.resample(hrir_l, fs_hrir, fs_target, axis=1)
+        hrir_r_resampled = resampy.resample(hrir_r, fs_hrir, fs_target, axis=1)
     elif jobs_count > 1:
         print("Using %i processes..." % jobs_count)
         with multiprocessing.Pool(processes=jobs_count) as pool:
