@@ -102,7 +102,7 @@ class LoudspeakerSetup:
         assert(len(self.d) == self.npoints)
 
     @classmethod
-    def from_sph(cls, azi, colat, r=1, listener_orientation=None):
+    def from_sph(cls, azi, colat, r=1, listener_position=None):
         """ Alternative constructor, using spherical coordinates in rad.
 
         Parameters
@@ -110,15 +110,15 @@ class LoudspeakerSetup:
         azi : array_like, spherical
         colat : array_like, spherical
         r : array_like, spherical
-        listener_orientation : (azi, colat, r), spherical, optional
+        listener_position : (azi, colat, r), spherical, optional
             Offset, will be substracted from the loudspeaker positions.
 
         """
         x, y, z = utils.sph2cart(azi, colat, r)
-        if listener_orientation is None:
-            listener_orientation = [0, 0, 0]
-        listener_orientation = utils.asarray_1d(listener_orientation)
-        listener_position = utils.sph2cart(*listener_orientation)
+        if listener_position is None:
+            listener_position = [0, 0, 0]
+        listener_position = utils.asarray_1d(listener_position)
+        listener_position = utils.sph2cart(*listener_position)
         return cls(x, y, z, listener_position=listener_position)
 
     def is_simplex_valid(self, simplex):
