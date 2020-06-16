@@ -215,6 +215,12 @@ def frac_octave_filterbank(n, N_out, fs, f_low, f_high=None, mode='energy',
 
     Notes
     -----
+    This filterbank is originally designed such that the sum of gains squared
+    sums to unity. The alternative 'amplitude' mode ensures that the gains sum
+    directly to unity.
+
+    References
+    ----------
     Antoni, J. (2010). Orthogonal-like fractional-octave-band filters.
     The Journal of the Acoustical Society of America, 127(2), 884–895.
 
@@ -290,17 +296,10 @@ def frac_octave_filterbank(n, N_out, fs, f_low, f_high=None, mode='energy',
         for l_i in range(l):
             phi = np.sin(np.pi / 2 * phi)
 
-        if mode == 'energy':
-            # shift phi to [0, 1]
-            phi = 0.5 * (phi + 1)
-            a = np.sin(np.pi / 2 * phi)
-            b = np.cos(np.pi / 2 * phi)
-
-        if mode in ['amplitude', 'pressure']:
-            # This is not part of Antony (2010)
-            a = np.sin(np.pi / 2 * phi)
-            a = 0.5 * (a + 1)
-            b = 1 - a
+        # shift phi to [0, 1]
+        phi = 0.5 * (phi + 1)
+        a = np.sin(np.pi / 2 * phi)
+        b = np.cos(np.pi / 2 * phi)
 
         # Hi
         g[b_idx, k_i[b_idx] - P[b_idx]: k_i[b_idx] + P[b_idx] + 1] = b
@@ -308,6 +307,14 @@ def frac_octave_filterbank(n, N_out, fs, f_low, f_high=None, mode='energy',
         # Lo
         g[b_idx + 1, k_i[b_idx] - P[b_idx]: k_i[b_idx] + P[b_idx] + 1] = a
         g[b_idx + 1, : k_i[b_idx] - P[b_idx]] = 0.
+
+    if mode in ['energy']:
+        g = g
+    elif mode in ['amplitude', 'pressure']:
+        # This is not part of Antony (2010), see 'notes'
+        g = g**2
+    else:
+        raise ValueError("Mode not implemented: " + mode)
 
     # Corresponding frequency limits
     ff = np.c_[f_lo, f_c, f_hi]
