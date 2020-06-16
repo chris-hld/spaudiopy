@@ -10,11 +10,11 @@
 
     import spaudiopy as spa
 
-    spa.plots.sh_coeffs_subplot([np.sqrt(4 * np.pi) * np.array([1, 0, 0, 0]),
-                                np.sqrt(4/3 * np.pi) * np.array([0, 1, 0, 0]),
-                                np.sqrt(4/3 * np.pi) * np.array([0, 0, 1, 0]),
-                                np.sqrt(4/3 * np.pi) * np.array([0, 0, 0, 1])],
-                                title=["$Y_{0, 0}$", "$Y_{1, -1}$",
+    spa.plots.sh_coeffs_subplot([np.sqrt(4*np.pi) * np.array([1, 0, 0, 0]),
+                                 np.sqrt(4/3*np.pi) * np.array([0, 1, 0, 0]),
+                                 np.sqrt(4/3*np.pi) * np.array([0, 0, 1, 0]),
+                                 np.sqrt(4/3*np.pi) * np.array([0, 0, 0, 1])],
+                                titles=["$Y_{0, 0}$", "$Y_{1, -1}$",
                                        "$Y_{1, 0}$", "$Y_{1, 1}$"])
 """
 
@@ -103,13 +103,13 @@ def sh_matrix(N, azi, colat, SH_type='complex', weights=None):
             elif SH_type == 'real':
                 if m == 0:
                     Ymn[:, i] = weights * np.real(
-                            scyspecial.sph_harm(m, n, azi, colat))
+                                scyspecial.sph_harm(m, n, azi, colat))
                 if m < 0:
                     Ymn[:, i] = weights * np.sqrt(2) * (-1) ** m * np.imag(
-                            scyspecial.sph_harm(np.abs(m), n, azi, colat))
+                                scyspecial.sph_harm(np.abs(m), n, azi, colat))
                 if m > 0:
                     Ymn[:, i] = weights * np.sqrt(2) * (-1) ** m * np.real(
-                            scyspecial.sph_harm(np.abs(m), n, azi, colat))
+                                scyspecial.sph_harm(np.abs(m), n, azi, colat))
 
             i += 1
     return Ymn
@@ -677,7 +677,7 @@ def binaural_coloration_compensation(N, f, r_0=0.0875, w_taper=None):
     N_full = int(np.ceil(kr[-1]))
 
     gain = pressure_on_sphere(N_full, kr) / \
-           pressure_on_sphere(N, kr, weights=w_taper)
+           pressure_on_sphere(N, kr, weights=w_taper)  # noqa: E127
     # catch NaNs
     gain[np.isnan(gain)] = 1.
     return gain

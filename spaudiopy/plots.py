@@ -305,7 +305,7 @@ def sh_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None):
         plt.title(title)
 
 
-def sh_coeffs_subplot(F_l, SH_type=None, azi_steps=5, el_steps=3, title=None):
+def sh_coeffs_subplot(F_l, SH_type=None, azi_steps=5, el_steps=3, titles=None):
     """Plot spherical harmonics coefficients list as function on the sphere."""
     N_plots = len(F_l)
     azi_steps = np.deg2rad(azi_steps)
@@ -366,8 +366,8 @@ def sh_coeffs_subplot(F_l, SH_type=None, azi_steps=5, el_steps=3, title=None):
         ax.locator_params(nbins=3)
         plt.grid(True)
         ax.view_init(25, 230)
-        if title is not None:
-            ax.set_title(title[i_p])
+        if titles is not None:
+            ax.set_title(titles[i_p])
         ax.set_aspect('equal')
         ax_l.append(ax)
 
@@ -406,7 +406,7 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, lim_m=1,
             valid_s = simplices
         else:
             is_valid_s = np.array([hull.is_simplex_valid(s)
-                                  for s in simplices])
+                                   for s in simplices])
             valid_s = simplices[is_valid_s]
             invalid_s = simplices[~is_valid_s]
             if np.all(is_valid_s):
@@ -661,7 +661,7 @@ def doa(azi, colat, fs, p=None, size=300):
     ax.set_ylabel("Elevation in rad")
     ax.set_xticks([-np.pi, -np.pi/2, 0, np.pi/2, np.pi])
     ax.set_xticklabels([r'$-\pi$', r'$-\pi / 2$', r'$0$',
-                       r'$\pi / 2$', r'$\pi$'])
+                        r'$\pi / 2$', r'$\pi$'])
     ax.set_yticks([-np.pi/2, 0, np.pi/2])
     ax.set_yticklabels([r'$-\pi / 2$', r'$0$', r'$\pi / 2$'])
 

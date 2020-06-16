@@ -97,7 +97,7 @@ plots.sh_coeffs_subplot([np.array([1, 0, 0, 0]),
                          np.array([0, 1, 0, 0]),
                          np.array([0, 0, 1, 0]),
                          np.array([0, 0, 0, 1])],
-                        title=["0", "1, -1", "1, 0", "1, 1"])
+                        titles=["0", "1, -1", "1, 0", "1, 1"])
 
 # %%
 plots.sh_coeffs(np.sqrt(2) * np.array([1, 0, 0, -1]), 'complex',
