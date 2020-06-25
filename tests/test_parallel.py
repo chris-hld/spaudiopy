@@ -16,12 +16,13 @@ from scipy.io import loadmat
 
 import spaudiopy as spa
 
-current_file_dir = os.path.dirname(__file__)
-sys.path.insert(0, os.path.abspath(os.path.join(
-                current_file_dir, '..')))
+#current_file_dir = os.path.dirname(__file__)
+#sys.path.insert(0, os.path.abspath(os.path.join(
+#                current_file_dir, '..')))
 
+JOB_COUNTS = [1, 2, None]
 
-@pytest.mark.parametrize('test_jobs', [2, None])
+@pytest.mark.parametrize('test_jobs', JOB_COUNTS)
 def test_pseudo_intensity(test_jobs):
     fs = 44100
     n_samples = 10000
@@ -36,7 +37,7 @@ def test_pseudo_intensity(test_jobs):
     return azi_r, colat_r, r_r
 
 
-@pytest.mark.parametrize('test_jobs', [2, None])
+@pytest.mark.parametrize('test_jobs', JOB_COUNTS)
 def test_vbap(test_jobs):
     vecs = spa.grids.load_t_design(degree=5)
     hull = spa.decoder.LoudspeakerSetup(*vecs.T)
@@ -46,7 +47,7 @@ def test_vbap(test_jobs):
     assert_allclose(gains_t, gains_r)
 
 
-@pytest.mark.parametrize('test_jobs', [2, None])
+@pytest.mark.parametrize('test_jobs', JOB_COUNTS)
 def test_allrap(test_jobs):
     vecs = spa.grids.load_t_design(degree=5)
     hull = spa.decoder.LoudspeakerSetup(*vecs.T)
@@ -57,7 +58,7 @@ def test_allrap(test_jobs):
     assert_allclose(gains_t, gains_r)
 
 
-@pytest.mark.parametrize('test_jobs', [2, None])
+@pytest.mark.parametrize('test_jobs', JOB_COUNTS)
 def test_allrap2(test_jobs):
     vecs = spa.grids.load_t_design(degree=5)
     hull = spa.decoder.LoudspeakerSetup(*vecs.T)
@@ -68,7 +69,7 @@ def test_allrap2(test_jobs):
     assert_allclose(gains_t, gains_r)
 
 
-@pytest.mark.parametrize('test_jobs', [2, None])
+@pytest.mark.parametrize('test_jobs', JOB_COUNTS)
 def test_render_bsdm(test_jobs):
     sdm_p, sdm_phi, sdm_theta = [*np.random.randn(3, 1000)]
     hrirs = spa.IO.load_hrirs(fs=44100, filename='dummy')
@@ -79,7 +80,7 @@ def test_render_bsdm(test_jobs):
     assert_allclose([bsdm_l_t, bsdm_r_t], [bsdm_l_r, bsdm_r_r])
 
 
-@pytest.mark.parametrize('test_jobs', [2, None])
+@pytest.mark.parametrize('test_jobs', JOB_COUNTS)
 def test_resample_hrirs(test_jobs):
     hrirs = spa.IO.load_hrirs(fs=44100, filename='dummy')
     hrir_l_rsmp_r, hrir_r_rsmp_r, _ = spa.process.resample_hrirs(hrirs.left,
@@ -93,3 +94,4 @@ def test_resample_hrirs(test_jobs):
                                                                  test_jobs)
     assert_allclose([hrir_l_rsmp_t, hrir_r_rsmp_t],
                     [hrir_l_rsmp_r, hrir_r_rsmp_r])
+
