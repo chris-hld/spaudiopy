@@ -1,9 +1,9 @@
 {
-    "Name": "MCC_layoutC",
-    "Description": "This configuration file was created with spaudiopy (v-0.1.2-dirty), 2020-05-04 18:54:53.025826",
+    "Name": "Aalto MCC Wilska subset C",
+    "Description": "This configuration file was created with spaudiopy (v-0.1.2-dirty), 2020-06-26 15:01:59.051247",
     "LoudspeakerLayout": {
-        "Name": "MCC_layoutC",
-        "Description": "Symmetrical subset for Aalto MCC.",
+        "Name": "Aalto MCC Wilska subset C",
+        "Description": "Symmetrical subset for Aalto MCC Wilska.",
         "Loudspeakers": [
             {
                 "Azimuth": 0.0,

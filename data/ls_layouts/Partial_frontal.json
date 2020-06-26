@@ -1,0 +1,82 @@
+{
+    "Name": "Partial frontal setup example of 9 loudspeakers.",
+    "Description": "This configuration file was created with spaudiopy (v-0.1.2-dirty), 2020-06-26 15:01:58.746902",
+    "LoudspeakerLayout": {
+        "Name": "Partial frontal setup example of 9 loudspeakers.",
+        "Description": "Example loudspeaker layout used in research.spa.aalto.fi/projects/vbap-lib/vbap.html ",
+        "Loudspeakers": [
+            {
+                "Azimuth": 280.0,
+                "Elevation": 0.0,
+                "Radius": 1.0,
+                "IsImaginary": false,
+                "Channel": 1,
+                "Gain": 1.0
+            },
+            {
+                "Azimuth": 315.0,
+                "Elevation": 0.0,
+                "Radius": 1.0,
+                "IsImaginary": false,
+                "Channel": 2,
+                "Gain": 1.0
+            },
+            {
+                "Azimuth": 0.0,
+                "Elevation": 0.0,
+                "Radius": 1.0,
+                "IsImaginary": false,
+                "Channel": 3,
+                "Gain": 1.0
+            },
+            {
+                "Azimuth": 45.0,
+                "Elevation": 0.0,
+                "Radius": 1.0,
+                "IsImaginary": false,
+                "Channel": 4,
+                "Gain": 1.0
+            },
+            {
+                "Azimuth": 80.0,
+                "Elevation": 0.0,
+                "Radius": 1.0,
+                "IsImaginary": false,
+                "Channel": 5,
+                "Gain": 1.0
+            },
+            {
+                "Azimuth": 300.0,
+                "Elevation": 60.0,
+                "Radius": 1.0,
+                "IsImaginary": false,
+                "Channel": 6,
+                "Gain": 1.0
+            },
+            {
+                "Azimuth": 330.0,
+                "Elevation": 60.0,
+                "Radius": 1.0,
+                "IsImaginary": false,
+                "Channel": 7,
+                "Gain": 1.0
+            },
+            {
+                "Azimuth": 30.0,
+                "Elevation": 60.0,
+                "Radius": 1.0,
+                "IsImaginary": false,
+                "Channel": 8,
+                "Gain": 1.0
+            },
+            {
+                "Azimuth": 60.0,
+                "Elevation": 60.0,
+                "Radius": 1.0,
+                "IsImaginary": false,
+                "Channel": 9,
+                "Gain": 1.0
+            }
+        ]
+    }
+}
