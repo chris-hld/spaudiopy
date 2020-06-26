@@ -33,51 +33,40 @@ from spaudiopy import utils, IO, sig, decoder, sph, plots, grids
 # %% User setup
 setupname = "graz"
 LISTEN = True
+listener_position = [0, 0, 0]
 
-if setupname == "aalto_full":
-    ls_dirs = np.array([[-18, -54, -90, -126, -162, -198, -234, -270, -306,
-                         -342, 0, -72, -144, -216, -288, -45, -135, -225,
-                         -315, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -10, -10, -10, -10, -10,
-                         45, 45, 45, 45, 90]])
-    ls_dirs[1, :] = 90 - ls_dirs[1, :]
-    normal_limit = 85
-    aperture_limit = 90
-    opening_limit = 150
-    blacklist = None
-elif setupname == "aalto_partial":
+
+if setupname == "frontal_partial":
     ls_dirs = np.array([[-80, -45, 0, 45, 80, -60, -30, 30, 60],
                         [0, 0, 0, 0, 0, 60, 60, 60, 60]])
     ls_dirs[1, :] = 90 - ls_dirs[1, :]
+    ls_x, ls_y, ls_z = utils.sph2cart(utils.deg2rad(ls_dirs[0, :]),
+                                      utils.deg2rad(ls_dirs[1, :]))
+
     normal_limit = 85
     aperture_limit = 90
     opening_limit = 150
     blacklist = None
+
+    ls_setup = decoder.LoudspeakerSetup(ls_x, ls_y, ls_z, listener_position)
+    ls_setup.pop_triangles(normal_limit, aperture_limit, opening_limit,
+                           blacklist)
+
 elif setupname == "graz":
-    ls_dirs = np.array([[0, 23.7, 48.2, 72.6, 103.1, -100.9, -69.8, -44.8, -21.4,
-                         22.7, 67.9, 114.2, -113.3, -65.4, -22.7,
-                         46.8, 133.4, -133.4, -43.4],
-                        [90.0, 89.6, 89.4, 89.3, 89.4, 89.4, 89.6, 89.5, 89.5,
-                         61.5, 61.5, 62.1, 61.6, 61.5, 62.0,
-                         33.0, 33.0, 33.4, 32.3]])
-    # [90, 90, 90, 90, 90, 90, 90, 90, 90, 60, 60, 60, 60, 60, 60, 30, 30, 30, 30]])
     normal_limit = 85
     aperture_limit = 90
     opening_limit = 135
     blacklist = None
+    ls_setup = IO.load_layout("../data/ls_layouts/Graz.json",
+                              listener_position=listener_position)
+    ls_setup.pop_triangles(normal_limit, aperture_limit, opening_limit,
+                           blacklist)
+
 else:
     raise ValueError
 
-ls_x, ls_y, ls_z = utils.sph2cart(utils.deg2rad(ls_dirs[0, :]),
-                                  utils.deg2rad(ls_dirs[1, :]))
-
-listener_position = [0, 0, 0]
-
 
 # %% Show setup
-ls_setup = decoder.LoudspeakerSetup(ls_x, ls_y, ls_z, listener_position)
-ls_setup.pop_triangles(normal_limit, aperture_limit, opening_limit, blacklist)
-
 ls_setup.show()
 plots.hull_normals(ls_setup)
 
