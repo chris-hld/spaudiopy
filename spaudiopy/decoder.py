@@ -982,7 +982,7 @@ def allrad2(F_nm, hull, N_sph=None, jobs_count=1):
     return ls_sig
 
 
-def epad(F_nm, hull, N_sph=None, tapering=True):
+def epad(F_nm, hull, N_sph=None):
     """Loudspeaker signals of Energy-Preserving Ambisonic Decoder.
 
     Parameters
@@ -1010,8 +1010,9 @@ def epad(F_nm, hull, N_sph=None, tapering=True):
         else:
             N_sph = hull.get_characteristic_order()
 
-    if (hull.npoints < (N_sph+1)**2):
-        raise ValueError(f'Not enough loudspeakers ({hull.npoints})!')
+    L = hull.npoints
+    if (L < (N_sph+1)**2):
+        raise ValueError(f'Not enough loudspeakers ({L}) for this N_sph!')
 
     N_sph_in = int(np.sqrt(F_nm.shape[0]) - 1)
     assert(N_sph_in >= N_sph)  # for now
@@ -1023,14 +1024,8 @@ def epad(F_nm, hull, N_sph=None, tapering=True):
     # Set singular values to identity and truncate
     S_new = np.eye(hull.npoints, (N_sph+1)**2)
     D = U @ S_new @ VH
-    #D = 4 * np.pi / hull.npoints * D
-
-    if tapering:
-        # SH tapering coefficients
-        a_n = sph.max_rE_weights(N_sph)
-        a_n = sph.repeat_order_coeffs(a_n)
-        # apply tapering to decoder matrix
-        D = D @ np.diag(a_n)
+    # Scale energy to unity
+    D = np.sqrt(4 * np.pi / L) * D
 
     # loudspeaker output signals
     ls_sig = D @ F_nm[:(N_sph+1)**2, :]

@@ -543,9 +543,9 @@ def polar(theta, r, title=None, rlim=(-40, 0), ax=None):
 
 def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
                         show_ls=True, **kwargs):
-    """Currently shows rE_mag, E and spread measures on grid.
+    """Shows energy, spread and angular error measures on grid.
     For renderer_type={'VBAP', 'VBIP', 'ALLRAP', 'NLS'},
-    as well as {'ALLRAD', 'EPAD'}.
+    as well as {'ALLRAD', 'ALLRAD2', 'EPAD'}.
     All kwargs are forwarded to the decoder function.
 
     Zotter, F., & Frank, M. (2019). Ambisonics.
@@ -560,9 +560,9 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
                                               theta_plot.ravel())
 
     # Prepare for SH based rendering
-    if renderer_type.lower() in ['allrad', 'epad']:
+    if renderer_type.lower() in ['allrad', 'allrad2', 'epad']:
         if 'N_sph' in kwargs:
-            N_sph = kwargs['N_sph']
+            N_sph = kwargs.pop('N_sph')
         else:
             N_sph = hull.get_characteristic_order()
         Y_in = sph.sh_matrix(N_sph, phi_plot.flatten(), theta_plot.flatten(),
@@ -583,9 +583,11 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
         G = decoder.nearest_loudspeaker(np.c_[_grid_x, _grid_y, grid_z], hull,
                                         **kwargs)
     elif renderer_type.lower() == 'allrad':
-        G = decoder.allrad(Y_in, hull, **kwargs).T
+        G = decoder.allrad(Y_in, hull, N_sph=N_sph, **kwargs).T
+    elif renderer_type.lower() == 'allrad2':
+        G = decoder.allrad2(Y_in, hull, N_sph=N_sph, **kwargs).T
     elif renderer_type.lower() == 'epad':
-        G = decoder.epad(Y_in, hull, **kwargs).T
+        G = decoder.epad(Y_in, hull, N_sph=N_sph, **kwargs).T
     else:
         raise ValueError('Unknown renderer_type')
 
@@ -594,7 +596,7 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
     # project points onto unit sphere
     ls_points = hull.points / hull.d[:, np.newaxis]
     rE, rE_mag = sph.r_E(ls_points, G / hull.d[np.newaxis, :] ** hull.a)
-    # Zotter book (eq. 2.11) adds 5/8
+    # Zotter book (eq. 2.11) adds factor 5/8
     spread = 2 * np.arccos(np.clip(rE_mag, 0, 1)) * 180 / np.pi
     # angular error
     col_dot = np.einsum('ij,ij->i', np.array([_grid_x, _grid_y, grid_z]).T,
