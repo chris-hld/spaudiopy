@@ -446,6 +446,8 @@ def load_layout(filename, N_kernel=50):
 
     azi = np.array([ls['Azimuth'] for ls in ls_data])
     ele = np.array([ls['Elevation'] for ls in ls_data])
+    if np.any(ele < -90) or np.any(ele > +90):
+        warn("Elevation out of bounds! (+-90)")
     r = np.array([ls['Radius'] for ls in ls_data])
     try:
         # not actually used, yet
