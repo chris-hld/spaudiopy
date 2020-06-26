@@ -435,9 +435,8 @@ def write_ssr_brirs_sdm(filename, sdm_p, sdm_phi, sdm_theta, fs, bitdepth=32,
         raise ValueError('Only 16 or 32 bit.')
 
 
-def load_layout(filename, N_kernel=50):
+def load_layout(filename, listener_position=None, N_kernel=50):
     """Load loudspeaker layout from json configuration file."""
-
     with open(filename, 'r') as f:
         in_data = json.load(f)
 
@@ -468,7 +467,8 @@ def load_layout(filename, N_kernel=50):
                                       utils.deg2rad(90-ele[~isImaginary]),
                                       r[~isImaginary])
 
-    ls_layout = decoder.LoudspeakerSetup(ls_x, ls_y, ls_z)
+    ls_layout = decoder.LoudspeakerSetup(ls_x, ls_y, ls_z,
+                                         listener_position=listener_position)
     # then add imaginary loudspeakers to ambisonics setup
     imag_x, imag_y, imag_z = utils.sph2cart(utils.deg2rad(azi[isImaginary]),
                                             utils.deg2rad(90-ele[isImaginary]),
