@@ -33,8 +33,7 @@ setuptools.setup(name='spaudiopy',
                                              'lebedevQuadratures_3_131.mat'
                                              ]
                                },
-                 data_files=[('config', ['data/ls_layouts/MCC_subset_C.json',
-                                         'data/ls_layouts/Graz.json'])],
+                 data_files=[('config', ['data/ls_layouts/*.json'])],
                  install_requires=[
                                    'numpy',
                                    'scipy',
