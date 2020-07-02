@@ -998,6 +998,10 @@ def epad(F_nm, hull, N_sph=None):
     ls_sig : (L, S) numpy.ndarray
         Loudspeaker L output signal S.
 
+    Notes
+    -----
+    L should be more than (N_sph+1)**2 .
+
     References
     ----------
     Zotter, F., Pomberger, H., & Noisternig, M. (2012). Energy-preserving
@@ -1012,7 +1016,7 @@ def epad(F_nm, hull, N_sph=None):
 
     L = hull.npoints
     if (L < (N_sph+1)**2):
-        raise ValueError(f'Not enough loudspeakers ({L}) for this N_sph!')
+        warn(f'Not enough loudspeakers ({L}) for this N_sph!')
 
     N_sph_in = int(np.sqrt(F_nm.shape[0]) - 1)
     assert(N_sph_in >= N_sph)  # for now
@@ -1025,7 +1029,7 @@ def epad(F_nm, hull, N_sph=None):
     S_new = np.eye(hull.npoints, (N_sph+1)**2)
     D = U @ S_new @ VH
     # Scale energy to unity
-    D = np.sqrt(4 * np.pi / L) * D
+    D = np.sqrt(S_new.shape[0] / S_new.shape[1]) * np.sqrt(4 * np.pi / L) * D
 
     # loudspeaker output signals
     ls_sig = D @ F_nm[:(N_sph+1)**2, :]
