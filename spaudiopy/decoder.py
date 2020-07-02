@@ -1016,7 +1016,8 @@ def epad(F_nm, hull, N_sph=None):
 
     L = hull.npoints
     if (L < (N_sph+1)**2):
-        warn(f'Not enough loudspeakers ({L}) for this N_sph!')
+        warn('EPAD needs more loudspeakers for this N_sph!'
+             f' ({L} < {(N_sph+1)**2})')
 
     N_sph_in = int(np.sqrt(F_nm.shape[0]) - 1)
     assert(N_sph_in >= N_sph)  # for now

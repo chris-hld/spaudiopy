@@ -117,8 +117,10 @@ plots.decoder_performance(ls_setup, 'VBAP', retain_outside=True)
 plt.suptitle('VBAP with imaginary loudspeaker')
 plots.decoder_performance(ls_setup, 'VBIP', retain_outside=True)
 plt.suptitle('VBIP with imaginary loudspeaker')
+plots.decoder_performance(ls_setup, 'EPAD')
 plots.decoder_performance(ls_setup, 'ALLRAP')
 plots.decoder_performance(ls_setup, 'ALLRAP2')
+
 
 # %% Binauralize
 fs = 44100
