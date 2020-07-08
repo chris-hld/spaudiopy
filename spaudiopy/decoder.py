@@ -982,6 +982,49 @@ def allrad2(F_nm, hull, N_sph=None, jobs_count=1):
     return ls_sig
 
 
+def mad(F_nm, hull, N_sph=None):
+    """Loudspeaker signals of Mode-Matching Ambisonic Decoder.
+
+    Parameters
+    ----------
+    F_nm : ((N_sph+1)**2, S) numpy.ndarray
+        Matrix of spherical harmonics coefficients of spherical function(S).
+    hull : LoudspeakerSetup
+    N_sph : int
+        Decoding order.
+
+    Returns
+    -------
+    ls_sig : (L, S) numpy.ndarray
+        Loudspeaker L output signal S.
+
+    References
+    ----------
+    ch. 4.9.2, Zotter, F., & Frank, M. (2019). Ambisonics.
+    Springer Topics in Signal Processing.
+
+    """
+    if N_sph is None:
+        if hull.characteristic_order:
+            N_sph = hull.characteristic_order
+        else:
+            N_sph = hull.get_characteristic_order()
+
+    L = hull.npoints
+    N_sph_in = int(np.sqrt(F_nm.shape[0]) - 1)
+    assert(N_sph_in >= N_sph)  # for now
+
+    ls_azi, ls_colat, ls_r = utils.cart2sph(*hull.points.T)
+    Y_ls = sph.sh_matrix(N_sph, ls_azi, ls_colat, SH_type='real')
+
+    D = (np.linalg.pinv(Y_ls)).T
+    D *= np.sqrt(L / (N_sph+1)**2)  # Energy to unity (on t-design)
+
+    # loudspeaker output signals
+    ls_sig = D @ F_nm[:(N_sph+1)**2, :]
+    return ls_sig
+
+
 def epad(F_nm, hull, N_sph=None):
     """Loudspeaker signals of Energy-Preserving Ambisonic Decoder.
 
