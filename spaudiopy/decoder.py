@@ -1027,10 +1027,11 @@ def epad(F_nm, hull, N_sph=None):
     Y_ls = sph.sh_matrix(N_sph, ls_azi, ls_colat, SH_type='real')
     U, S, VH = np.linalg.svd(Y_ls)
     # Set singular values to identity and truncate
-    S_new = np.eye(hull.npoints, (N_sph+1)**2)
+    S_new = np.eye(L, (N_sph+1)**2)
     D = U @ S_new @ VH
-    # Scale energy to unity
-    D = np.sqrt(S_new.shape[0] / S_new.shape[1]) * np.sqrt(4 * np.pi / L) * D
+    # Scale to unity
+    D *= np.sqrt(4 * np.pi / L)  # Amplitude to unity
+    D *= np.sqrt(L / (N_sph+1)**2)  # Energy to unity
 
     # loudspeaker output signals
     ls_sig = D @ F_nm[:(N_sph+1)**2, :]
