@@ -34,6 +34,7 @@ from . import process as pcs
 cachedir = './__cache_dir'
 memory = Memory(cachedir)
 shared_array = None
+lock = multiprocessing.RLock()
 
 
 # part of parallel pseudo_intensity:
@@ -172,8 +173,9 @@ def render_stereo_sdm(sdm_p, sdm_phi, sdm_theta):
 def _render_bsdm_sample(i, p, phi, theta, hrirs):
     h_l, h_r = hrirs[hrirs.nearest(phi, theta)]
     # global shared_array
-    shared_array[i:i + len(h_l), 0] += p * h_l
-    shared_array[i:i + len(h_l), 1] += p * h_r
+    with lock: # synchronize access, operator += needs lock!
+        shared_array[i:i + len(h_l), 0] += p * h_l
+        shared_array[i:i + len(h_r), 1] += p * h_r
 
 
 @memory.cache
