@@ -572,7 +572,7 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
             if hull.imaginary_ls_idx is None:
                 raise ValueError('No imaginary loudspeaker. Update hull!')
         else:
-            raise ValueError('Run hull.ambisonics_setup() first!')
+            raise ValueError('Run LoudspeakerSetup.ambisonics_setup() first!')
 
     if valid_simplices is None:
         valid_simplices = hull.valid_simplices
@@ -736,11 +736,11 @@ def allrap(src, hull, N_sph=None, jobs_count=1):
     if hull.ambisonics_hull:
         ambisonics_hull = hull.ambisonics_hull
     else:
-        raise ValueError('Run hull.ambisonics_setup() first!')
+        raise ValueError('Run LoudspeakerSetup.ambisonics_setup() first!')
     if hull.kernel_hull:
         kernel_hull = hull.kernel_hull
     else:
-        raise ValueError('Run hull.ambisonics_setup() first!')
+        raise ValueError('Run LoudspeakerSetup.ambisonics_setup() first!')
     if N_sph is None:
         N_sph = hull.characteristic_order
 
@@ -808,11 +808,11 @@ def allrap2(src, hull, N_sph=None, jobs_count=1):
     if hull.ambisonics_hull:
         ambisonics_hull = hull.ambisonics_hull
     else:
-        raise ValueError('Run hull.ambisonics_setup() first!')
+        raise ValueError('Run LoudspeakerSetup.ambisonics_setup() first!')
     if hull.kernel_hull:
         kernel_hull = hull.kernel_hull
     else:
-        raise ValueError('Run hull.ambisonics_setup() first!')
+        raise ValueError('Run LoudspeakerSetup.ambisonics_setup() first!')
     if N_sph is None:
         N_sph = hull.characteristic_order
 
@@ -851,8 +851,6 @@ def allrap2(src, hull, N_sph=None, jobs_count=1):
 
 def allrad(F_nm, hull, N_sph=None, jobs_count=1):
     """Loudspeaker signals of All-Round Ambisonic Decoder.
-    Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
-    Journal of Audio Engineering Society, Sec. 6.
 
     Parameters
     ----------
@@ -869,15 +867,20 @@ def allrad(F_nm, hull, N_sph=None, jobs_count=1):
     ls_sig : (L, S) numpy.ndarray
         Loudspeaker L output signal S.
 
+    References
+    ----------
+    Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
+    Journal of Audio Engineering Society, Sec. 6.
+
     """
     if hull.ambisonics_hull:
         ambisonics_hull = hull.ambisonics_hull
     else:
-        raise ValueError('Run hull.ambisonics_setup() first!')
+        raise ValueError('Run LoudspeakerSetup.ambisonics_setup() first!')
     if hull.kernel_hull:
         kernel_hull = hull.kernel_hull
     else:
-        raise ValueError('Run hull.ambisonics_setup() first!')
+        raise ValueError('Run LoudspeakerSetup.ambisonics_setup() first!')
     if N_sph is None:
         N_sph = hull.characteristic_order
 
@@ -915,8 +918,6 @@ def allrad(F_nm, hull, N_sph=None, jobs_count=1):
 
 def allrad2(F_nm, hull, N_sph=None, jobs_count=1):
     """Loudspeaker signals of All-Round Ambisonic Decoder 2.
-    Zotter, F., & Frank, M. (2018). Ambisonic decoding with panning-invariant
-    loudness on small layouts (AllRAD2). In 144th AES Convention.
 
     Parameters
     ----------
@@ -933,16 +934,21 @@ def allrad2(F_nm, hull, N_sph=None, jobs_count=1):
     ls_sig : (L, S) numpy.ndarray
         Loudspeaker L output signal S.
 
+    References
+    ----------
+    Zotter, F., & Frank, M. (2018). Ambisonic decoding with panning-invariant
+    loudness on small layouts (AllRAD2). In 144th AES Convention.
+
     """
     warn("ALLRAD2 currently rectifies the signal!!")
     if hull.ambisonics_hull:
         ambisonics_hull = hull.ambisonics_hull
     else:
-        raise ValueError('Run hull.ambisonics_setup() first!')
+        raise ValueError('Run LoudspeakerSetup.ambisonics_setup() first!')
     if hull.kernel_hull:
         kernel_hull = hull.kernel_hull
     else:
-        raise ValueError('Run hull.ambisonics_setup() first!')
+        raise ValueError('Run LoudspeakerSetup.ambisonics_setup() first!')
     if N_sph is None:
         N_sph = hull.characteristic_order
 
