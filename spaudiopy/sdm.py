@@ -34,7 +34,7 @@ from . import process as pcs
 cachedir = './__cache_dir'
 memory = Memory(cachedir)
 shared_array = None
-lock = multiprocessing.Lock()
+lock = multiprocessing.RLock()
 
 
 # part of parallel pseudo_intensity:
