@@ -542,10 +542,10 @@ def polar(theta, r, title=None, rlim=(-40, 0), ax=None):
 
 
 def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
-                        show_ls=True, **kwargs):
+                        show_ls=True, title=None, **kwargs):
     """Shows energy, spread and angular error measures on grid.
     For renderer_type={'VBAP', 'VBIP', 'ALLRAP', 'NLS'},
-    as well as {'ALLRAD', 'ALLRAD2', 'EPAD'}.
+    as well as {'ALLRAD', 'ALLRAD2', 'EPAD', 'MAD'}.
     All kwargs are forwarded to the decoder function.
 
     Zotter, F., & Frank, M. (2019). Ambisonics.
@@ -560,7 +560,7 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
                                               theta_plot.ravel())
 
     # Prepare for SH based rendering
-    if renderer_type.lower() in ['allrad', 'allrad2', 'epad']:
+    if renderer_type.lower() in ['allrad', 'allrad2', 'epad', 'mad']:
         if 'N_sph' in kwargs:
             N_sph = kwargs.pop('N_sph')
         else:
@@ -588,10 +588,15 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
         G = decoder.allrad2(Y_in, hull, N_sph=N_sph, **kwargs).T
     elif renderer_type.lower() == 'epad':
         G = decoder.epad(Y_in, hull, N_sph=N_sph, **kwargs).T
+    elif renderer_type.lower() == 'mad':
+        G = decoder.mad(Y_in, hull, N_sph=N_sph, **kwargs).T
     else:
         raise ValueError('Unknown renderer_type')
 
     # Measures
+    # Amplitude
+    A = np.sum(G, axis=1)
+    # Energy
     E = np.sum(G**2, axis=1)  # * (4 * np.pi / G.shape[1])  # (eq. 15)
     # project points onto unit sphere
     ls_points = hull.points / hull.d[:, np.newaxis]
@@ -604,17 +609,17 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
     ang_error = np.rad2deg(np.arccos(np.clip(col_dot, -1.0, 1.0)))
 
     # Show them
-    fig, axes = plt.subplots(1, 3, sharex='all', sharey='all',
-                             figsize=(10, 2.2))  # works for nb
-    for ip, _data in enumerate([E, spread, ang_error]):
+    fig, axes = plt.subplots(2, 2, sharex='all', sharey='all')
+    axes = axes.ravel()
+    for ip, _data in enumerate([A, E, spread, ang_error]):
         _data = _data.reshape(phi_plot.shape)
         ax = axes[ip]
         ax.set_aspect('equal')
         # draw mesh, value corresponds to center of mesh
         p = ax.pcolormesh(phi_plot-azi_steps/2, theta_plot-ele_steps/2,
-                          _data, vmin=0, vmax=90 if ip == 1 or ip == 2
-                          else np.max([1.0, np.max(_data)]))
-        # draw loudspeakers
+                          _data, vmin=0, vmax=np.max([1.0, np.max(_data)])
+                          if ip in [0, 1] else 90)
+
         if show_ls:
             for s, co in enumerate(ls_points):
                 # map to pixels grid
@@ -634,22 +639,30 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
         cbar = fig.colorbar(p, ax=ax, fraction=0.024, pad=0.04)
         cbar.outline.set_linewidth(0.5)
         if ip == 0:
-            ax.set_xlabel('Azimuth')
-            ax.set_ylabel('Colatitude')
+            ax.set_title(r'$A$')
+            cbar.set_ticks([0, 0.5, np.max([1.0, np.max(_data)])])
+        if ip == 1:
             ax.set_title(r'$E$')
             cbar.set_ticks([0, 0.5, np.max([1.0, np.max(_data)])])
-        elif ip == 1:
+        elif ip == 2:
+            ax.set_xlabel('Azimuth')
+            ax.set_ylabel('Colatitude')
+
             ax.set_title(r'$\sigma_E$')
             cbar.set_ticks([0, 45, 90])
             cbar.set_ticklabels([r'$0^{\circ}$', r'$45^{\circ}$',
                                  r'$90^{\circ}$'])
-        elif ip == 2:
+        elif ip == 3:
             ax.set_title(r'$\Delta \angle$')
             cbar.set_ticks([0, 45, 90])
             cbar.set_ticklabels([r'$0^{\circ}$', r'$45^{\circ}$',
                                  r'$90^{\circ}$'])
 
-    plt.suptitle(renderer_type)
+    if title is None:
+        title = renderer_type
+    else:
+        title = renderer_type + ', ' + str(title)
+    plt.suptitle(title)
     plt.subplots_adjust(wspace=0.25)
 
 
