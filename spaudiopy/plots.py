@@ -553,8 +553,8 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
     """
     azi_steps = np.deg2rad(azi_steps)
     ele_steps = np.deg2rad(ele_steps)
-    phi_vec = np.arange(-np.pi, np.pi + 2*azi_steps, azi_steps)
-    theta_vec = np.arange(0., np.pi + 2*ele_steps, ele_steps)
+    phi_vec = np.arange(-np.pi, np.pi + azi_steps, azi_steps)
+    theta_vec = np.arange(0., np.pi + ele_steps, ele_steps)
     phi_plot, theta_plot = np.meshgrid(phi_vec, theta_vec)
     _grid_x, _grid_y, grid_z = utils.sph2cart(phi_plot.ravel(),
                                               theta_plot.ravel())
@@ -616,8 +616,8 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
         ax = axes[ip]
         ax.set_aspect('equal')
         # draw mesh, value corresponds to center of mesh
-        p = ax.pcolormesh(phi_plot-azi_steps/2, theta_plot-ele_steps/2,
-                          _data, vmin=0, vmax=np.max([1.0, np.max(_data)])
+        p = ax.pcolormesh(phi_plot, theta_plot,
+                          _data, shading='gouraud', vmin=0, vmax=np.max([1.0, np.max(_data)])
                           if ip in [0, 1] else 90)
 
         if show_ls:
