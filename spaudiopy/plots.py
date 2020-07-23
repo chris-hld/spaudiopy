@@ -666,7 +666,7 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
     plt.subplots_adjust(wspace=0.25)
 
 
-def doa(azi, colat, fs, p=None, size=300):
+def doa(azi, colat, fs, p=None, size=250):
     """Direction of Arrival, with optional p(t) scaling the size."""
     # t in ms
     t_ms = np.linspace(0, len(azi) / fs, len(azi), endpoint=False) * 1000
@@ -680,12 +680,14 @@ def doa(azi, colat, fs, p=None, size=300):
         s_plot = np.clip(p / np.max(p), 10e-15, None)
     else:
         s_plot = np.ones_like(azi)
+    # scale
+    s_plot *= size
 
     fig, ax = plt.subplots(constrained_layout=True)
     ax.set_aspect('equal')
 
     # plot in reverse order so that first reflections are on top
-    p = ax.scatter(azi[::-1], ele[::-1], s=s_plot[::-1]*size, c=t_ms[::-1],
+    p = ax.scatter(azi[::-1], ele[::-1], s=s_plot[::-1], c=t_ms[::-1],
                    alpha=0.35)
     ax.set_xlabel("Azimuth in rad")
     ax.set_ylabel("Elevation in rad")
@@ -700,8 +702,9 @@ def doa(azi, colat, fs, p=None, size=300):
     cbar.set_label("t in ms")
 
     # produce a legend with a cross section of sizes from the scatter
-    # handles, labels = p.legend_elements(prop="sizes", alpha=0.6)
-    # ax.legend(handles, labels, loc="upper right", title="Sizes")
+    handles, labels = p.legend_elements(prop="sizes", alpha=0.3, num=5,
+                                        func=lambda x: x/size)
+    ax.legend(handles, labels, loc="upper right", title="p(t)")
 
 
 def set_aspect_equal3d(ax=None, XYZlim=None):
