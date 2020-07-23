@@ -437,6 +437,7 @@ def bandlimited_dirac(N, d, w_n=None):
         spa.plots.polar(azi, dirac_untapered)
 
     """
+    d = utils.asarray_1d(d)
     if w_n is None:
         w_n = np.ones(N + 1)
     g_n = np.zeros([(N + 1)**2, len(d)])

@@ -616,8 +616,9 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
         ax = axes[ip]
         ax.set_aspect('equal')
         # draw mesh, value corresponds to center of mesh
-        p = ax.pcolormesh(phi_plot, theta_plot,
-                          _data, shading='gouraud', vmin=0, vmax=np.max([1.0, np.max(_data)])
+        p = ax.pcolormesh(phi_plot, theta_plot, _data,
+                          shading='gouraud', vmin=0,
+                          vmax=np.max([1.0, np.max(_data)])
                           if ip in [0, 1] else 90)
 
         if show_ls:
