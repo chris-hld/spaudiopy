@@ -701,10 +701,13 @@ def doa(azi, colat, fs, p=None, size=250):
     cbar = plt.colorbar(p, ax=ax, orientation='horizontal')
     cbar.set_label("t in ms")
 
-    # produce a legend with a cross section of sizes from the scatter
-    handles, labels = p.legend_elements(prop="sizes", alpha=0.3, num=5,
-                                        func=lambda x: x/size)
-    ax.legend(handles, labels, loc="upper right", title="p(t)")
+    try:
+        # produce a legend with a cross section of sizes from the scatter
+        handles, labels = p.legend_elements(prop="sizes", alpha=0.3, num=5,
+                                            func=lambda x: x/size)
+        ax.legend(handles, labels, loc="upper right", title="p(t)")
+    except AttributeError:  # mpl < 3.3.0
+        pass
 
 
 def set_aspect_equal3d(ax=None, XYZlim=None):
