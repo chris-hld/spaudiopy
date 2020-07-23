@@ -315,8 +315,7 @@ def sh_coeffs_subplot(F_l, SH_type=None, azi_steps=5, el_steps=3, titles=None):
                                        np.arange(10e-3, np.pi + el_steps,
                                                  el_steps))
 
-    fig = plt.figure(figsize=plt.figaspect(1 / N_plots),
-                     constrained_layout=True)
+    fig = plt.figure(figsize=plt.figaspect(1 / N_plots))  # constrained_layout=True)
     ax_l = []
     for i_p, ff in enumerate(F_l):
         F_nm = utils.asarray_1d(ff)
@@ -371,8 +370,8 @@ def sh_coeffs_subplot(F_l, SH_type=None, azi_steps=5, el_steps=3, titles=None):
         set_aspect_equal3d(ax)
         ax_l.append(ax)
 
-    cbar = plt.colorbar(m, shrink=0.33, aspect=3,
-                        ax=ax_l, orientation='horizontal')
+    cbar = plt.colorbar(m, ax=ax_l,
+                        shrink=0.5, orientation='horizontal')
     cbar.set_ticks([-np.pi, 0, np.pi])
     cbar.set_ticklabels([r'$-\pi$', r'$0$', r'$\pi$'])
 
