@@ -152,9 +152,12 @@ class LoudspeakerSetup:
 
     def get_characteristic_order(self):
         """Characteristic Ambisonics order."""
-        N_e = characteristic_ambisonic_order(self)
-        if N_e < 1:
-            raise ValueError
+        if self.characteristic_order is None:
+            N_e = characteristic_ambisonic_order(self)
+            if N_e < 1:
+                raise ValueError
+        else:
+            N_e = self.characteristic_order
         return N_e
 
     def ambisonics_setup(self, N_kernel=50, update_hull=False,
@@ -569,7 +572,7 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
             if hull.imaginary_ls_idx is None:
                 raise ValueError('No imaginary loudspeaker. Update hull!')
         else:
-            raise ValueError('Run hull.ambisonics_setup() first!')
+            raise ValueError('Run LoudspeakerSetup.ambisonics_setup() first!')
 
     if valid_simplices is None:
         valid_simplices = hull.valid_simplices
@@ -733,11 +736,11 @@ def allrap(src, hull, N_sph=None, jobs_count=1):
     if hull.ambisonics_hull:
         ambisonics_hull = hull.ambisonics_hull
     else:
-        raise ValueError('Run hull.ambisonics_setup() first!')
+        raise ValueError('Run LoudspeakerSetup.ambisonics_setup() first!')
     if hull.kernel_hull:
         kernel_hull = hull.kernel_hull
     else:
-        raise ValueError('Run hull.ambisonics_setup() first!')
+        raise ValueError('Run LoudspeakerSetup.ambisonics_setup() first!')
     if N_sph is None:
         N_sph = hull.characteristic_order
 
@@ -805,11 +808,11 @@ def allrap2(src, hull, N_sph=None, jobs_count=1):
     if hull.ambisonics_hull:
         ambisonics_hull = hull.ambisonics_hull
     else:
-        raise ValueError('Run hull.ambisonics_setup() first!')
+        raise ValueError('Run LoudspeakerSetup.ambisonics_setup() first!')
     if hull.kernel_hull:
         kernel_hull = hull.kernel_hull
     else:
-        raise ValueError('Run hull.ambisonics_setup() first!')
+        raise ValueError('Run LoudspeakerSetup.ambisonics_setup() first!')
     if N_sph is None:
         N_sph = hull.characteristic_order
 
@@ -847,9 +850,7 @@ def allrap2(src, hull, N_sph=None, jobs_count=1):
 
 
 def allrad(F_nm, hull, N_sph=None, jobs_count=1):
-    """Loudspeaker gains for All-Round Ambisonic Decoder.
-    Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
-    Journal of Audio Engineering Society, Sec. 6.
+    """Loudspeaker signals of All-Round Ambisonic Decoder.
 
     Parameters
     ----------
@@ -866,15 +867,20 @@ def allrad(F_nm, hull, N_sph=None, jobs_count=1):
     ls_sig : (L, S) numpy.ndarray
         Loudspeaker L output signal S.
 
+    References
+    ----------
+    Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
+    Journal of Audio Engineering Society, Sec. 6.
+
     """
     if hull.ambisonics_hull:
         ambisonics_hull = hull.ambisonics_hull
     else:
-        raise ValueError('Run hull.ambisonics_setup() first!')
+        raise ValueError('Run LoudspeakerSetup.ambisonics_setup() first!')
     if hull.kernel_hull:
         kernel_hull = hull.kernel_hull
     else:
-        raise ValueError('Run hull.ambisonics_setup() first!')
+        raise ValueError('Run LoudspeakerSetup.ambisonics_setup() first!')
     if N_sph is None:
         N_sph = hull.characteristic_order
 
@@ -911,9 +917,7 @@ def allrad(F_nm, hull, N_sph=None, jobs_count=1):
 
 
 def allrad2(F_nm, hull, N_sph=None, jobs_count=1):
-    """Loudspeaker gains for All-Round Ambisonic Decoder 2.
-    Zotter, F., & Frank, M. (2018). Ambisonic decoding with panning-invariant
-    loudness on small layouts (AllRAD2). In 144th AES Convention.
+    """Loudspeaker signals of All-Round Ambisonic Decoder 2.
 
     Parameters
     ----------
@@ -930,16 +934,21 @@ def allrad2(F_nm, hull, N_sph=None, jobs_count=1):
     ls_sig : (L, S) numpy.ndarray
         Loudspeaker L output signal S.
 
+    References
+    ----------
+    Zotter, F., & Frank, M. (2018). Ambisonic decoding with panning-invariant
+    loudness on small layouts (AllRAD2). In 144th AES Convention.
+
     """
     warn("ALLRAD2 currently rectifies the signal!!")
     if hull.ambisonics_hull:
         ambisonics_hull = hull.ambisonics_hull
     else:
-        raise ValueError('Run hull.ambisonics_setup() first!')
+        raise ValueError('Run LoudspeakerSetup.ambisonics_setup() first!')
     if hull.kernel_hull:
         kernel_hull = hull.kernel_hull
     else:
-        raise ValueError('Run hull.ambisonics_setup() first!')
+        raise ValueError('Run LoudspeakerSetup.ambisonics_setup() first!')
     if N_sph is None:
         N_sph = hull.characteristic_order
 
@@ -976,6 +985,105 @@ def allrad2(F_nm, hull, N_sph=None, jobs_count=1):
     # remove imaginary loudspeakers
     if ambisonics_hull.imaginary_ls_idx is not None:
         ls_sig = np.delete(ls_sig, ambisonics_hull.imaginary_ls_idx, axis=0)
+    return ls_sig
+
+
+def mad(F_nm, hull, N_sph=None):
+    """Loudspeaker signals of Mode-Matching Ambisonic Decoder.
+
+    Parameters
+    ----------
+    F_nm : ((N_sph+1)**2, S) numpy.ndarray
+        Matrix of spherical harmonics coefficients of spherical function(S).
+    hull : LoudspeakerSetup
+    N_sph : int
+        Decoding order.
+
+    Returns
+    -------
+    ls_sig : (L, S) numpy.ndarray
+        Loudspeaker L output signal S.
+
+    References
+    ----------
+    ch. 4.9.2, Zotter, F., & Frank, M. (2019). Ambisonics.
+    Springer Topics in Signal Processing.
+
+    """
+    if N_sph is None:
+        if hull.characteristic_order:
+            N_sph = hull.characteristic_order
+        else:
+            N_sph = hull.get_characteristic_order()
+
+    L = hull.npoints
+    N_sph_in = int(np.sqrt(F_nm.shape[0]) - 1)
+    assert(N_sph_in >= N_sph)  # for now
+
+    ls_azi, ls_colat, ls_r = utils.cart2sph(*hull.points.T)
+    Y_ls = sph.sh_matrix(N_sph, ls_azi, ls_colat, SH_type='real')
+
+    D = (np.linalg.pinv(Y_ls)).T
+    D *= np.sqrt(L / (N_sph+1)**2)  # Energy to unity (on t-design)
+
+    # loudspeaker output signals
+    ls_sig = D @ F_nm[:(N_sph+1)**2, :]
+    return ls_sig
+
+
+def epad(F_nm, hull, N_sph=None):
+    """Loudspeaker signals of Energy-Preserving Ambisonic Decoder.
+
+    Parameters
+    ----------
+    F_nm : ((N_sph+1)**2, S) numpy.ndarray
+        Matrix of spherical harmonics coefficients of spherical function(S).
+    hull : LoudspeakerSetup
+    N_sph : int
+        Decoding order.
+
+    Returns
+    -------
+    ls_sig : (L, S) numpy.ndarray
+        Loudspeaker L output signal S.
+
+    Notes
+    -----
+    L should be more than (N_sph+1)**2 .
+
+    References
+    ----------
+    Zotter, F., Pomberger, H., & Noisternig, M. (2012). Energy-preserving
+    ambisonic decoding. Acta Acustica United with Acustica, 98(1), 37–47.
+
+    """
+    if N_sph is None:
+        if hull.characteristic_order:
+            N_sph = hull.characteristic_order
+        else:
+            N_sph = hull.get_characteristic_order()
+
+    L = hull.npoints
+    if (L < (N_sph+1)**2):
+        warn('EPAD needs more loudspeakers for this N_sph!'
+             f' ({L} < {(N_sph+1)**2})')
+
+    N_sph_in = int(np.sqrt(F_nm.shape[0]) - 1)
+    assert(N_sph_in >= N_sph)  # for now
+
+    # SVD of LS base
+    ls_azi, ls_colat, ls_r = utils.cart2sph(*hull.points.T)
+    Y_ls = sph.sh_matrix(N_sph, ls_azi, ls_colat, SH_type='real')
+    U, S, VH = np.linalg.svd(Y_ls)
+    # Set singular values to identity and truncate
+    S_new = np.eye(L, (N_sph+1)**2)
+    D = U @ S_new @ VH
+    # Scale to unity
+    D *= np.sqrt(4 * np.pi / L)  # Amplitude to unity
+    D *= np.sqrt(L / (N_sph+1)**2)  # Energy to unity
+
+    # loudspeaker output signals
+    ls_sig = D @ F_nm[:(N_sph+1)**2, :]
     return ls_sig
 
 
