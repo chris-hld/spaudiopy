@@ -21,7 +21,7 @@ from datetime import datetime
 
 import numpy as np
 import pandas as pd
-from scipy.io import loadmat, savemat, wavfile
+from scipy.io import loadmat, savemat
 import h5py
 
 import soundfile as sf
