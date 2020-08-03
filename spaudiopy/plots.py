@@ -235,7 +235,7 @@ def spherical_function(f, azi, colat, title=None):
     cbar.set_label(r"$f\,(\Omega)$")
 
     plt.grid(True)
-    ax.set_aspect('equal')
+    set_aspect_equal3d(ax)
     ax.view_init(25, 230)
     if title is not None:
         plt.title(title)
@@ -299,7 +299,7 @@ def sh_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None):
     cb.set_ticklabels([r'$-\pi$', r'$0$', r'$\pi$'])
 
     plt.grid(True)
-    ax.set_aspect('equal')
+    set_aspect_equal3d(ax)
     ax.view_init(25, 230)
     if title is not None:
         plt.title(title)
@@ -315,8 +315,7 @@ def sh_coeffs_subplot(F_l, SH_type=None, azi_steps=5, el_steps=3, titles=None):
                                        np.arange(10e-3, np.pi + el_steps,
                                                  el_steps))
 
-    fig = plt.figure(figsize=plt.figaspect(1 / N_plots),
-                     constrained_layout=True)
+    fig = plt.figure(figsize=plt.figaspect(1 / N_plots))  # constrained_layout=True)
     ax_l = []
     for i_p, ff in enumerate(F_l):
         F_nm = utils.asarray_1d(ff)
@@ -368,16 +367,16 @@ def sh_coeffs_subplot(F_l, SH_type=None, azi_steps=5, el_steps=3, titles=None):
         ax.view_init(25, 230)
         if titles is not None:
             ax.set_title(titles[i_p])
-        ax.set_aspect('equal')
+        set_aspect_equal3d(ax)
         ax_l.append(ax)
 
-    cbar = plt.colorbar(m, shrink=0.33, aspect=3,
-                        ax=ax_l, orientation='horizontal')
+    cbar = plt.colorbar(m, ax=ax_l,
+                        shrink=0.5, orientation='horizontal')
     cbar.set_ticks([-np.pi, 0, np.pi])
     cbar.set_ticklabels([r'$-\pi$', r'$0$', r'$\pi$'])
 
 
-def hull(hull, simplices=None, mark_invalid=True, title=None, lim_m=1,
+def hull(hull, simplices=None, mark_invalid=True, title=None, ax_lim=None,
          color=None, clim=None):
     """Plot loudspeaker setup and valid simplices from its hull object.
 
@@ -388,7 +387,7 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, lim_m=1,
     mark_invalid : bool, optional
         mark invalid simplices from hull object.
     title : string, optional
-    lim_m : float, optional
+    ax_lim : float, optional
         Axis limits in m.
     color : array_like, optional
         Custom colors for simplices.
@@ -434,7 +433,7 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, lim_m=1,
     z = hull.points[:, 2]
 
     fig = plt.figure(constrained_layout=True)
-    ax = fig.gca(projection='3d', aspect='equal')
+    ax = fig.gca(projection='3d')
 
     # valid
     polyc = ax.plot_trisurf(x, y, z,
@@ -459,9 +458,11 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, lim_m=1,
     ax.set_zlabel('z')
     ax.locator_params(tight=True, nbins=5)
 
-    ax.set_xlim(-lim_m, lim_m)
-    ax.set_ylim(-lim_m, lim_m)
-    ax.set_zlim(-lim_m, lim_m)
+    if ax_lim is None:
+        ax_lim = np.max(np.array([abs(x), abs(y), abs(z)])).T
+        ax_lim = 1.1*np.max([ax_lim, 1.0])  # 1.1 looks good
+    set_aspect_equal3d(ax, XYZlim=(-ax_lim, ax_lim))
+
     ax.view_init(25, 230)
     if color is not None:
         fig.colorbar(m, ax=ax, fraction=0.024, pad=0.04)
@@ -476,7 +477,7 @@ def hull_normals(hull, plot_face_normals=True, plot_vertex_normals=True):
     z = hull.points[:, 2]
 
     fig = plt.figure(constrained_layout=True)
-    ax = fig.gca(projection='3d', aspect='equal')
+    ax = fig.gca(projection='3d')
     ax.plot_trisurf(x, y, z,
                     triangles=hull.simplices,
                     edgecolor='black', linewidth=0.5,
@@ -518,9 +519,7 @@ def hull_normals(hull, plot_face_normals=True, plot_vertex_normals=True):
     ax.set_zlabel('z')
     ax.locator_params(tight=True, nbins=5)
 
-    ax.set_xlim(-1, 1)
-    ax.set_ylim(-1, 1)
-    ax.set_zlim(-1, 1)
+    set_aspect_equal3d(ax, XYZlim=[-1, 1])
     plt.legend(loc='best')
     ax.view_init(25, 230)
 
@@ -553,8 +552,8 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
     """
     azi_steps = np.deg2rad(azi_steps)
     ele_steps = np.deg2rad(ele_steps)
-    phi_vec = np.arange(-np.pi, np.pi + 2*azi_steps, azi_steps)
-    theta_vec = np.arange(0., np.pi + 2*ele_steps, ele_steps)
+    phi_vec = np.arange(-np.pi, np.pi + azi_steps, azi_steps)
+    theta_vec = np.arange(0., np.pi + ele_steps, ele_steps)
     phi_plot, theta_plot = np.meshgrid(phi_vec, theta_vec)
     _grid_x, _grid_y, grid_z = utils.sph2cart(phi_plot.ravel(),
                                               theta_plot.ravel())
@@ -616,8 +615,9 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
         ax = axes[ip]
         ax.set_aspect('equal')
         # draw mesh, value corresponds to center of mesh
-        p = ax.pcolormesh(phi_plot-azi_steps/2, theta_plot-ele_steps/2,
-                          _data, vmin=0, vmax=np.max([1.0, np.max(_data)])
+        p = ax.pcolormesh(phi_plot, theta_plot, _data,
+                          shading='gouraud', vmin=0,
+                          vmax=np.max([1.0, np.max(_data)])
                           if ip in [0, 1] else 90)
 
         if show_ls:
@@ -666,7 +666,7 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
     plt.subplots_adjust(wspace=0.25)
 
 
-def doa(azi, colat, fs, p=None, size=300):
+def doa(azi, colat, fs, p=None, size=250):
     """Direction of Arrival, with optional p(t) scaling the size."""
     # t in ms
     t_ms = np.linspace(0, len(azi) / fs, len(azi), endpoint=False) * 1000
@@ -680,12 +680,14 @@ def doa(azi, colat, fs, p=None, size=300):
         s_plot = np.clip(p / np.max(p), 10e-15, None)
     else:
         s_plot = np.ones_like(azi)
+    # scale
+    s_plot *= size
 
     fig, ax = plt.subplots(constrained_layout=True)
     ax.set_aspect('equal')
 
     # plot in reverse order so that first reflections are on top
-    p = ax.scatter(azi[::-1], ele[::-1], s=s_plot[::-1]*size, c=t_ms[::-1],
+    p = ax.scatter(azi[::-1], ele[::-1], s=s_plot[::-1], c=t_ms[::-1],
                    alpha=0.35)
     ax.set_xlabel("Azimuth in rad")
     ax.set_ylabel("Elevation in rad")
@@ -699,6 +701,44 @@ def doa(azi, colat, fs, p=None, size=300):
     cbar = plt.colorbar(p, ax=ax, orientation='horizontal')
     cbar.set_label("t in ms")
 
-    # produce a legend with a cross section of sizes from the scatter
-    # handles, labels = p.legend_elements(prop="sizes", alpha=0.6)
-    # ax.legend(handles, labels, loc="upper right", title="Sizes")
+    try:
+        # produce a legend with a cross section of sizes from the scatter
+        handles, labels = p.legend_elements(prop="sizes", alpha=0.3, num=5,
+                                            func=lambda x: x/size)
+        ax.legend(handles, labels, loc="upper right", title="p(t)")
+    except AttributeError:  # mpl < 3.3.0
+        pass
+
+
+def set_aspect_equal3d(ax=None, XYZlim=None):
+    """
+    Set 3D axis to equal aspect.
+
+    Parameters
+    ----------
+    ax : axis, optional
+        ax object. The default is None.
+    XYZlim : [min, max], optional
+        min and max in m. The default is None.
+
+    Returns
+    -------
+    None.
+
+    """
+    if ax is None:
+        ax = plt.gca()
+
+    if XYZlim is None:
+        xyzlim = np.array([ax.get_xlim3d(),
+                           ax.get_ylim3d(),
+                           ax.get_zlim3d()]).T
+        XYZlim = [min(xyzlim[0]), max(xyzlim[1])]
+
+    ax.set_xlim3d(XYZlim)
+    ax.set_ylim3d(XYZlim)
+    ax.set_zlim3d(XYZlim)
+    try:  # mpl < 3.1.0
+        ax.set_aspect('equal')
+    except NotImplementedError:  # mpl >= 3.3.0
+        ax.set_box_aspect((1, 1, 1))

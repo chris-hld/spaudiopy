@@ -294,9 +294,9 @@ class LoudspeakerSetup:
             'Provide gain per speaker!'
         return (sig_in[:, np.newaxis] * ls_gains).T
 
-    def show(self, title='Loudspeaker Setup'):
-        """Plot hull object."""
-        plots.hull(self, title=title)
+    def show(self, title='Loudspeaker Setup', **kwargs):
+        """Plot hull object, calls plots.hull()."""
+        plots.hull(self, title=title, **kwargs)
 
 
 def get_hull(x, y, z):
