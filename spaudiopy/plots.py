@@ -120,7 +120,7 @@ def freq_resp(freq, amp, to_db=True, smoothing_n=None, title=None,
 def transfer_function(freq, H, title=None, xlim=(10, 25000)):
     """Plot transfer function H (magnitude and phase) over time frequency f."""
     fig, ax1 = plt.subplots()
-    H += 10e-15
+    H = np.clip(H, 10e-15, None)
     ax1.semilogx(freq, utils.db(H),
                  color=plt.rcParams['axes.prop_cycle'].by_key()['color'][0],
                  label='Amplitude')
@@ -603,7 +603,7 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
     spread = 2 * np.arccos(np.clip(rE_mag, 0, 1)) * 180 / np.pi
     # angular error
     col_dot = np.einsum('ij,ij->i', np.array([_grid_x, _grid_y, grid_z]).T,
-                        (rE / (rE_mag[:, np.newaxis] + 10e-15)))
+                        (rE / (np.clip(rE_mag, 10e-15, None)[:, np.newaxis])))
     ang_error = np.rad2deg(np.arccos(np.clip(col_dot, -1.0, 1.0)))
 
     # Show them
