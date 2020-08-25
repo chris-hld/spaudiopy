@@ -307,7 +307,7 @@ def sh_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None):
 
 def sh_coeffs_subplot(F_l, SH_type=None, azi_steps=5, el_steps=3, titles=None):
     """Plot spherical harmonics coefficients list as function on the sphere."""
-    N_plots = len(F_l)
+    num_plots = len(F_l)
     azi_steps = np.deg2rad(azi_steps)
     el_steps = np.deg2rad(el_steps)
     phi_plot, theta_plot = np.meshgrid(np.arange(0., 2 * np.pi + azi_steps,
@@ -315,10 +315,11 @@ def sh_coeffs_subplot(F_l, SH_type=None, azi_steps=5, el_steps=3, titles=None):
                                        np.arange(10e-3, np.pi + el_steps,
                                                  el_steps))
 
-    fig = plt.figure(figsize=plt.figaspect(1 / N_plots))  # constrained_layout=True)
-    ax_l = []
-    for i_p, ff in enumerate(F_l):
-        F_nm = utils.asarray_1d(ff)
+    fig, axs = plt.subplots(1, num_plots, figsize=plt.figaspect(1 / num_plots),
+                            constrained_layout=True,
+                            subplot_kw={'projection': '3d'})
+    for idx_p, ax in enumerate(axs):
+        F_nm = utils.asarray_1d(F_l[idx_p])
         F_nm = F_nm[:, np.newaxis]
         if SH_type is None:
             SH_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
@@ -331,8 +332,6 @@ def sh_coeffs_subplot(F_l, SH_type=None, azi_steps=5, el_steps=3, titles=None):
         x_plot, y_plot, z_plot = utils.sph2cart(phi_plot.ravel(),
                                                 theta_plot.ravel(),
                                                 f_r.ravel())
-
-        ax = fig.add_subplot(1, N_plots, i_p + 1, projection='3d')
 
         m = cm.ScalarMappable(cmap=cm.hsv,
                               norm=colors.Normalize(vmin=-np.pi, vmax=np.pi))
@@ -357,7 +356,7 @@ def sh_coeffs_subplot(F_l, SH_type=None, azi_steps=5, el_steps=3, titles=None):
             ax.plot([-x0[i], x0[i]], [-y0[i], y0[i]], [-z0[i], z0[i]], 'k',
                     alpha=0.3)
 
-        if i_p == 0:
+        if idx_p == 0:
             ax.set_xlabel('x')
             ax.set_ylabel('y')
             ax.set_zlabel('z')
@@ -366,12 +365,12 @@ def sh_coeffs_subplot(F_l, SH_type=None, azi_steps=5, el_steps=3, titles=None):
         plt.grid(True)
         ax.view_init(25, 230)
         if titles is not None:
-            ax.set_title(titles[i_p])
+            ax.set_title(titles[idx_p])
         set_aspect_equal3d(ax)
-        ax_l.append(ax)
 
-    cbar = plt.colorbar(m, ax=ax_l,
-                        shrink=0.5, orientation='horizontal')
+    cbar = plt.colorbar(m, ax=axs, orientation='horizontal', shrink=0.75,
+                        pad=0.1)
+    cbar.set_label("Phase in rad")
     cbar.set_ticks([-np.pi, 0, np.pi])
     cbar.set_ticklabels([r'$-\pi$', r'$0$', r'$\pi$'])
 
