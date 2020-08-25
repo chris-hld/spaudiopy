@@ -89,9 +89,9 @@ def sh_matrix(N, azi, colat, SH_type='complex', weights=None):
     if weights is None:
         weights = np.ones(Q)
     if SH_type == 'complex':
-        Ymn = np.zeros([Q, (N+1)**2], dtype=complex)
+        Ymn = np.zeros([Q, (N+1)**2], dtype=np.complex_)
     elif SH_type == 'real':
-        Ymn = np.zeros([Q, (N+1)**2], dtype=float)
+        Ymn = np.zeros([Q, (N+1)**2], dtype=np.float_)
     else:
         raise ValueError('SH_type unknown.')
 
@@ -103,7 +103,7 @@ def sh_matrix(N, azi, colat, SH_type='complex', weights=None):
             elif SH_type == 'real':
                 if m == 0:
                     Ymn[:, idx] = weights * np.real(
-                                scyspecial.sph_harm(0, n, azi, colat))
+                                  scyspecial.sph_harm(0, n, azi, colat))
                 if m < 0:
                     Ymn[:, idx] = weights * np.sqrt(2) * (-1) ** abs(m) * \
                                   np.imag(
