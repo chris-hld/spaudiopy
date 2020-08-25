@@ -368,8 +368,8 @@ def sh_coeffs_subplot(F_l, SH_type=None, azi_steps=5, el_steps=3, titles=None):
             ax.set_title(titles[idx_p])
         set_aspect_equal3d(ax)
 
-    cbar = plt.colorbar(m, ax=axs, orientation='horizontal', shrink=0.75,
-                        pad=0.1)
+    cbar = plt.colorbar(m, ax=axs, shrink=0.5, aspect=10, pad=0.1,
+                        orientation='horizontal')
     cbar.set_label("Phase in rad")
     cbar.set_ticks([-np.pi, 0, np.pi])
     cbar.set_ticklabels([r'$-\pi$', r'$0$', r'$\pi$'])
