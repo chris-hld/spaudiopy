@@ -89,29 +89,31 @@ def sh_matrix(N, azi, colat, SH_type='complex', weights=None):
     if weights is None:
         weights = np.ones(Q)
     if SH_type == 'complex':
-        Ymn = np.zeros([Q, (N+1)**2], dtype=complex)
+        Ymn = np.zeros([Q, (N+1)**2], dtype=np.complex_)
     elif SH_type == 'real':
-        Ymn = np.zeros([Q, (N+1)**2], dtype=float)
+        Ymn = np.zeros([Q, (N+1)**2], dtype=np.float_)
     else:
         raise ValueError('SH_type unknown.')
 
-    i = 0
+    idx = 0
     for n in range(N+1):
         for m in range(-n, n+1):
             if SH_type == 'complex':
-                Ymn[:, i] = weights * scyspecial.sph_harm(m, n, azi, colat)
+                Ymn[:, idx] = weights * scyspecial.sph_harm(m, n, azi, colat)
             elif SH_type == 'real':
                 if m == 0:
-                    Ymn[:, i] = weights * np.real(
-                                scyspecial.sph_harm(m, n, azi, colat))
+                    Ymn[:, idx] = weights * np.real(
+                                  scyspecial.sph_harm(0, n, azi, colat))
                 if m < 0:
-                    Ymn[:, i] = weights * np.sqrt(2) * (-1) ** m * np.imag(
-                                scyspecial.sph_harm(np.abs(m), n, azi, colat))
+                    Ymn[:, idx] = weights * np.sqrt(2) * (-1) ** abs(m) * \
+                                  np.imag(
+                                  scyspecial.sph_harm(abs(m), n, azi, colat))
                 if m > 0:
-                    Ymn[:, i] = weights * np.sqrt(2) * (-1) ** m * np.real(
-                                scyspecial.sph_harm(np.abs(m), n, azi, colat))
+                    Ymn[:, idx] = weights * np.sqrt(2) * (-1) ** abs(m) * \
+                                  np.real(
+                                  scyspecial.sph_harm(abs(m), n, azi, colat))
 
-            i += 1
+            idx += 1
     return Ymn
 
 
