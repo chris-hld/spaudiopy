@@ -565,9 +565,10 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
         ls_setup = spa.decoder.LoudspeakerSetup(ls_x, ls_y, ls_z)
         ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
                                opening_limit=150)
-        ls_setup.ambisonics_setup(update_hull=True)
 
         spa.plots.decoder_performance(ls_setup, 'VBAP')
+
+        ls_setup.ambisonics_setup(update_hull=True)
         spa.plots.decoder_performance(ls_setup, 'VBAP', retain_outside=True)
         plt.suptitle('VBAP with imaginary loudspeaker')
 
@@ -662,9 +663,10 @@ def vbip(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
         ls_setup = spa.decoder.LoudspeakerSetup(ls_x, ls_y, ls_z)
         ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
                                opening_limit=150)
-        ls_setup.ambisonics_setup(update_hull=True)
 
         spa.plots.decoder_performance(ls_setup, 'VBIP')
+
+        ls_setup.ambisonics_setup(update_hull=True)
         spa.plots.decoder_performance(ls_setup, 'VBIP', retain_outside=True)
         plt.suptitle('VBIP with imaginary loudspeaker')
 
@@ -1061,7 +1063,6 @@ def mad(F_nm, hull, N_sph=None):
         ls_setup = spa.decoder.LoudspeakerSetup(ls_x, ls_y, ls_z)
         ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
                                opening_limit=150)
-        ls_setup.ambisonics_setup(update_hull=True)
 
         spa.plots.decoder_performance(ls_setup, 'MAD')
 
@@ -1122,7 +1123,6 @@ def epad(F_nm, hull, N_sph=None):
         ls_setup = spa.decoder.LoudspeakerSetup(ls_x, ls_y, ls_z)
         ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
                                opening_limit=150)
-        ls_setup.ambisonics_setup(update_hull=True)
 
         spa.plots.decoder_performance(ls_setup, 'EPAD')
 
@@ -1183,7 +1183,6 @@ def nearest_loudspeaker(src, hull):
         ls_setup = spa.decoder.LoudspeakerSetup(ls_x, ls_y, ls_z)
         ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
                                opening_limit=150)
-        ls_setup.ambisonics_setup(update_hull=True)
 
         spa.plots.decoder_performance(ls_setup, 'NLS')
 
