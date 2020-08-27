@@ -20,7 +20,7 @@ from datetime import datetime
 
 import numpy as np
 import pandas as pd
-from scipy.io import loadmat, savemat, wavfile
+from scipy.io import loadmat, savemat
 import h5py
 
 import soundfile as sf
@@ -77,7 +77,7 @@ def save_audio(signal, filename, fs=None, subtype='FLOAT'):
     Parameters
     ----------
     signal : sig. MonoSignal, sig.MultiSignal or np.ndarray
-        Audio Signal, forwarded to sf.write()/
+        Audio Signal, forwarded to sf.write(); (frames x channels). 
     filename : string
         Audio file name.
     fs : int
@@ -310,7 +310,7 @@ def load_sofa_data(filename):
     return out_dict
 
 
-def write_ssr_brirs_loudspeaker(filename, ls_irs, hull, fs, bitdepth=32,
+def write_ssr_brirs_loudspeaker(filename, ls_irs, hull, fs, subtype='FLOAT',
                                 hrirs=None, jobs_count=1):
     """Write binaural room impulse responses (BRIRs) and save as wav file.
 
@@ -325,7 +325,7 @@ def write_ssr_brirs_loudspeaker(filename, ls_irs, hull, fs, bitdepth=32,
         e.g. by hull.loudspeaker_signals().
     hull : decoder.LoudspeakerSetup
     fs : int
-    bitdepth : 16 or 32
+    subtype : forwarded to sf.write(), optional
     hrirs : sig.HRIRs, optional
     jobs_count : int, optional
         [CPU Cores], Number of Processes, switches implementation for n > 1.
@@ -375,16 +375,11 @@ def write_ssr_brirs_loudspeaker(filename, ls_irs, hull, fs, bitdepth=32,
         ssr_brirs = ssr_brirs / np.max(np.abs(ssr_brirs))
 
     # write to file
-    if bitdepth == 32:
-        wavfile.write(filename, fs, ssr_brirs.astype(np.float32).T)
-    elif bitdepth == 16:
-        wavfile.write(filename, fs, (32767 * ssr_brirs).astype(np.int16).T)
-    else:
-        raise ValueError('Only 16 or 32 bit.')
+    save_audio(ssr_brirs.T, filename, fs, subtype=subtype)
 
 
-def write_ssr_brirs_sdm(filename, sdm_p, sdm_phi, sdm_theta, fs, bitdepth=32,
-                        hrirs=None):
+def write_ssr_brirs_sdm(filename, sdm_p, sdm_phi, sdm_theta, fs,
+                        subtype='FLOAT', hrirs=None):
     """Write binaural room impulse responses (BRIRs) and save as wav file.
 
     The azimuth resolution is one degree. The channels are interleaved and
@@ -400,7 +395,7 @@ def write_ssr_brirs_sdm(filename, sdm_p, sdm_phi, sdm_theta, fs, bitdepth=32,
     sdm_theta : (n,) array_like
         Colatitude theta(t).
     fs : int
-    bitdepth : 16 or 32
+    subtype : forwarded to sf.write(), optional
     hrirs : sig.HRIRs, optional
 
     """
@@ -427,12 +422,7 @@ def write_ssr_brirs_sdm(filename, sdm_p, sdm_phi, sdm_theta, fs, bitdepth=32,
         ssr_brirs = ssr_brirs / np.max(np.abs(ssr_brirs))
 
     # write to file
-    if bitdepth == 32:
-        wavfile.write(filename, fs, ssr_brirs.astype(np.float32).T)
-    elif bitdepth == 16:
-        wavfile.write(filename, fs, (32767 * ssr_brirs).astype(np.int16).T)
-    else:
-        raise ValueError('Only 16 or 32 bit.')
+    save_audio(ssr_brirs.T, filename, fs, subtype=subtype)
 
 
 def load_layout(filename, listener_position=None, N_kernel=50):
