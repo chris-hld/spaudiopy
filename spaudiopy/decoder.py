@@ -163,12 +163,13 @@ class LoudspeakerSetup:
     def ambisonics_setup(self, N_kernel=50, update_hull=False,
                          imaginary_ls=None):
         """Prepare loudspeaker hull for ambisonic rendering.
-        Sets the kernel_hull as t-design for order N_kernel and updates the 
-        ambisonic hull with additional imaginary loudspeaker if desired.
+        Sets the `kernel_hull` as an n-design of twice `N_kernel`,
+        and updates the ambisonic hull with an additional imaginary loudspeaker,
+        if desired.
 
         Parameters
         ----------
-        N_kernel : int
+        N_kernel : int, optional
         update_hull : bool, optional
         imaginary_ls : (L, 3), cartesian, optional
             Imaginary loudspeaker positions, if set to 'None' calls
@@ -180,7 +181,8 @@ class LoudspeakerSetup:
             :context: close-figs
 
             ls_setup.ambisonics_setup(update_hull=True)
-            ls_setup.ambisonics_hull.show(title='Ambisonic Hull')
+            N_e = ls_setup.characteristic_order
+            ls_setup.ambisonics_hull.show(title=f"Ambisonic Hull, $N_e={N_e}$")
 
         """
         self.characteristic_order = self.get_characteristic_order()
@@ -1039,7 +1041,7 @@ def mad(F_nm, hull, N_sph=None):
         Matrix of spherical harmonics coefficients of spherical function(S).
     hull : LoudspeakerSetup
     N_sph : int
-        Decoding order.
+        Decoding order, defaults to hull.characteristic_order.
 
     Returns
     -------
@@ -1094,7 +1096,7 @@ def epad(F_nm, hull, N_sph=None):
         Matrix of spherical harmonics coefficients of spherical function(S).
     hull : LoudspeakerSetup
     N_sph : int
-        Decoding order.
+        Decoding order, defaults to hull.characteristic_order.
 
     Returns
     -------
