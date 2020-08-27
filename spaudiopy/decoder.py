@@ -459,9 +459,13 @@ def sort_vertices(simplices):
 
 
 def find_imaginary_loudspeaker(hull):
-    """Find imaginary loudspeaker coordinates according to
+    """Find imaginary loudspeaker coordinates for smoother hull.
+
+    References
+    ----------
     Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
     Journal of Audio Engineering Society, Sec. 1.1.
+
     """
     # detect edges
     rim_edges = []
@@ -528,8 +532,6 @@ def _vbap_gains_single_source(src_idx, src, inverted_ls_triplets,
 
 def vbap(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
     """Loudspeaker gains for Vector Base Amplitude Panning decoding.
-    Pulkki, V. (1997). Virtual Sound Source Positioning Using Vector Base
-    Amplitude Panning. AES, 144(5), 357–360.
 
     Parameters
     ----------
@@ -547,6 +549,11 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
     -------
     gains : (n, L) numpy.ndarray
         Panning gains for L loudspeakers to render n sources.
+
+    References
+    ----------
+    Pulkki, V. (1997). Virtual Sound Source Positioning Using Vector Base
+    Amplitude Panning. AES, 144(5), 357–360.
 
     Examples
     --------
@@ -676,8 +683,13 @@ def vbip(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
 
 
 def characteristic_ambisonic_order(hull):
-    """Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and
+    """Find the characteristic order for specified loudspeaker layout.
+
+    References
+    ----------
+    Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and
     Decoding. Journal of Audio Engineering Society, Sec. 7.
+
     """
     _hull = copy.copy(hull)
     # projection for loudspeakers not on unit sphere
@@ -702,8 +714,6 @@ def characteristic_ambisonic_order(hull):
 
 def allrap(src, hull, N_sph=None, jobs_count=1):
     """Loudspeaker gains for All-Round Ambisonic Panning.
-    Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
-    Journal of Audio Engineering Society, Sec. 4.
 
     Parameters
     ----------
@@ -719,6 +729,11 @@ def allrap(src, hull, N_sph=None, jobs_count=1):
     -------
     gains : (N, L) numpy.ndarray
         Panning gains for L loudspeakers to render N sources.
+
+    References
+    ----------
+    Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
+    Journal of Audio Engineering Society, Sec. 4.
 
     Examples
     --------
@@ -774,8 +789,6 @@ def allrap(src, hull, N_sph=None, jobs_count=1):
 
 def allrap2(src, hull, N_sph=None, jobs_count=1):
     """Loudspeaker gains for All-Round Ambisonic Panning 2.
-    Zotter, F., & Frank, M. (2018). Ambisonic decoding with panning-invariant
-    loudness on small layouts (AllRAD2). In 144th AES Convention.
 
     Parameters
     ----------
@@ -791,6 +804,11 @@ def allrap2(src, hull, N_sph=None, jobs_count=1):
     -------
     gains : (N, L) numpy.ndarray
         Panning gains for L loudspeakers to render N sources.
+
+    References
+    ----------
+    Zotter, F., & Frank, M. (2018). Ambisonic decoding with panning-invariant
+    loudness on small layouts (AllRAD2). In 144th AES Convention.
 
     Examples
     --------
@@ -872,6 +890,18 @@ def allrad(F_nm, hull, N_sph=None, jobs_count=1):
     Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
     Journal of Audio Engineering Society, Sec. 6.
 
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        ls_setup = spa.decoder.LoudspeakerSetup(ls_x, ls_y, ls_z)
+        ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
+                               opening_limit=150)
+        ls_setup.ambisonics_setup(update_hull=True)
+
+        spa.plots.decoder_performance(ls_setup, 'ALLRAD')
+
     """
     if hull.ambisonics_hull:
         ambisonics_hull = hull.ambisonics_hull
@@ -938,6 +968,18 @@ def allrad2(F_nm, hull, N_sph=None, jobs_count=1):
     ----------
     Zotter, F., & Frank, M. (2018). Ambisonic decoding with panning-invariant
     loudness on small layouts (AllRAD2). In 144th AES Convention.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        ls_setup = spa.decoder.LoudspeakerSetup(ls_x, ls_y, ls_z)
+        ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
+                               opening_limit=150)
+        ls_setup.ambisonics_setup(update_hull=True)
+
+        spa.plots.decoder_performance(ls_setup, 'ALLRAD2')
 
     """
     warn("ALLRAD2 currently rectifies the signal!!")
@@ -1009,6 +1051,18 @@ def mad(F_nm, hull, N_sph=None):
     ch. 4.9.2, Zotter, F., & Frank, M. (2019). Ambisonics.
     Springer Topics in Signal Processing.
 
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        ls_setup = spa.decoder.LoudspeakerSetup(ls_x, ls_y, ls_z)
+        ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
+                               opening_limit=150)
+        ls_setup.ambisonics_setup(update_hull=True)
+
+        spa.plots.decoder_performance(ls_setup, 'MAD')
+
     """
     if N_sph is None:
         if hull.characteristic_order:
@@ -1032,7 +1086,7 @@ def mad(F_nm, hull, N_sph=None):
 
 
 def epad(F_nm, hull, N_sph=None):
-    """Loudspeaker signals of Energy-Preserving Ambisonic Decoder.
+    r"""Loudspeaker signals of Energy-Preserving Ambisonic Decoder.
 
     Parameters
     ----------
@@ -1049,12 +1103,29 @@ def epad(F_nm, hull, N_sph=None):
 
     Notes
     -----
-    L should be more than (N_sph+1)**2 .
+    Number of loudspeakers should be greater or equal than SH channels, i.e.
+
+    .. math::  L \geq (N_{sph}+1)^2 .
 
     References
     ----------
     Zotter, F., Pomberger, H., & Noisternig, M. (2012). Energy-preserving
     ambisonic decoding. Acta Acustica United with Acustica, 98(1), 37–47.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        ls_setup = spa.decoder.LoudspeakerSetup(ls_x, ls_y, ls_z)
+        ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
+                               opening_limit=150)
+        ls_setup.ambisonics_setup(update_hull=True)
+
+        spa.plots.decoder_performance(ls_setup, 'EPAD')
+
+        spa.plots.decoder_performance(ls_setup, 'EPAD', N_sph=2,
+                                      title='$N_{sph}=2$')
 
     """
     if N_sph is None:

@@ -413,7 +413,7 @@ def bandlimited_dirac(N, d, w_n=None):
     -----
     Normalize with
 
-    .. math::  \sum^N \frac{2N + 1}{4 \pi} = \frac{(N+1)^2}{4 \pi}
+    .. math::  \sum^N \frac{2N + 1}{4 \pi} = \frac{(N+1)^2}{4 \pi} .
 
     References
     ----------

@@ -541,7 +541,7 @@ def polar(theta, r, title=None, rlim=(-40, 0), ax=None):
 
 def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
                         show_ls=True, title=None, **kwargs):
-    """Shows energy, spread and angular error measures on grid.
+    """Shows amplitude, energy, spread and angular error measures on grid.
     For renderer_type={'VBAP', 'VBIP', 'ALLRAP', 'NLS'},
     as well as {'ALLRAD', 'ALLRAD2', 'EPAD', 'MAD'}.
     All kwargs are forwarded to the decoder function.
