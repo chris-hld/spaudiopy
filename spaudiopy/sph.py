@@ -640,7 +640,7 @@ def binaural_coloration_compensation(N, f, r_0=0.0875, w_taper=None):
 
     See Also
     --------
-    process.gain_clipping : Limit maximum gain
+    :py:func:`spaudiopy.process.gain_clipping` : Limit maximum gain
 
     References
     ----------

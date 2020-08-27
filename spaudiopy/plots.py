@@ -71,6 +71,10 @@ def freq_resp(freq, amp, to_db=True, smoothing_n=None, title=None,
     f : frequency array
     amp : array_like, list of array_like
 
+    Examples
+    --------
+    See :py:func:`spaudiopy.sph.binaural_coloration_compensation`
+
     """
     if not isinstance(amp, (list, tuple)):
         amp = [amp]
@@ -242,7 +246,13 @@ def spherical_function(f, azi, colat, title=None):
 
 
 def sh_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None):
-    """Plot spherical harmonics coefficients as function on the sphere."""
+    """Plot spherical harmonics coefficients as function on the sphere.
+
+    Examples
+    --------
+    See :py:mod:`spaudiopy.sph`
+
+    """
     F_nm = utils.asarray_1d(F_nm)
     F_nm = F_nm[:, np.newaxis]
     if SH_type is None:
@@ -306,7 +316,13 @@ def sh_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None):
 
 
 def sh_coeffs_subplot(F_l, SH_type=None, azi_steps=5, el_steps=3, titles=None):
-    """Plot spherical harmonics coefficients list as function on the sphere."""
+    """Plot spherical harmonics coefficients list as function on the sphere.
+
+    Examples
+    --------
+    See :py:mod:`spaudiopy.sph`
+
+    """
     num_plots = len(F_l)
     azi_steps = np.deg2rad(azi_steps)
     el_steps = np.deg2rad(el_steps)
@@ -392,6 +408,10 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, ax_lim=None,
         Custom colors for simplices.
     clim : (2,), optional
         `vmin` and `vmax` for colors.
+
+    Examples
+    --------
+    See :py:mod:`spaudiopy.decoder`
 
     """
     if simplices is None:
@@ -524,7 +544,12 @@ def hull_normals(hull, plot_face_normals=True, plot_vertex_normals=True):
 
 
 def polar(theta, r, title=None, rlim=(-40, 0), ax=None):
-    """Polar plot in dB that allows negative values for 'r'."""
+    """Polar plot in dB that allows negative values for `r`.
+
+    Examples
+    --------
+    See :py:func:`spaudiopy.sph.bandlimited_dirac`
+    """
     if ax is None:
         fig = plt.figure()
         ax = fig.gca(projection='polar')
@@ -546,8 +571,14 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
     as well as {'ALLRAD', 'ALLRAD2', 'EPAD', 'MAD'}.
     All kwargs are forwarded to the decoder function.
 
+    References
+    ----------
     Zotter, F., & Frank, M. (2019). Ambisonics.
     Springer Topics in Signal Processing.
+
+    Examples
+    --------
+    See :py:mod:`spaudiopy.decoder`
     """
     azi_steps = np.deg2rad(azi_steps)
     ele_steps = np.deg2rad(ele_steps)
@@ -666,7 +697,26 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
 
 
 def doa(azi, colat, fs, p=None, size=250):
-    """Direction of Arrival, with optional p(t) scaling the size."""
+    """Direction of Arrival, with optional p(t) scaling the size.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        n = 1000
+        fs = 44100
+        t_ms = np.linspace(0, n/fs, n, endpoint=False) * 1000  # t in ms
+
+        x = np.random.randn(n)
+        y = np.random.randn(n)
+        z = np.random.randn(n)
+        azi, colat, r = spa.utils.cart2sph(x, y, z)
+
+        ps = 1 / np.exp(np.linspace(0, 3, n))
+        spa.plots.doa(azi, colat, fs, ps)
+
+    """
     # t in ms
     t_ms = np.linspace(0, len(azi) / fs, len(azi), endpoint=False) * 1000
 
@@ -710,8 +760,7 @@ def doa(azi, colat, fs, p=None, size=250):
 
 
 def set_aspect_equal3d(ax=None, XYZlim=None):
-    """
-    Set 3D axis to equal aspect.
+    """Set 3D axis to equal aspect.
 
     Parameters
     ----------
