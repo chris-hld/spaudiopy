@@ -16,12 +16,21 @@
    plots
 
 """
-from subprocess import check_output
+from pathlib import Path
+from subprocess import run
+
+file_dir = Path(__file__).parent.absolute()
 
 
 try:
-    release = check_output(['git', 'describe', '--tags', '--always'])
-    __version__ = release.decode().strip()
+    # release = check_output(['git', 'describe', '--tags', '--always'])
+    # __version__ = release.decode().strip()
+
+    release = run(['git', 'describe', '--tags', '--always'],
+                  cwd=str(file_dir),
+                  capture_output=True)
+    __version__ = release.stdout.decode().strip()
+
 except Exception:
     __version__ = "0.1.2-dirty"
 
