@@ -765,7 +765,6 @@ def allrap(src, hull, N_sph=None, jobs_count=1):
 
     src = np.atleast_2d(src)
     assert(src.shape[1] == 3)
-    src_count = src.shape[0]
 
     # normalize direction
     src = src / np.linalg.norm(src, axis=1)[:, np.newaxis]
@@ -777,12 +776,21 @@ def allrap(src, hull, N_sph=None, jobs_count=1):
 
     # SH tapering coefficients
     a_n = sph.max_rE_weights(N_sph)
+    a_nm = sph.repeat_order_coeffs(a_n)
 
-    G_bld = np.zeros([src_count, J])
-    for src_idx, src_pos in enumerate(src):
-        # discretize panning function
-        d = utils.angle_between(src_pos, kernel_hull.points)
-        G_bld[src_idx, :] = sph.bandlimited_dirac(N_sph, d, a_n)
+    # sources
+    _s_azi, _s_colat, _s_r = utils.cart2sph(src[:, 0],
+                                            src[:, 1],
+                                            src[:, 2])
+    Y_s = sph.sh_matrix(N_sph, _s_azi, _s_colat, SH_type='real')
+    # kernel
+    _k_azi, _k_colat, _k_r = utils.cart2sph(kernel_hull.points[:, 0],
+                                            kernel_hull.points[:, 1],
+                                            kernel_hull.points[:, 2])
+    Y_k = sph.sh_matrix(N_sph, _k_azi, _k_colat, SH_type='real')
+
+    # discretized (band-limited) ambisonic panning function
+    G_bld = Y_s @ np.diag(a_nm) @ Y_k.T
 
     # remove imaginary loudspeaker
     if ambisonics_hull.imaginary_ls_idx is not None:
@@ -841,7 +849,6 @@ def allrap2(src, hull, N_sph=None, jobs_count=1):
 
     src = np.atleast_2d(src)
     assert(src.shape[1] == 3)
-    src_count = src.shape[0]
 
     # normalize direction
     src = src / np.linalg.norm(src, axis=1)[:, np.newaxis]
@@ -857,12 +864,21 @@ def allrap2(src, hull, N_sph=None, jobs_count=1):
     a_w = np.sqrt(np.sum((2 * (np.arange(N_sph + 1) + 1)) / (4 * np.pi) *
                          a_n**2))
     a_n /= a_w
+    a_nm = sph.repeat_order_coeffs(a_n)
 
-    G_bld = np.zeros([src_count, J])
-    for src_idx, src_pos in enumerate(src):
-        # discretize panning function
-        d = utils.angle_between(src_pos, kernel_hull.points)
-        G_bld[src_idx, :] = sph.bandlimited_dirac(N_sph, d, a_n)
+    # sources
+    _s_azi, _s_colat, _s_r = utils.cart2sph(src[:, 0],
+                                            src[:, 1],
+                                            src[:, 2])
+    Y_s = sph.sh_matrix(N_sph, _s_azi, _s_colat, SH_type='real')
+    # kernel
+    _k_azi, _k_colat, _k_r = utils.cart2sph(kernel_hull.points[:, 0],
+                                            kernel_hull.points[:, 1],
+                                            kernel_hull.points[:, 2])
+    Y_k = sph.sh_matrix(N_sph, _k_azi, _k_colat, SH_type='real')
+
+    # discretized (band-limited) ambisonic panning function
+    G_bld = Y_s @ np.diag(a_nm) @ Y_k.T
 
     # remove imaginary loudspeaker
     if ambisonics_hull.imaginary_ls_idx is not None:
@@ -935,11 +951,11 @@ def allrad(F_nm, hull, N_sph=None, jobs_count=1):
     a_n = sph.repeat_order_coeffs(a_n)
 
     # virtual Ambisonic decoder
-    _t_azi, _t_colat, _t_r = utils.cart2sph(kernel_hull.points[:, 0],
+    _k_azi, _k_colat, _k_r = utils.cart2sph(kernel_hull.points[:, 0],
                                             kernel_hull.points[:, 1],
                                             kernel_hull.points[:, 2])
     # band-limited Dirac
-    Y_bld = sph.sh_matrix(N_sph, _t_azi, _t_colat, SH_type='real')
+    Y_bld = sph.sh_matrix(N_sph, _k_azi, _k_colat, SH_type='real')
 
     # ALLRAD Decoder
     D = 4 * np.pi / J * G_k.T @ Y_bld
@@ -1014,11 +1030,11 @@ def allrad2(F_nm, hull, N_sph=None, jobs_count=1):
     # tapering already applied in kernel, sufficient?
 
     # virtual Ambisonic decoder
-    _t_azi, _t_colat, _t_r = utils.cart2sph(kernel_hull.points[:, 0],
+    _k_azi, _k_colat, _k_r = utils.cart2sph(kernel_hull.points[:, 0],
                                             kernel_hull.points[:, 1],
                                             kernel_hull.points[:, 2])
     # band-limited Dirac
-    Y_bld = sph.sh_matrix(N_sph, _t_azi, _t_colat, SH_type='real')
+    Y_bld = sph.sh_matrix(N_sph, _k_azi, _k_colat, SH_type='real')
 
     # ALLRAD2 Decoder
     D = 4 * np.pi / J * G_k.T @ Y_bld
