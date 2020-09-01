@@ -455,7 +455,7 @@ def max_rE_weights(N):
 
     See Also
     --------
-    :py:func:`spaudiopy.process.unity_gain` : Unit amplitude compensation.
+    :py:func:`spaudiopy.sph.unity_gain` : Unit amplitude compensation.
 
     References
     ----------
