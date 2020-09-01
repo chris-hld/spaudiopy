@@ -433,10 +433,10 @@ def bandlimited_dirac(N, d, w_n=None):
         azi = np.linspace(0, 2 * np.pi, 720, endpoint=True)
 
         # Bandlimited Dirac pulse
-        dirac_untapered = 4 * np.pi / (N + 1) ** 2 * \
-                           spa.sph.bandlimited_dirac(N, azi - dirac_azi)
+        dirac_bandlim = 4 * np.pi / (N + 1) ** 2 * \
+                            spa.sph.bandlimited_dirac(N, azi - dirac_azi)
 
-        spa.plots.polar(azi, dirac_untapered)
+        spa.plots.polar(azi, dirac_bandlim)
 
     """
     d = utils.asarray_1d(d)
@@ -457,6 +457,27 @@ def max_rE_weights(N):
     ----------
     Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
     Journal of Audio Engineering Society, eq. (10).
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        dirac_azi = np.deg2rad(90)
+        dirac_colat = np.deg2rad(90)
+        N = 5
+
+        # cross section
+        azi = np.linspace(0, 2 * np.pi, 720, endpoint=True)
+
+        # Bandlimited Dirac pulse, with max r_E tapering window
+        w_n = spa.sph.max_rE_weights(N)
+        dirac_tapered = 4 * np.pi / (N + 1) ** 2 * \
+                            spa.sph.bandlimited_dirac(N, azi - dirac_azi,
+                                                      w_n=w_n)
+
+        spa.plots.polar(azi, dirac_tapered)
+
     """
     theta = np.deg2rad(137.9) / (N + 1.51)
     a_n = scyspecial.eval_legendre(np.arange(N + 1), np.cos(theta))
@@ -464,8 +485,7 @@ def max_rE_weights(N):
 
 
 def r_E(p, g):
-    """r_E vector and magnitude calculated from loudspeaker position vector p
-    and their gains g.
+    """Calculate r_E vector and magnitude from loudspeaker gains.
 
     Parameters
     ----------

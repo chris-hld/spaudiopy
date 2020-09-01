@@ -1203,7 +1203,7 @@ def _create_shared_array(shared_array_shape, d_type='d'):
 
 
 def _init_shared_array(shared_array_base, shared_array_shape):
-    """Makes 'shared_array' available to child processes."""
+    """Make 'shared_array' available to child processes."""
     global shared_array
     shared_array = np.frombuffer(shared_array_base.get_obj())
     shared_array = shared_array.reshape(shared_array_shape)
