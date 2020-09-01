@@ -11,8 +11,11 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 
 setuptools.setup(name='spaudiopy',
-                 version_format='{tag}.dev{commitcount}+{gitsha}',
-                 setup_requires=['setuptools-git-version'],
+                 version_config={
+                     "version_format": "{tag}.dev{sha}",
+                     "starting_version": "0.0.0"
+                 },
+                 setup_requires=['better-setuptools-git-version'],
                  description='Spatial Audio Python Package',
                  long_description=long_description,
                  long_description_content_type='text/markdown',
