@@ -453,6 +453,10 @@ def bandlimited_dirac(N, d, w_n=None):
 def max_rE_weights(N):
     """Return max-rE modal weight coefficients for spherical harmonics order N.
 
+    See Also
+    --------
+    :py:func:`spaudiopy.process.unity_gain` : Unit amplitude compensation.
+
     References
     ----------
     Zotter, F., & Frank, M. (2012). All-Round Ambisonic Panning and Decoding.
@@ -472,9 +476,8 @@ def max_rE_weights(N):
 
         # Bandlimited Dirac pulse, with max r_E tapering window
         w_n = spa.sph.max_rE_weights(N)
-        dirac_tapered = 4 * np.pi / (N + 1) ** 2 * \
-                            spa.sph.bandlimited_dirac(N, azi - dirac_azi,
-                                                      w_n=w_n)
+        w_n = spa.sph.unity_gain(w_n)
+        dirac_tapered = spa.sph.bandlimited_dirac(N, azi - dirac_azi, w_n=w_n)
 
         spa.plots.polar(azi, dirac_tapered)
 
@@ -660,7 +663,7 @@ def binaural_coloration_compensation(N, f, r_0=0.0875, w_taper=None):
 
     See Also
     --------
-    :py:func:`spaudiopy.process.gain_clipping` : Limit maximum gain
+    :py:func:`spaudiopy.process.gain_clipping` : Limit maximum gain.
 
     References
     ----------
@@ -704,3 +707,28 @@ def binaural_coloration_compensation(N, f, r_0=0.0875, w_taper=None):
     # catch NaNs
     gain[np.isnan(gain)] = 1.
     return gain
+
+
+def unity_gain(w_n):
+    """Make modal weighting / tapering unit amplitude in steering direction.
+
+    Parameters
+    ----------
+    w_n : (N+1,) array_like
+        Modal weighting factors.
+
+    Returns
+    -------
+    w_n : (N+1,) array_like
+        Modal weighting factors, adjusted for unit amplitude.
+
+    Examples
+    --------
+    See :py:func:`spaudiopy.sph.max_rE_weights`.
+
+    """
+    w_n = utils.asarray_1d(w_n)
+    a_n = 0
+    for n, w in enumerate(w_n):
+        a_n += (2*n + 1) / (4 * np.pi) * w
+    return w_n / a_n
