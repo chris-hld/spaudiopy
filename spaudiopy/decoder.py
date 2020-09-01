@@ -766,28 +766,29 @@ def allrap(src, hull, N_sph=None, jobs_count=1):
     src = np.atleast_2d(src)
     assert(src.shape[1] == 3)
     src_count = src.shape[0]
-    ls_count = ambisonics_hull.npoints
 
     # normalize direction
     src = src / np.linalg.norm(src, axis=1)[:, np.newaxis]
     # virtual t-design loudspeakers
     J = len(kernel_hull.points)
-    # virtual speakers expressed as VBAP phantom sources
-    G = vbap(src=kernel_hull.points, hull=ambisonics_hull,
-             jobs_count=jobs_count)
+    # virtual speakers expressed as VBAP phantom sources (Kernel)
+    G_k = vbap(src=kernel_hull.points, hull=ambisonics_hull,
+               jobs_count=jobs_count)
 
     # SH tapering coefficients
     a_n = sph.max_rE_weights(N_sph)
 
-    gains = np.zeros([src_count, ls_count])
-    for src_idx in range(src_count):
+    G_bld = np.zeros([src_count, J])
+    for src_idx, src_pos in enumerate(src):
         # discretize panning function
-        d = utils.angle_between(src[src_idx, :], kernel_hull.points)
-        g_l = sph.bandlimited_dirac(N_sph, d, a_n)
-        gains[src_idx, :] = 4 * np.pi / J * G.T @ g_l
+        d = utils.angle_between(src_pos, kernel_hull.points)
+        G_bld[src_idx, :] = sph.bandlimited_dirac(N_sph, d, a_n)
+
     # remove imaginary loudspeaker
     if ambisonics_hull.imaginary_ls_idx is not None:
-        gains = np.delete(gains, ambisonics_hull.imaginary_ls_idx, axis=1)
+        G_k = np.delete(G_k, ambisonics_hull.imaginary_ls_idx, axis=1)
+
+    gains = 4 * np.pi / J * G_bld @ G_k
     return gains
 
 
@@ -841,16 +842,14 @@ def allrap2(src, hull, N_sph=None, jobs_count=1):
     src = np.atleast_2d(src)
     assert(src.shape[1] == 3)
     src_count = src.shape[0]
-    # includes imaginary loudspeakers
-    ls_count = ambisonics_hull.npoints
 
     # normalize direction
     src = src / np.linalg.norm(src, axis=1)[:, np.newaxis]
     # virtual t-design loudspeakers
     J = len(kernel_hull.points)
-    # virtual speakers expressed as VBAP phantom sources
-    G = vbap(src=kernel_hull.points, hull=ambisonics_hull,
-             jobs_count=jobs_count)
+    # virtual speakers expressed as VBAP phantom sources (Kernel)
+    G_k = vbap(src=kernel_hull.points, hull=ambisonics_hull,
+               jobs_count=jobs_count)
 
     # SH tapering coefficients
     a_n = sph.max_rE_weights(N_sph)
@@ -859,15 +858,17 @@ def allrap2(src, hull, N_sph=None, jobs_count=1):
                          a_n**2))
     a_n /= a_w
 
-    gains = np.zeros([src_count, ls_count])
-    for src_idx in range(src_count):
+    G_bld = np.zeros([src_count, J])
+    for src_idx, src_pos in enumerate(src):
         # discretize panning function
-        d = utils.angle_between(src[src_idx, :], kernel_hull.points)
-        g_l = sph.bandlimited_dirac(N_sph, d, a_n)
-        gains[src_idx, :] = np.sqrt(4 * np.pi / J * G.T**2 @ g_l**2)
+        d = utils.angle_between(src_pos, kernel_hull.points)
+        G_bld[src_idx, :] = sph.bandlimited_dirac(N_sph, d, a_n)
+
     # remove imaginary loudspeaker
     if ambisonics_hull.imaginary_ls_idx is not None:
-        gains = np.delete(gains, ambisonics_hull.imaginary_ls_idx, axis=1)
+        G_k = np.delete(G_k, ambisonics_hull.imaginary_ls_idx, axis=1)
+
+    gains = np.sqrt(4 * np.pi / J * G_bld**2 @ G_k**2)
     return gains
 
 
@@ -925,9 +926,9 @@ def allrad(F_nm, hull, N_sph=None, jobs_count=1):
 
     # virtual t-design loudspeakers
     J = len(kernel_hull.points)
-    # virtual speakers expressed as VBAP phantom sources
-    G = vbap(src=kernel_hull.points, hull=ambisonics_hull,
-             jobs_count=jobs_count)
+    # virtual speakers expressed as VBAP phantom sources (Kernel)
+    G_k = vbap(src=kernel_hull.points, hull=ambisonics_hull,
+               jobs_count=jobs_count)
 
     # SH tapering coefficients
     a_n = sph.max_rE_weights(N_sph)
@@ -937,16 +938,21 @@ def allrad(F_nm, hull, N_sph=None, jobs_count=1):
     _t_azi, _t_colat, _t_r = utils.cart2sph(kernel_hull.points[:, 0],
                                             kernel_hull.points[:, 1],
                                             kernel_hull.points[:, 2])
-    Y_td = sph.sh_matrix(N_sph, _t_azi, _t_colat, SH_type='real')
+    # band-limited Dirac
+    Y_bld = sph.sh_matrix(N_sph, _t_azi, _t_colat, SH_type='real')
+
     # ALLRAD Decoder
-    D = 4 * np.pi / J * G.T @ Y_td
+    D = 4 * np.pi / J * G_k.T @ Y_bld
     # apply tapering to decoder matrix
     D = D @ np.diag(a_n)
-    # loudspeaker output signals
-    ls_sig = D @ F_nm
+
     # remove imaginary loudspeakers
     if ambisonics_hull.imaginary_ls_idx is not None:
-        ls_sig = np.delete(ls_sig, ambisonics_hull.imaginary_ls_idx, axis=0)
+        D = np.delete(D, ambisonics_hull.imaginary_ls_idx, axis=0)
+
+    # loudspeaker output signals
+    ls_sig = D @ F_nm
+
     return ls_sig
 
 
@@ -986,10 +992,7 @@ def allrad2(F_nm, hull, N_sph=None, jobs_count=1):
         spa.plots.decoder_performance(ls_setup, 'ALLRAD2')
 
     """
-    warn("ALLRAD2 currently rectifies the signal!!")
-    if hull.ambisonics_hull:
-        ambisonics_hull = hull.ambisonics_hull
-    else:
+    if not hull.ambisonics_hull:
         raise ValueError('Run LoudspeakerSetup.ambisonics_setup() first!')
     if hull.kernel_hull:
         kernel_hull = hull.kernel_hull
@@ -1005,32 +1008,23 @@ def allrad2(F_nm, hull, N_sph=None, jobs_count=1):
 
     # virtual t-design loudspeakers
     J = len(kernel_hull.points)
-    # virtual speakers expressed as VBAP phantom sources
-    G = vbap(src=kernel_hull.points, hull=ambisonics_hull,
-             jobs_count=jobs_count)
-
-    # SH tapering coefficients
-    a_n = sph.max_rE_weights(N_sph)
-    # sqrt(E) normalization (eq.6)
-    a_w = np.sqrt(np.sum((2 * (np.arange(N_sph + 1) + 1)) / (4 * np.pi) *
-                         a_n**2))
-    a_n /= a_w
-    a_n = sph.repeat_order_coeffs(a_n)
+    # virtual speakers expressed as phantom sources (Kernel)
+    G_k = allrap2(src=kernel_hull.points, hull=hull, N_sph=N_sph,
+                  jobs_count=jobs_count)
+    # tapering already applied in kernel, sufficient?
 
     # virtual Ambisonic decoder
     _t_azi, _t_colat, _t_r = utils.cart2sph(kernel_hull.points[:, 0],
                                             kernel_hull.points[:, 1],
                                             kernel_hull.points[:, 2])
-    Y_td = sph.sh_matrix(N_sph, _t_azi, _t_colat, SH_type='real')
+    # band-limited Dirac
+    Y_bld = sph.sh_matrix(N_sph, _t_azi, _t_colat, SH_type='real')
 
-    # tapered dirac
-    Y_k = Y_td @ np.diag(a_n) @ F_nm
     # ALLRAD2 Decoder
-    ls_sig = np.sqrt(4 * np.pi / J * np.square(G.T) @ np.square(Y_k))
+    D = 4 * np.pi / J * G_k.T @ Y_bld
 
-    # remove imaginary loudspeakers
-    if ambisonics_hull.imaginary_ls_idx is not None:
-        ls_sig = np.delete(ls_sig, ambisonics_hull.imaginary_ls_idx, axis=0)
+    # loudspeaker output signals
+    ls_sig = D @ F_nm
     return ls_sig
 
 
