@@ -948,7 +948,7 @@ def allrad(F_nm, hull, N_sph=None, jobs_count=1):
 
     # SH tapering coefficients
     a_n = sph.max_rE_weights(N_sph)
-    a_n = sph.repeat_order_coeffs(a_n)
+    a_nm = sph.repeat_order_coeffs(a_n)
 
     # virtual Ambisonic decoder
     _k_azi, _k_colat, _k_r = utils.cart2sph(kernel_hull.points[:, 0],
@@ -960,7 +960,7 @@ def allrad(F_nm, hull, N_sph=None, jobs_count=1):
     # ALLRAD Decoder
     D = 4 * np.pi / J * G_k.T @ Y_bld
     # apply tapering to decoder matrix
-    D = D @ np.diag(a_n)
+    D = D @ np.diag(a_nm)
 
     # remove imaginary loudspeakers
     if ambisonics_hull.imaginary_ls_idx is not None:
