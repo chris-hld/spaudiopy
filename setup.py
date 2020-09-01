@@ -1,14 +1,8 @@
+"""For pip install."""
+
 import setuptools
 from os import path
 
-__version__ = "unknown"
-
-
-# "import" __version__
-for line in open("spaudiopy/__init__.py"):
-    if line.startswith("__version__"):
-        exec(line)
-        break
 
 # read the contents of your README file
 this_directory = path.abspath(path.dirname(__file__))
@@ -16,9 +10,9 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 
-
 setuptools.setup(name='spaudiopy',
-                 version=__version__,
+                 version_format='{tag}.dev{commitcount}+{gitsha}',
+                 setup_requires=['setuptools-git-version'],
                  description='Spatial Audio Python Package',
                  long_description=long_description,
                  long_description_content_type='text/markdown',
