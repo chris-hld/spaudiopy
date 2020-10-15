@@ -195,7 +195,7 @@ def compare_ambi(Ambi_A, Ambi_B):
     plt.title('B-format')
 
 
-def spherical_function(f, azi, colat, title=None):
+def spherical_function(f, azi, colat, title=None, fig=None):
     """Plot function 1D vector f over azi and colat."""
     f = utils.asarray_1d(np.real_if_close(f))
     azi = utils.asarray_1d(azi)
@@ -205,7 +205,8 @@ def spherical_function(f, azi, colat, title=None):
     # triangulate in the underlying parametrization
     triang = tri.Triangulation(colat, azi)
 
-    fig = plt.figure()
+    if fig is None:
+        fig = plt.figure(constrained_layout=True)
     ax = fig.gca(projection='3d')
     p_tri = ax.plot_trisurf(x, y, z,
                             cmap=plt.cm.coolwarm,
@@ -245,7 +246,8 @@ def spherical_function(f, azi, colat, title=None):
         plt.title(title)
 
 
-def sh_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None):
+def sh_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None,
+              fig=None):
     """Plot spherical harmonics coefficients as function on the sphere.
 
     Examples
@@ -274,7 +276,8 @@ def sh_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None):
                                             theta_plot.ravel(),
                                             f_r.ravel())
 
-    fig = plt.figure()
+    if fig is None:
+        fig = plt.figure(constrained_layout=True)
     ax = fig.gca(projection='3d')
 
     m = cm.ScalarMappable(cmap=cm.hsv,
@@ -315,7 +318,8 @@ def sh_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None):
         plt.title(title)
 
 
-def sh_coeffs_subplot(F_l, SH_type=None, azi_steps=5, el_steps=3, titles=None):
+def sh_coeffs_subplot(F_l, SH_type=None, azi_steps=5, el_steps=3, titles=None,
+                      fig=None):
     """Plot spherical harmonics coefficients list as function on the sphere.
 
     Examples
@@ -331,9 +335,11 @@ def sh_coeffs_subplot(F_l, SH_type=None, azi_steps=5, el_steps=3, titles=None):
                                        np.arange(10e-3, np.pi + el_steps,
                                                  el_steps))
 
-    fig, axs = plt.subplots(1, num_plots, figsize=plt.figaspect(1 / num_plots),
-                            constrained_layout=True,
-                            subplot_kw={'projection': '3d'})
+    if fig is None:
+        fig = plt.figure(figsize=plt.figaspect(1 / num_plots),
+                         constrained_layout=True)
+    axs = fig.subplots(1, num_plots, subplot_kw={'projection': '3d'})
+
     for idx_p, ax in enumerate(axs):
         F_nm = utils.asarray_1d(F_l[idx_p])
         F_nm = F_nm[:, np.newaxis]
@@ -392,7 +398,7 @@ def sh_coeffs_subplot(F_l, SH_type=None, azi_steps=5, el_steps=3, titles=None):
 
 
 def hull(hull, simplices=None, mark_invalid=True, title=None, ax_lim=None,
-         color=None, clim=None):
+         color=None, clim=None, fig=None):
     """Plot loudspeaker setup and valid simplices from its hull object.
 
     Parameters
@@ -451,7 +457,8 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, ax_lim=None,
     y = hull.points[:, 1]
     z = hull.points[:, 2]
 
-    fig = plt.figure(constrained_layout=True)
+    if fig is None:
+        fig = plt.figure(constrained_layout=True)
     ax = fig.gca(projection='3d')
 
     # valid
