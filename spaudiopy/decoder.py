@@ -776,7 +776,7 @@ def allrap(src, hull, N_sph=None, jobs_count=1):
 
     # SH tapering coefficients
     a_n = sph.max_rE_weights(N_sph)
-    a_nm = sph.repeat_order_coeffs(a_n)
+    a_nm = sph.repeat_per_order(a_n)
 
     # sources
     _s_azi, _s_colat, _s_r = utils.cart2sph(src[:, 0],
@@ -864,7 +864,7 @@ def allrap2(src, hull, N_sph=None, jobs_count=1):
     a_w = np.sqrt(np.sum((2 * (np.arange(N_sph + 1) + 1)) / (4 * np.pi) *
                          a_n**2))
     a_n /= a_w
-    a_nm = sph.repeat_order_coeffs(a_n)
+    a_nm = sph.repeat_per_order(a_n)
 
     # sources
     _s_azi, _s_colat, _s_r = utils.cart2sph(src[:, 0],
@@ -948,7 +948,7 @@ def allrad(F_nm, hull, N_sph=None, jobs_count=1):
 
     # SH tapering coefficients
     a_n = sph.max_rE_weights(N_sph)
-    a_nm = sph.repeat_order_coeffs(a_n)
+    a_nm = sph.repeat_per_order(a_n)
 
     # virtual Ambisonic decoder
     _k_azi, _k_colat, _k_r = utils.cart2sph(kernel_hull.points[:, 0],

@@ -245,7 +245,7 @@ def N3D_to_SN3D(F_nm, sh_axis=0):
     # 1/sqrt(2n+1) conversion factor
     n_norm = np.array([1/np.sqrt(2*n + 1) for n in range(N + 1)])
     # Broadcast
-    n_norm = np.expand_dims(repeat_order_coeffs(n_norm), axis=sh_axis-1)
+    n_norm = np.expand_dims(repeat_per_order(n_norm), axis=sh_axis-1)
     return n_norm * F_nm
 
 
@@ -271,7 +271,7 @@ def SN3D_to_N3D(F_nm, sh_axis=0):
     # sqrt(2n+1) conversion factor
     n_norm = np.array([np.sqrt(2*n + 1) for n in range(N + 1)])
     # Broadcast
-    n_norm = np.expand_dims(repeat_order_coeffs(n_norm), axis=sh_axis-1)
+    n_norm = np.expand_dims(repeat_per_order(n_norm), axis=sh_axis-1)
     return n_norm * F_nm
 
 
@@ -528,7 +528,7 @@ def project_on_sphere(x, y, z):
     return utils.sph2cart(phi, theta, r)
 
 
-def repeat_order_coeffs(c):
+def repeat_per_order(c):
     """Repeat each coefficient in 'c' m times per spherical order n.
 
     Parameters
