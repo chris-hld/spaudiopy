@@ -467,8 +467,8 @@ def max_rE_weights(N):
     .. plot::
         :context: close-figs
 
-        dirac_azi = np.deg2rad(90)
-        dirac_colat = np.deg2rad(90)
+        dirac_azi = np.deg2rad(45)
+        dirac_colat = np.deg2rad(45)
         N = 5
 
         # cross section

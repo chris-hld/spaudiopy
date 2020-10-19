@@ -562,10 +562,12 @@ def polar(theta, r, title=None, rlim=(-40, 0), ax=None):
         ax = fig.gca(projection='polar')
     ax.plot(theta, utils.db(np.clip(r, 0, None)), label='$+$')
     ax.plot(theta, utils.db(abs(np.clip(r, None, 0))), label='$-$')
+    ax.set_theta_offset(np.pi/2)
     ax.set_rmin(rlim[0])
     ax.set_rmax(rlim[1])
     ax.set_rticks(np.linspace(rlim[0], rlim[1], 5))
-    ax.text(np.pi/8, 5, 'dB', horizontalalignment='left')
+    ax.set_rlabel_position(6.5/8 * 360)
+    ax.text(6.5/8 * 2*np.pi, 3.3, 'dB', horizontalalignment='left')
     plt.legend(loc='lower right')
     if title is not None:
         plt.title(title)
