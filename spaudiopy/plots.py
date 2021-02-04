@@ -478,6 +478,9 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, ax_lim=None,
     # loudspeaker no
     for s, co in enumerate(np.c_[x, y, z]):
         ax.text(co[0], co[1], co[2], s, zorder=1)
+    
+    # origin
+    ax.scatter(0, 0, 0, s=30, c='darkgray', marker='+')
 
     ax.set_xlabel('x')
     ax.set_ylabel('y')
