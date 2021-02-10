@@ -190,7 +190,7 @@ def stack(vector_1, vector_2):
     return np.squeeze(out)
 
 
-def test_diff(v1, v2, msg=None, axis=None, test_lim=10e-8, VERBOSE=True):
+def test_diff(v1, v2, msg=None, axis=None, test_lim=1e-6, VERBOSE=True):
     """Test if the cumulative element-wise difference between v1 and v2.
     Return difference and be verbose if is greater `test_lim`.
     """

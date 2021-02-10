@@ -478,6 +478,9 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, ax_lim=None,
     # loudspeaker no
     for s, co in enumerate(np.c_[x, y, z]):
         ax.text(co[0], co[1], co[2], s, zorder=1)
+    
+    # origin
+    ax.scatter(0, 0, 0, s=30, c='darkgray', marker='+')
 
     ax.set_xlabel('x')
     ax.set_ylabel('y')
@@ -550,8 +553,8 @@ def hull_normals(hull, plot_face_normals=True, plot_vertex_normals=True):
     ax.view_init(25, 230)
 
 
-def polar(theta, r, title=None, rlim=(-40, 0), ax=None):
-    """Polar plot in dB that allows negative values for `r`.
+def polar(theta, r, INDB=True, rlim=None, title=None, ax=None):
+    """Polar plot (in dB) that allows negative values for `r`.
 
     Examples
     --------
@@ -560,17 +563,31 @@ def polar(theta, r, title=None, rlim=(-40, 0), ax=None):
     if ax is None:
         fig = plt.figure()
         ax = fig.gca(projection='polar')
-    ax.plot(theta, utils.db(np.clip(r, 0, None)), label='$+$')
-    ax.plot(theta, utils.db(abs(np.clip(r, None, 0))), label='$-$')
+    # Split in pos and neg part and set rest NaN for plots
+    rpos = np.copy(r)
+    rpos[r < 0] = np.nan
+    rneg = np.copy(r)
+    rneg[r >= 0] = np.nan
+    if INDB:
+        if not rlim:
+            rlim = (-40, 0)
+        ax.plot(theta, utils.db(rpos), label='$+$')
+        ax.plot(theta, utils.db(abs(rneg)), label='$-$')
+        ax.text(6.5/8 * 2*np.pi, 3.3, 'dB', horizontalalignment='left')
+    else:
+        if not rlim:
+            rlim = (0, 1)
+        ax.plot(theta, rpos, label='$+$')
+        ax.plot(theta, np.abs(rneg), label='$-$')
+
     ax.set_theta_offset(np.pi/2)
     ax.set_rmin(rlim[0])
-    ax.set_rmax(rlim[1])
+    ax.set_rmax(rlim[1] + 0.03*rlim[1])
     ax.set_rticks(np.linspace(rlim[0], rlim[1], 5))
     ax.set_rlabel_position(6.5/8 * 360)
-    ax.text(6.5/8 * 2*np.pi, 3.3, 'dB', horizontalalignment='left')
-    plt.legend(loc='lower right')
+    ax.legend(loc='lower right')
     if title is not None:
-        plt.title(title)
+        ax.set_title(title)
 
 
 def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,

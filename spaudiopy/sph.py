@@ -425,7 +425,7 @@ def bandlimited_dirac(N, d, w_n=None):
     .. plot::
         :context: close-figs
 
-        dirac_azi = np.deg2rad(90)
+        dirac_azi = np.deg2rad(0)
         dirac_colat = np.deg2rad(90)
         N = 5
 

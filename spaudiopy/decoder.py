@@ -776,6 +776,7 @@ def allrap(src, hull, N_sph=None, jobs_count=1):
 
     # SH tapering coefficients
     a_n = sph.max_rE_weights(N_sph)
+    a_n = sph.unity_gain(a_n)
     a_nm = sph.repeat_per_order(a_n)
 
     # sources
@@ -860,6 +861,7 @@ def allrap2(src, hull, N_sph=None, jobs_count=1):
 
     # SH tapering coefficients
     a_n = sph.max_rE_weights(N_sph)
+    a_n = sph.unity_gain(a_n)
     # sqrt(E) normalization (eq.6)
     a_w = np.sqrt(np.sum((2 * (np.arange(N_sph + 1) + 1)) / (4 * np.pi) *
                          a_n**2))
@@ -948,6 +950,7 @@ def allrad(F_nm, hull, N_sph=None, jobs_count=1):
 
     # SH tapering coefficients
     a_n = sph.max_rE_weights(N_sph)
+    a_n = sph.unity_gain(a_n)
     a_nm = sph.repeat_per_order(a_n)
 
     # virtual Ambisonic decoder
