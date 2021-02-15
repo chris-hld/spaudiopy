@@ -582,7 +582,7 @@ def polar(theta, r, INDB=True, rlim=None, title=None, ax=None):
 
     ax.set_theta_offset(np.pi/2)
     ax.set_rmin(rlim[0])
-    ax.set_rmax(rlim[1] + 0.03*rlim[1])
+    ax.set_rmax(rlim[1] + (0.5 if INDB else 0.03))
     ax.set_rticks(np.linspace(rlim[0], rlim[1], 5))
     ax.set_rlabel_position(6.5/8 * 360)
     ax.legend(loc='lower right')
