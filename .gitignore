@@ -112,3 +112,4 @@ venv.bak/
 
 # editor configs
 .vscode/
+*.pdf
