@@ -318,6 +318,83 @@ def sh_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None,
         plt.title(title)
 
 
+def sh_coeffs_overlay(F_nm_list, SH_type=None, azi_steps=5, el_steps=3,
+                      title=None, fig=None):
+    """Overlay spherical harmonics coefficients plots.
+
+    Examples
+    --------
+    See :py:mod:`spaudiopy.plots.sh_coeffs`
+
+    """
+    azi_steps = np.deg2rad(azi_steps)
+    el_steps = np.deg2rad(el_steps)
+    phi_plot, theta_plot = np.meshgrid(np.arange(0., 2 * np.pi + azi_steps,
+                                                 azi_steps),
+                                       np.arange(10e-3, np.pi + el_steps,
+                                                 el_steps))
+
+    if fig is None:
+        fig = plt.figure(constrained_layout=True)
+    ax = fig.gca(projection='3d')
+
+    # m = cm.ScalarMappable(cmap=cm.hsv,
+    #                      norm=colors.Normalize(vmin=-np.pi, vmax=np.pi))
+    # m.set_array(f_ang)
+    # c = m.to_rgba(f_ang.reshape(phi_plot.shape))
+    # ax.set_prop_cycle('color',
+    # plt.cm.Spectral(np.linspace(0,1,len(F_nm_list))))
+    cols = plt.cm.get_cmap('Set1')(np.arange(len(F_nm_list)))
+
+    for idx, F_nm in enumerate(F_nm_list):
+        F_nm = utils.asarray_1d(F_nm)
+        F_nm = F_nm[:, np.newaxis]
+        if SH_type is None:
+            SH_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
+        f_plot = sph.inverse_sht(F_nm, phi_plot.ravel(), theta_plot.ravel(),
+                                 SH_type)
+        f_r = np.abs(f_plot)
+        f_ang = np.angle(f_plot)
+
+        x_plot, y_plot, z_plot = utils.sph2cart(phi_plot.ravel(),
+                                                theta_plot.ravel(),
+                                                f_r.ravel())
+        ax.plot_surface(x_plot.reshape(phi_plot.shape),
+                        y_plot.reshape(phi_plot.shape),
+                        z_plot.reshape(phi_plot.shape),
+                        # facecolors=c,
+                        color=cols[idx, :],
+                        edgecolor=(0.6, 0.6, 0.6, 0.6), linewidth=0.06,
+                        alpha=0.38, shade=True)
+
+    ax.set_xlim(-1, 1)
+    ax.set_ylim(-1, 1)
+    ax.set_zlim(-1, 1)
+
+    # Draw axis lines
+    x0 = np.array([1, 0, 0])
+    y0 = np.array([0, 1, 0])
+    z0 = np.array([0, 0, 1])
+    for i in range(3):
+        ax.plot([-x0[i], x0[i]], [-y0[i], y0[i]], [-z0[i], z0[i]], 'k',
+                alpha=0.3)
+
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.set_zlabel('z')
+    ax.locator_params(nbins=5)
+
+    # cb = plt.colorbar(m, ticks=[-np.pi, 0, np.pi], shrink=0.5, aspect=10)
+    # cb.set_label("Phase in rad")
+    # cb.set_ticklabels([r'$-\pi$', r'$0$', r'$\pi$'])
+
+    plt.grid(True)
+    set_aspect_equal3d(ax)
+    ax.view_init(25, 230)
+    if title is not None:
+        plt.title(title)
+
+
 def sh_coeffs_subplot(F_l, SH_type=None, azi_steps=5, el_steps=3, titles=None,
                       fig=None):
     """Plot spherical harmonics coefficients list as function on the sphere.
