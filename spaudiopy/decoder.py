@@ -1047,6 +1047,60 @@ def allrad2(F_nm, hull, N_sph=None, jobs_count=1):
     return ls_sig
 
 
+def sad(F_nm, hull, N_sph=None):
+    """Loudspeaker signals of Sampling Ambisonic Decoder.
+
+    Parameters
+    ----------
+    F_nm : ((N_sph+1)**2, S) numpy.ndarray
+        Matrix of spherical harmonics coefficients of spherical function(S).
+    hull : LoudspeakerSetup
+    N_sph : int
+        Decoding order, defaults to hull.characteristic_order.
+
+    Returns
+    -------
+    ls_sig : (L, S) numpy.ndarray
+        Loudspeaker L output signal S.
+
+    References
+    ----------
+    ch. 4.9.1, Zotter, F., & Frank, M. (2019). Ambisonics.
+    Springer Topics in Signal Processing.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        ls_setup = spa.decoder.LoudspeakerSetup(ls_x, ls_y, ls_z)
+        ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
+                               opening_limit=150)
+
+        spa.plots.decoder_performance(ls_setup, 'SAD')
+
+    """
+    if N_sph is None:
+        if hull.characteristic_order:
+            N_sph = hull.characteristic_order
+        else:
+            N_sph = hull.get_characteristic_order()
+
+    L = hull.npoints
+    N_sph_in = int(np.sqrt(F_nm.shape[0]) - 1)
+    assert(N_sph_in >= N_sph)  # for now
+
+    ls_azi, ls_colat, ls_r = utils.cart2sph(*hull.points.T)
+    Y_ls = sph.sh_matrix(N_sph, ls_azi, ls_colat, SH_type='real')
+
+    D = Y_ls
+    D *= np.sqrt(4*np.pi / (N_sph+1)**2)
+    D *= np.sqrt(4*np.pi / L)  # Energy to unity (on t-design)
+    # loudspeaker output signals
+    ls_sig = D @ F_nm[:(N_sph+1)**2, :]
+    return ls_sig
+
+
 def mad(F_nm, hull, N_sph=None):
     """Loudspeaker signals of Mode-Matching Ambisonic Decoder.
 

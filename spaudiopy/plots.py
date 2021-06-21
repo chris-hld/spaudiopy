@@ -596,7 +596,7 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
                         show_ls=True, title=None, **kwargs):
     """Shows amplitude, energy, spread and angular error measures on grid.
     For renderer_type={'VBAP', 'VBIP', 'ALLRAP', 'NLS'},
-    as well as {'ALLRAD', 'ALLRAD2', 'EPAD', 'MAD'}.
+    as well as {'ALLRAD', 'ALLRAD2', 'EPAD', 'MAD', 'SAD'}.
     All kwargs are forwarded to the decoder function.
 
     References
@@ -617,7 +617,7 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
                                               theta_plot.ravel())
 
     # Prepare for SH based rendering
-    if renderer_type.lower() in ['allrad', 'allrad2', 'epad', 'mad']:
+    if renderer_type.lower() in ['allrad', 'allrad2', 'epad', 'mad', 'sad']:
         if 'N_sph' in kwargs:
             N_sph = kwargs.pop('N_sph')
         else:
@@ -647,6 +647,8 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
         G = decoder.epad(Y_in, hull, N_sph=N_sph, **kwargs).T
     elif renderer_type.lower() == 'mad':
         G = decoder.mad(Y_in, hull, N_sph=N_sph, **kwargs).T
+    elif renderer_type.lower() == 'sad':
+        G = decoder.sad(Y_in, hull, N_sph=N_sph, **kwargs).T
     else:
         raise ValueError('Unknown renderer_type')
 
