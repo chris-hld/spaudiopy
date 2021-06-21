@@ -17,6 +17,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm, colors, tri
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
+from scipy.spatial import ConvexHull
 
 from . import utils
 from . import sph
@@ -203,7 +204,8 @@ def spherical_function(f, azi, colat, title=None, fig=None):
     x, y, z = utils.sph2cart(azi, colat, r=abs(f))
 
     # triangulate in the underlying parametrization
-    triang = tri.Triangulation(colat, azi)
+    chull = ConvexHull(np.column_stack((x, y, z)))
+    triang = tri.Triangulation(colat, azi, triangles=chull.simplices)
 
     if fig is None:
         fig = plt.figure(constrained_layout=True)
