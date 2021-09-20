@@ -833,3 +833,100 @@ def maxre_modal_weights(N_sph, UNITAMP=True):
     # This is an iSHT in the same direction as unit PW
     a = bandlimited_dirac(N_sph, 0, c_n) if UNITAMP else 1
     return c_n/a
+
+
+def spat_filterbank_reconstruction_factor(w_nm, num_secs, mode=None):
+    """Reconstruction factor for restoring amplitude/energy preservation.
+
+
+    Parameters
+    ----------
+    w_nm : ((N+1)**2,), array_like
+        SH beam coefficients.
+    num_secs : int
+        Number of spatial filters.
+    mode : 'amplitude' or 'energy'
+
+    Raises
+    ------
+    ValueError
+        If mode is not specified.
+
+    Returns
+    -------
+    beta : float
+        Reconstruction factor.
+
+    References
+    ----------
+    Hold, C., Politis, A., Mc Cormack, L., & Pulkki, V. (2021).
+    Spatial Filter Bank Design in the Spherical Harmonic Domain. EUSIPCO 2021.
+
+    """
+    w_nm = np.atleast_2d(w_nm)
+    assert(mode)
+    if mode.lower() in ['amplitude', 'amp']:
+        beta = np.sqrt(4*np.pi) / (w_nm[0, 0] * num_secs)
+    elif mode.lower() in ['energy', 'en']:
+        beta = (4*np.pi) / (w_nm[0, :].conj()@w_nm[0, :] * num_secs)
+    else:
+        raise ValueError("Mode not implemented: " + mode)
+    return beta
+
+
+def design_spat_filterbank(N_sph, sec_azi, sec_zen, c_n, SH_type, mode):
+    """Design analysis and reconstruction matrix of a spatial filter bank.
+
+    Parameters
+    ----------
+    N_sph : int
+        SH order.
+    sec_azi : (J,) array_like
+        Sector azimuth steering directions.
+    sec_zen : (J,) array_like
+        Sector zenith/colatitude steering directions.
+    c_n : (N,) array_like
+        Modal weights, describing (axisymmetric) pattern.
+    SH_type : 'real' or 'complex'
+    mode : 'amplitude' or 'energy'
+        Design preserves amplitude or energy.
+
+    Raises
+    ------
+    ValueError
+        If mode not specified.
+
+    Returns
+    -------
+    A : (J, (N+1)**2) numpy.ndarray
+        Analysis matrix.
+    B : (J, (N+1)**2) numpy.ndarray
+        Resynthesis matrix.
+
+    References
+    ----------
+    TBA
+
+    """
+    sec_azi = utils.asarray_1d(sec_azi)
+    sec_zen = utils.asarray_1d(sec_zen)
+    c_n = utils.asarray_1d(c_n)
+    num_secs = len(sec_azi)
+
+    # Analysis matrix
+    A = repeat_per_order(c_n) * \
+        sh_matrix(N_sph, sec_azi, sec_zen, SH_type).conj()
+
+    beta = spat_filterbank_reconstruction_factor(A[0, :], num_secs, mode=mode)
+
+    # Reconstruction matrix
+    if mode.lower() in ['amplitude', 'amp']:
+        B = beta * repeat_per_order(1/(c_n/c_n[0])) * \
+                       sh_matrix(N_sph, sec_azi, sec_zen, SH_type)
+    elif mode.lower() in ['energy', 'en']:
+        B = np.sqrt(beta) * repeat_per_order(1/(c_n/c_n[0])) * \
+                                sh_matrix(N_sph, sec_azi, sec_zen, SH_type)
+    else:
+        raise ValueError("Mode not implemented: " + mode)
+
+    return A, B
