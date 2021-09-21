@@ -914,8 +914,7 @@ def design_spat_filterbank(N_sph, sec_azi, sec_zen, c_n, SH_type, mode):
     num_secs = len(sec_azi)
 
     # Analysis matrix
-    A = repeat_per_order(c_n) * \
-        sh_matrix(N_sph, sec_azi, sec_zen, SH_type).conj()
+    A = repeat_per_order(c_n) * sh_matrix(N_sph, sec_azi, sec_zen, SH_type)
 
     beta = spat_filterbank_reconstruction_factor(A[0, :], num_secs, mode=mode)
 
