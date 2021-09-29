@@ -732,3 +732,200 @@ def unity_gain(w_n):
     for n, w in enumerate(w_n):
         a_n += (2*n + 1) / (4 * np.pi) * w
     return w_n / a_n
+
+
+def hypercardioid_modal_weights(N_sph):
+    """Modal weights for beamformer resulting in a hyper-cardioid.
+
+    Parameters
+    ----------
+    N_sph : int
+        SH order.
+
+    Returns
+    -------
+    w_n : (N+1,) array_like
+        Modal weighting factors.
+
+    Notes
+    -----
+    Also called max-DI or normalized PWD.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        N = 5
+        w_n = spa.sph.hypercardioid_modal_weights(N)
+        w_nm = spa.sph.repeat_per_order(w_n) * \
+            spa.sph.sh_matrix(N, np.pi/4, np.pi/4, 'real')
+        spa.plots.sh_coeffs(w_nm)
+
+    """
+    c_n = np.repeat((4*np.pi)/(N_sph+1)**2, N_sph+1)
+    return c_n
+
+
+def cardioid_modal_weights(N_sph):
+    """Modal weights for beamformer resulting in a cardioid.
+
+    Parameters
+    ----------
+    N_sph : int
+        SH order.
+
+    Returns
+    -------
+    w_n : (N+1,) array_like
+        Modal weighting factors.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        N = 5
+        w_n = spa.sph.cardioid_modal_weights(N)
+        w_nm = spa.sph.repeat_per_order(w_n) * \
+            spa.sph.sh_matrix(N, np.pi/4, np.pi/4, 'real')
+        spa.plots.sh_coeffs(w_nm)
+
+    """
+    c_n = np.array([(np.math.factorial(N_sph)*np.math.factorial(N_sph)) /
+                    (np.math.factorial(N_sph+n+1) * np.math.factorial(N_sph-n))
+                    for n in range(N_sph+1)])
+    # Note: 4pi to compensate for correct normalization, unit amplitude
+    return 4*np.pi*c_n
+
+
+def maxre_modal_weights(N_sph, UNITAMP=True):
+    """Modal weights for beamformer resulting with max-rE weighting.
+
+    Parameters
+    ----------
+    N_sph : int
+        SH order.
+    UNITAMP : bool, optional (default:True)
+
+    Returns
+    -------
+    w_n : (N+1,) array_like
+        Modal weighting factors.
+
+    Notes
+    -----
+    Can be compensated for unit amplitude.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        N = 5
+        w_n = spa.sph.maxre_modal_weights(N)
+        w_nm = spa.sph.repeat_per_order(w_n) * \
+            spa.sph.sh_matrix(N, np.pi/4, np.pi/4, 'real')
+        spa.plots.sh_coeffs(w_nm)
+
+    """
+    c_n = max_rE_weights(N_sph)
+    # This is an iSHT in the same direction as unit PW
+    a = bandlimited_dirac(N_sph, 0, c_n) if UNITAMP else 1
+    return c_n/a
+
+
+def spat_filterbank_reconstruction_factor(w_nm, num_secs, mode=None):
+    """Reconstruction factor for restoring amplitude/energy preservation.
+
+
+    Parameters
+    ----------
+    w_nm : ((N+1)**2,), array_like
+        SH beam coefficients.
+    num_secs : int
+        Number of spatial filters.
+    mode : 'amplitude' or 'energy'
+
+    Raises
+    ------
+    ValueError
+        If mode is not specified.
+
+    Returns
+    -------
+    beta : float
+        Reconstruction factor.
+
+    References
+    ----------
+    Hold, C., Politis, A., Mc Cormack, L., & Pulkki, V. (2021).
+    Spatial Filter Bank Design in the Spherical Harmonic Domain. EUSIPCO 2021.
+
+    """
+    w_nm = np.atleast_2d(w_nm)
+    assert(mode)
+    if mode.lower() in ['amplitude', 'amp']:
+        beta = np.sqrt(4*np.pi) / (w_nm[0, 0] * num_secs)
+    elif mode.lower() in ['energy', 'en']:
+        beta = (4*np.pi) / (w_nm[0, :].conj()@w_nm[0, :] * num_secs)
+    else:
+        raise ValueError("Mode not implemented: " + mode)
+    return beta
+
+
+def design_spat_filterbank(N_sph, sec_azi, sec_zen, c_n, SH_type, mode):
+    """Design analysis and reconstruction matrix of a spatial filter bank.
+
+    Parameters
+    ----------
+    N_sph : int
+        SH order.
+    sec_azi : (J,) array_like
+        Sector azimuth steering directions.
+    sec_zen : (J,) array_like
+        Sector zenith/colatitude steering directions.
+    c_n : (N,) array_like
+        Modal weights, describing (axisymmetric) pattern.
+    SH_type : 'real' or 'complex'
+    mode : 'amplitude' or 'energy'
+        Design preserves amplitude or energy.
+
+    Raises
+    ------
+    ValueError
+        If mode not specified.
+
+    Returns
+    -------
+    A : (J, (N+1)**2) numpy.ndarray
+        Analysis matrix.
+    B : (J, (N+1)**2) numpy.ndarray
+        Resynthesis matrix.
+
+    References
+    ----------
+    TBA
+
+    """
+    sec_azi = utils.asarray_1d(sec_azi)
+    sec_zen = utils.asarray_1d(sec_zen)
+    c_n = utils.asarray_1d(c_n)
+    num_secs = len(sec_azi)
+
+    # Analysis matrix
+    A = repeat_per_order(c_n) * sh_matrix(N_sph, sec_azi, sec_zen, SH_type)
+
+    beta = spat_filterbank_reconstruction_factor(A[0, :], num_secs, mode=mode)
+
+    # Reconstruction matrix
+    if mode.lower() in ['amplitude', 'amp']:
+        B = beta * repeat_per_order(1/(c_n/c_n[0])) * \
+                       sh_matrix(N_sph, sec_azi, sec_zen, SH_type)
+    elif mode.lower() in ['energy', 'en']:
+        B = np.sqrt(beta) * repeat_per_order(1/(c_n/c_n[0])) * \
+                                sh_matrix(N_sph, sec_azi, sec_zen, SH_type)
+    else:
+        raise ValueError("Mode not implemented: " + mode)
+
+    return A, B
