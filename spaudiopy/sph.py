@@ -875,7 +875,7 @@ def spat_filterbank_reconstruction_factor(w_nm, num_secs, mode=None):
 
 
 def design_spat_filterbank(N_sph, sec_azi, sec_zen, c_n, SH_type, mode):
-    """Design analysis and reconstruction matrix of a spatial filter bank.
+    """Design spatial filter bank analysis and reconstruction matrix.
 
     Parameters
     ----------
@@ -886,7 +886,7 @@ def design_spat_filterbank(N_sph, sec_azi, sec_zen, c_n, SH_type, mode):
     sec_zen : (J,) array_like
         Sector zenith/colatitude steering directions.
     c_n : (N,) array_like
-        Modal weights, describing (axisymmetric) pattern.
+        SH Modal weights, describing (axisymmetric) pattern.
     SH_type : 'real' or 'complex'
     mode : 'amplitude' or 'energy'
         Design preserves amplitude or energy.
@@ -905,7 +905,29 @@ def design_spat_filterbank(N_sph, sec_azi, sec_zen, c_n, SH_type, mode):
 
     References
     ----------
-    TBA
+    Hold, C., Schlecht, S. J., Politis, A., & Pulkki, V. (2021). 
+    SPATIAL FILTER BANK IN THE SPHERICAL HARMONIC DOMAIN : 
+    RECONSTRUCTION AND APPLICATION. WASPAA 2021.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        N_sph = 3
+        sec_dirs = spa.utils.cart2sph(*spa.grids.load_t_design(2*N_sph).T)
+        c_n = spa.sph.maxre_modal_weights(N_sph)
+        [A, B] = spa.sph.design_spat_filterbank(N_sph, sec_dirs[0], sec_dirs[1],
+                                                c_n, 'real', 'amp')
+        # diffuse input SH signal
+        in_nm = np.random.randn((N_sph+1)**2, 1000)
+        # Sector signals (Analysis)
+        s_sec = A @ in_nm
+        # Reconstruction to SH domain
+        out_nm = B.conj().T @ s_sec
+
+        # Test perfect reconstruction
+        print(spa.utils.test_diff(in_nm, out_nm))
 
     """
     sec_azi = utils.asarray_1d(sec_azi)
