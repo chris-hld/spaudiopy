@@ -12,8 +12,6 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 
-from scipy.io import loadmat
-
 import spaudiopy as spa
 
 #current_file_dir = os.path.dirname(__file__)
