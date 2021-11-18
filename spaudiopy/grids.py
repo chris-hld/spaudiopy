@@ -232,7 +232,7 @@ def load_maxDet(degree):
     .. plot::
         :context: close-figs
 
-        vecs, weights = spa.grids.load_maxDet(degree=2*5)
+        vecs, weights = spa.grids.load_maxDet(degree=5)
         spa.plots.hull(spa.decoder.get_hull(*vecs.T))
 
     """
