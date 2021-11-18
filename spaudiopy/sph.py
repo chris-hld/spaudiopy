@@ -77,7 +77,7 @@ def sh_matrix(N, azi, colat, SH_type='complex', weights=None):
 
     Notes
     -----
-    The convention used here is also known as N3D-ACN.
+    The convention used here is also known as N3D-ACN (for SH_type='real').
 
     """
     azi = utils.asarray_1d(azi)
@@ -221,6 +221,57 @@ def inverse_sht(F_nm, azi, colat, SH_type, N=None, Y_nm=None):
         Y_nm = sh_matrix(N, azi, colat, SH_type)
     # perform the inverse transform up to degree N
     return np.matmul(Y_nm, F_nm[:(N + 1) ** 2, :])
+
+
+def check_cond_sht(N, azi, colat, SH_type, lim=None):
+    """Check if condition number for a least-squares SHT(N) is greater 'lim'."""
+    if lim is None:
+        lim = N + N / 2
+    Y = sh_matrix(N, azi, colat, SH_type)
+    c = np.zeros(N + 1)
+    YYn = np.matmul(Y.conj().T, Y)
+    c = np.linalg.cond(YYn)
+    if np.any(c > lim):
+        print("High condition number! " + str(c))
+    return c
+
+
+def calculate_grid_weights(azi, zen, order=None):
+    """Approximate quadrature weights by pseudo-inverse.
+    
+    Parameters
+    ----------
+    azi : (Q,) array_like
+        Azimuth.
+    zen : (Q,) array_like
+        Zenith / Colatitude.
+    order : int, optional
+        Supported order N, searched if not provided.
+    
+    Returns
+    -------
+    weights : (Q,) array_like
+        Grid / Quadrature weights.
+    
+    References
+    ---------
+    Fornberg, B., & Martel, J. M. (2014). On spherical harmonics based 
+    numerical quadrature over the surface of a sphere. 
+    Advances in Computational Mathematics.
+
+    """
+    if order is None:  # search for max supported SHT order
+        for itOrder in range(100):
+            cond = check_cond_sht(itOrder, azi, zen, 'real', 10e5)
+            if cond > 1.5*itOrder:
+                order = itOrder-1
+                break
+
+    Y = sh_matrix(order, azi, zen, 'real')
+    P_leftinv = np.linalg.pinv(Y)
+    weights = np.sqrt(4*np.pi) * P_leftinv[1, :]
+    if (np.abs(np.sum(weights) - 4*np.pi) > 0.01) or np.any(weights < 0):
+        print('Could not calculate weights')
 
 
 def N3D_to_SN3D(F_nm, sh_axis=0):
@@ -374,22 +425,6 @@ def src_to_B(signal, src_azi, src_colat):
     gx, gy, gz = utils.sph2cart(src_azi, src_colat)
     g = np.c_[gw, gx, gy, gz]
     return np.outer(g, signal)
-
-
-def check_cond_sht(N, azi, colat, SH_type, lim=None):
-    """Check if condition number for a least-squares SHT is greater 'lim'."""
-    A = sh_matrix(N, azi, colat, SH_type)
-    c = np.zeros(N + 1)
-    for iN in range(N + 1):
-        # get coeffs up to iter order iN
-        Y = A[:, :(iN + 1)**2]
-        YYn = np.matmul(Y.conj().T, Y)
-        c[iN] = np.linalg.cond(YYn)
-    if lim is None:
-        lim = N + N / 2
-    if np.any(c > lim):
-        print("High condition number! " + str(c))
-    return c
 
 
 def bandlimited_dirac(N, d, w_n=None):
