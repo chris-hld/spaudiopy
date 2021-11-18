@@ -59,7 +59,8 @@ def load_t_design(degree):
         raise ValueError('Order should be at least 1.')
     # extract
     current_file_dir = os.path.dirname(__file__)
-    file_path = os.path.join(current_file_dir, 't_designs_1_21.mat')
+    file_path = os.path.join(current_file_dir,
+                             '../data/Grids/t_designs_1_21.mat')
     mat = loadmat(file_path)
     t_designs_obj = mat['t_designs']
     t_designs = t_designs_obj[0].tolist()
@@ -101,7 +102,8 @@ def load_n_design(degree):
         raise ValueError('Order should be at least 1.')
     # extract
     current_file_dir = os.path.dirname(__file__)
-    file_path = os.path.join(current_file_dir, 'n_designs_1_124.mat')
+    file_path = os.path.join(current_file_dir,
+                             '../data/Grids/n_designs_1_124.mat')
     mat = loadmat(file_path)
     try:
         n_design = mat['N' + f'{degree:03}']
@@ -145,7 +147,7 @@ def load_lebedev(degree):
     # extract
     current_file_dir = os.path.dirname(__file__)
     file_path = os.path.join(current_file_dir,
-                             'lebedevQuadratures_3_131.mat')
+                             '../data/Grids/lebedevQuadratures_3_131.mat')
     mat = loadmat(file_path)
     try:
         design = mat['lebedev_' + f'{degree:03}']
@@ -197,7 +199,8 @@ def load_Fliege_Maier_nodes(grid_order):
         raise ValueError('Order should be at least 2.')
     # extract
     current_file_dir = os.path.dirname(__file__)
-    file_path = os.path.join(current_file_dir, 'fliegeMaierNodes_1_30.mat')
+    file_path = os.path.join(current_file_dir,
+                             '../data/Grids/fliegeMaierNodes_1_30.mat')
     mat = loadmat(file_path)
     fliege_maier_nodes = np.squeeze(mat['fliegeNodes'])
     # grid_order >= N+1 should be used for SHT
