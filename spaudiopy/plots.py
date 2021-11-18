@@ -544,7 +544,7 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, ax_lim=None,
     polyc = ax.plot_trisurf(x, y, z,
                             triangles=valid_s,
                             cmap=cm.Spectral if color is None else None,
-                            edgecolor='black', linewidth=0.3, alpha=0.6,
+                            edgecolor='black', linewidth=0.1, alpha=0.6,
                             zorder=2)
     # apply colors if given
     polyc.set_facecolors(colset)
@@ -552,9 +552,10 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, ax_lim=None,
     if mark_invalid:
         ax.plot_trisurf(x, y, z,
                         triangles=invalid_s, linestyle='--',
-                        edgecolor='black', linewidth=0.35,
+                        edgecolor='black', linewidth=0.1,
                         color=(0., 0., 0., 0.), alpha=0.1, zorder=2)
     # loudspeaker no
+    ax.scatter(x, y, z, c='black', s=20, alpha=0.5, zorder=1)
     for s, co in enumerate(np.c_[x, y, z]):
         ax.text(co[0], co[1], co[2], s, zorder=1)
     
