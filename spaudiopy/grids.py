@@ -206,6 +206,54 @@ def load_Fliege_Maier_nodes(grid_order):
     return vecs, weights
 
 
+def load_maxDet(degree):
+    """Return Maximum Determinant (Fekete, Extremal) points on the sphere.
+
+    The designs have been copied from:
+    https://web.maths.unsw.edu.au/~rsw/Sphere/MaxDet/
+
+    Parameters
+    ----------
+    degree : int
+       Degree between 1 and 200.
+
+    Returns
+    -------
+    vecs : (M, 3) numpy.ndarray
+        Coordinates of points.
+    weights : array_like
+        Quadrature weights.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        vecs, weights = spa.grids.load_maxDet(degree=2*5)
+        spa.plots.hull(spa.decoder.get_hull(*vecs.T))
+
+    """
+    if degree > 200:
+        raise ValueError('Designs of order > 200 are not implemented.')
+    elif degree < 1:
+        raise ValueError('Order should be at least 1.')
+    # extract
+    current_file_dir = os.path.dirname(__file__)
+    file_path = os.path.join(current_file_dir,
+                             '../data/Grids/maxDetPoints_1_200.mat')
+    mat = loadmat(file_path)
+    try:
+        design = mat['maxDet_' + f'{degree:03}']
+        vecs = design[:, :3]
+        weights = design[:, 3]
+        if np.any(weights < 0):
+            warn(f"Grid {degree} has negative weights.")
+    except KeyError:
+        warn(f"Degree {degree} not defined, trying {degree+1} ...")
+        vecs, weights = load_maxDet(degree + 1)
+    return vecs, weights
+
+
 def equal_angle(n):
     """Equi-angular sampling points on a sphere.
 
