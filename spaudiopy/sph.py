@@ -261,17 +261,18 @@ def calculate_grid_weights(azi, zen, order=None):
 
     """
     if order is None:  # search for max supported SHT order
-        for itOrder in range(100):
-            cond = check_cond_sht(itOrder, azi, zen, 'real', 10e5)
+        for itOrder in range(1,100):
+            cond =  check_cond_sht(itOrder, azi, zen, 'real', np.inf)
             if cond > 1.5*itOrder:
                 order = itOrder-1
                 break
-
+    assert(order>0)
     Y = sh_matrix(order, azi, zen, 'real')
     P_leftinv = np.linalg.pinv(Y)
-    weights = np.sqrt(4*np.pi) * P_leftinv[1, :]
+    weights = np.sqrt(4*np.pi) * P_leftinv[0, :]
     if (np.abs(np.sum(weights) - 4*np.pi) > 0.01) or np.any(weights < 0):
         print('Could not calculate weights')
+    return weights
 
 
 def N3D_to_SN3D(F_nm, sh_axis=0):
