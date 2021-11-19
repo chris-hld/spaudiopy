@@ -113,3 +113,4 @@ venv.bak/
 # editor configs
 .vscode/
 *.pdf
+.DS_Store
