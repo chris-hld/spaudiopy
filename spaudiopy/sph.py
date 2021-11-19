@@ -478,6 +478,7 @@ def bandlimited_dirac(N, d, w_n=None):
     d = utils.asarray_1d(d)
     if w_n is None:
         w_n = np.ones(N + 1)
+    assert(len(w_n) == N + 1), "Provide weight per order."
     g_n = np.zeros([(N + 1)**2, len(d)])
     for n, i in enumerate(range(N + 1)):
         g_n[i, :] = w_n[i] * (2 * n + 1) / (4 * np.pi) * \
