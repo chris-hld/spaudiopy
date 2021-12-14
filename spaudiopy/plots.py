@@ -477,8 +477,8 @@ def sh_coeffs_subplot(F_l, SH_type=None, azi_steps=5, el_steps=3, titles=None,
     cbar.set_ticklabels([r'$-\pi$', r'$0$', r'$\pi$'])
 
 
-def hull(hull, simplices=None, mark_invalid=True, title=None, ax_lim=None,
-         color=None, clim=None, fig=None):
+def hull(hull, simplices=None, mark_invalid=True, title=None, draw_ls=True, 
+         ax_lim=None, color=None, clim=None, fig=None):
     """Plot loudspeaker setup and valid simplices from its hull object.
 
     Parameters
@@ -488,6 +488,7 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, ax_lim=None,
     mark_invalid : bool, optional
         mark invalid simplices from hull object.
     title : string, optional
+    draw_ls : bool, optional
     ax_lim : float, optional
         Axis limits in m.
     color : array_like, optional
@@ -546,7 +547,7 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, ax_lim=None,
     polyc = ax.plot_trisurf(x, y, z,
                             triangles=valid_s,
                             cmap=cm.Spectral if color is None else None,
-                            edgecolor='black', linewidth=0.1, alpha=0.6,
+                            edgecolor='grey', linewidth=0.1, alpha=0.6,
                             zorder=2)
     # apply colors if given
     polyc.set_facecolors(colset)
@@ -554,12 +555,14 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, ax_lim=None,
     if mark_invalid:
         ax.plot_trisurf(x, y, z,
                         triangles=invalid_s, linestyle='--',
-                        edgecolor='black', linewidth=0.1,
+                        edgecolor='grey', linewidth=0.1,
                         color=(0., 0., 0., 0.), alpha=0.1, zorder=2)
     # loudspeaker no
-    ax.scatter(x, y, z, c='black', s=20, alpha=0.5, zorder=1)
-    for s, co in enumerate(np.c_[x, y, z]):
-        ax.text(co[0], co[1], co[2], s, zorder=1)
+    if draw_ls:
+        for s, co in enumerate(np.c_[x, y, z]):
+            ax.scatter(co[0], co[1], co[2], c='black', s=20, alpha=0.5,
+                       zorder=2)
+            ax.text(co[0], co[1], co[2], s, zorder=2)
     
     # origin
     ax.scatter(0, 0, 0, s=30, c='darkgray', marker='+')
