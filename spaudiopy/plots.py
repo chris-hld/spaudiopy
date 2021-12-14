@@ -210,6 +210,8 @@ def spherical_function(f, azi, colat, title=None, fig=None):
     if fig is None:
         fig = plt.figure(constrained_layout=True)
     ax = fig.gca(projection='3d')
+    ax.view_init(25, 230)
+
     p_tri = ax.plot_trisurf(x, y, z,
                             cmap=plt.cm.coolwarm,
                             # antialiased=False,
@@ -243,7 +245,6 @@ def spherical_function(f, azi, colat, title=None, fig=None):
 
     plt.grid(True)
     set_aspect_equal3d(ax)
-    ax.view_init(25, 230)
     if title is not None:
         plt.title(title)
 
@@ -281,6 +282,7 @@ def sh_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None,
     if fig is None:
         fig = plt.figure(constrained_layout=True)
     ax = fig.gca(projection='3d')
+    ax.view_init(25, 230)
 
     m = cm.ScalarMappable(cmap=cm.hsv,
                           norm=colors.Normalize(vmin=-np.pi, vmax=np.pi))
@@ -315,7 +317,6 @@ def sh_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None,
 
     plt.grid(True)
     set_aspect_equal3d(ax)
-    ax.view_init(25, 230)
     if title is not None:
         plt.title(title)
 
@@ -339,6 +340,7 @@ def sh_coeffs_overlay(F_nm_list, SH_type=None, azi_steps=5, el_steps=3,
     if fig is None:
         fig = plt.figure(constrained_layout=True)
     ax = fig.gca(projection='3d')
+    ax.view_init(25, 230)
 
     # m = cm.ScalarMappable(cmap=cm.hsv,
     #                      norm=colors.Normalize(vmin=-np.pi, vmax=np.pi))
@@ -392,7 +394,6 @@ def sh_coeffs_overlay(F_nm_list, SH_type=None, azi_steps=5, el_steps=3,
 
     plt.grid(True)
     set_aspect_equal3d(ax)
-    ax.view_init(25, 230)
     if title is not None:
         plt.title(title)
 
@@ -539,6 +540,7 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, ax_lim=None,
     if fig is None:
         fig = plt.figure(constrained_layout=True)
     ax = fig.gca(projection='3d')
+    ax.view_init(25, 230)
 
     # valid
     polyc = ax.plot_trisurf(x, y, z,
@@ -572,7 +574,6 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, ax_lim=None,
         ax_lim = 1.1*np.max([ax_lim, 1.0])  # 1.1 looks good
     set_aspect_equal3d(ax, XYZlim=(-ax_lim, ax_lim))
 
-    ax.view_init(25, 230)
     if color is not None:
         fig.colorbar(m, ax=ax, fraction=0.024, pad=0.04)
     if title is not None:
@@ -587,6 +588,7 @@ def hull_normals(hull, plot_face_normals=True, plot_vertex_normals=True):
 
     fig = plt.figure(constrained_layout=True)
     ax = fig.gca(projection='3d')
+    ax.view_init(25, 230)
     ax.plot_trisurf(x, y, z,
                     triangles=hull.simplices,
                     edgecolor='black', linewidth=0.5,
@@ -630,7 +632,6 @@ def hull_normals(hull, plot_face_normals=True, plot_vertex_normals=True):
 
     set_aspect_equal3d(ax, XYZlim=[-1, 1])
     plt.legend(loc='best')
-    ax.view_init(25, 230)
 
 
 def polar(theta, r, INDB=True, rlim=None, title=None, ax=None):
