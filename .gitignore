@@ -8,6 +8,7 @@ data/
 
 # joblib cache
 __cache_dir/
+.spa_cache_dir/
 
 # C extensions
 *.so

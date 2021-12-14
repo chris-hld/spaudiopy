@@ -31,7 +31,7 @@ from . import process as pcs
 
 
 # Prepare Caching
-cachedir = './__cache_dir'
+cachedir = './.spa_cache_dir'
 memory = Memory(cachedir)
 shared_array = None
 lock = multiprocessing.RLock()

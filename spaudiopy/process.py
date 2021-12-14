@@ -30,7 +30,7 @@ from . import sph
 from . import sig
 
 # Prepare Caching
-cachedir = './__cache_dir'
+cachedir = './.spa_cache_dir'
 memory = Memory(cachedir)
 
 
