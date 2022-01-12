@@ -486,6 +486,27 @@ def bandlimited_dirac(N, d, w_n=None):
     dirac = np.sum(g_n, axis=0)
     return dirac
 
+def in_phase_weights(N):
+    """Return the in-phase weight coefficients (complete side lobe
+    attenuation). 
+    
+    See Also
+    --------
+    :py:func:`spaudiopy.sph.max_rE_weights` : max-rE weights.
+    
+    References
+    ----------
+    Daniel, J. (2001). Acoustic field representation, application to the 
+    transmission and the reproduction of complex sound environments in a 
+    multimedia context. Université Paris, p. 184, table 3.10.
+    
+    """
+    weights = np.array(
+        [(np.math.factorial(N) * np.math.factorial(N + 1)) / 
+        (np.math.factorial(N + o + 1) * np.math.factorial(N - o)) 
+        for o in range(N + 1)])
+    return weights
+
 
 def max_rE_weights(N):
     """Return max-rE modal weight coefficients for spherical harmonics order N.
