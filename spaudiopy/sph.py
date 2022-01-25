@@ -872,6 +872,50 @@ def maxre_modal_weights(N_sph, UNITAMP=True):
     return c_n/a
 
 
+def butterworth_modal_weights(N_sph, k, n_c, UNITAMP=True):
+    """Modal weights for spatial butterworth filter / beamformer.
+
+    Parameters
+    ----------
+    N_sph : int
+        SH order.
+    k : int (float)
+        Filter order
+    n_c : int (float)
+        Cut-on SH order.
+    UNITAMP : bool, optional (default:True)
+
+    Returns
+    -------
+    w_n : (N+1,) array_like
+        Modal weighting factors.
+
+    Notes
+    -----
+    Can be compensated for unit amplitude.
+
+    References
+    ----------
+    Devaraju, B. (2015). Understanding filtering on the sphere.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        N = 5
+        w_n = spa.sph.butterworth_modal_weights(N, 5, 3)
+        w_nm = spa.sph.repeat_per_order(w_n) * \
+            spa.sph.sh_matrix(N, np.pi/4, np.pi/4, 'real')
+        spa.plots.sh_coeffs(w_nm)
+
+    """
+    c_n = 1/np.sqrt(1+(np.arange(N_sph+1) / n_c)**(2*k))
+    # This is an iSHT in the same direction as unit PW
+    a = bandlimited_dirac(N_sph, 0, c_n) if UNITAMP else 1
+    return c_n/a
+
+
 def spat_filterbank_reconstruction_factor(w_nm, num_secs, mode=None):
     """Reconstruction factor for restoring amplitude/energy preservation.
 
