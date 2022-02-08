@@ -872,6 +872,50 @@ def maxre_modal_weights(N_sph, UNITAMP=True):
     return c_n/a
 
 
+def butterworth_modal_weights(N_sph, k, n_c, UNITAMP=True):
+    """Modal weights for spatial butterworth filter / beamformer.
+
+    Parameters
+    ----------
+    N_sph : int
+        SH order.
+    k : int (float)
+        Filter order
+    n_c : int (float)
+        Cut-on SH order.
+    UNITAMP : bool, optional (default:True)
+
+    Returns
+    -------
+    w_n : (N+1,) array_like
+        Modal weighting factors.
+
+    Notes
+    -----
+    Can be compensated for unit amplitude.
+
+    References
+    ----------
+    Devaraju, B. (2015). Understanding filtering on the sphere.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        N = 5
+        w_n = spa.sph.butterworth_modal_weights(N, 5, 3)
+        w_nm = spa.sph.repeat_per_order(w_n) * \
+            spa.sph.sh_matrix(N, np.pi/4, np.pi/4, 'real')
+        spa.plots.sh_coeffs(w_nm)
+
+    """
+    c_n = 1/np.sqrt(1+(np.arange(N_sph+1) / n_c)**(2*k))
+    # This is an iSHT in the same direction as unit PW
+    a = bandlimited_dirac(N_sph, 0, c_n) if UNITAMP else 1
+    return c_n/a
+
+
 def spat_filterbank_reconstruction_factor(w_nm, num_secs, mode=None):
     """Reconstruction factor for restoring amplitude/energy preservation.
 
@@ -925,8 +969,8 @@ def design_spat_filterbank(N_sph, sec_azi, sec_zen, c_n, SH_type, mode):
     c_n : (N,) array_like
         SH Modal weights, describing (axisymmetric) pattern.
     SH_type : 'real' or 'complex'
-    mode : 'amplitude' or 'energy'
-        Design preserves amplitude or energy.
+    mode : 'perfect' or 'energy'
+        Design achieves perfect reconstruction or energy reconstruction.
 
     Raises
     ------
@@ -943,8 +987,8 @@ def design_spat_filterbank(N_sph, sec_azi, sec_zen, c_n, SH_type, mode):
     References
     ----------
     Hold, C., Schlecht, S. J., Politis, A., & Pulkki, V. (2021). 
-    SPATIAL FILTER BANK IN THE SPHERICAL HARMONIC DOMAIN : 
-    RECONSTRUCTION AND APPLICATION. WASPAA 2021.
+    Spatial Filter Bank in the Spherical Harmonic Domain : 
+    Reconstruction and Application. WASPAA 2021.
 
     Examples
     --------
@@ -955,7 +999,7 @@ def design_spat_filterbank(N_sph, sec_azi, sec_zen, c_n, SH_type, mode):
         sec_dirs = spa.utils.cart2sph(*spa.grids.load_t_design(2*N_sph).T)
         c_n = spa.sph.maxre_modal_weights(N_sph)
         [A, B] = spa.sph.design_spat_filterbank(N_sph, sec_dirs[0], sec_dirs[1],
-                                                c_n, 'real', 'amp')
+                                                c_n, 'real', 'perfect')
         # diffuse input SH signal
         in_nm = np.random.randn((N_sph+1)**2, 1000)
         # Sector signals (Analysis)
@@ -975,13 +1019,21 @@ def design_spat_filterbank(N_sph, sec_azi, sec_zen, c_n, SH_type, mode):
     # Analysis matrix
     A = repeat_per_order(c_n) * sh_matrix(N_sph, sec_azi, sec_zen, SH_type)
 
-    beta = spat_filterbank_reconstruction_factor(A[0, :], num_secs, mode=mode)
+    # Preservation property
+    if mode.lower() == 'perfect':
+        pres = 'amplitude'
+    elif mode.lower() == 'energy':
+        pres = 'energy'
+    else:
+        raise ValueError("Mode not implemented: " + mode)
+
+    beta = spat_filterbank_reconstruction_factor(A[0, :], num_secs, mode=pres)
 
     # Reconstruction matrix
-    if mode.lower() in ['amplitude', 'amp']:
+    if mode.lower() == 'perfect':
         B = beta * repeat_per_order(1/(c_n/c_n[0])) * \
                        sh_matrix(N_sph, sec_azi, sec_zen, SH_type)
-    elif mode.lower() in ['energy', 'en']:
+    elif mode.lower() == 'energy':
         B = np.sqrt(beta) * repeat_per_order(1/(c_n/c_n[0])) * \
                                 sh_matrix(N_sph, sec_azi, sec_zen, SH_type)
     else:

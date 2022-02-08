@@ -398,7 +398,7 @@ def sh_coeffs_overlay(F_nm_list, SH_type=None, azi_steps=5, el_steps=3,
         plt.title(title)
 
 
-def sh_coeffs_subplot(F_l, SH_type=None, azi_steps=5, el_steps=3, titles=None,
+def sh_coeffs_subplot(F_nm_list, SH_type=None, azi_steps=5, el_steps=3, titles=None,
                       fig=None):
     """Plot spherical harmonics coefficients list as function on the sphere.
 
@@ -407,7 +407,7 @@ def sh_coeffs_subplot(F_l, SH_type=None, azi_steps=5, el_steps=3, titles=None,
     See :py:mod:`spaudiopy.sph`
 
     """
-    num_plots = len(F_l)
+    num_plots = len(F_nm_list)
     azi_steps = np.deg2rad(azi_steps)
     el_steps = np.deg2rad(el_steps)
     phi_plot, theta_plot = np.meshgrid(np.arange(0., 2 * np.pi + azi_steps,
@@ -421,7 +421,7 @@ def sh_coeffs_subplot(F_l, SH_type=None, azi_steps=5, el_steps=3, titles=None,
     axs = fig.subplots(1, num_plots, subplot_kw={'projection': '3d'})
 
     for idx_p, ax in enumerate(axs):
-        F_nm = utils.asarray_1d(F_l[idx_p])
+        F_nm = utils.asarray_1d(F_nm_list[idx_p])
         F_nm = F_nm[:, np.newaxis]
         if SH_type is None:
             SH_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
@@ -470,7 +470,7 @@ def sh_coeffs_subplot(F_l, SH_type=None, azi_steps=5, el_steps=3, titles=None,
             ax.set_title(titles[idx_p])
         set_aspect_equal3d(ax)
 
-    cbar = plt.colorbar(m, ax=axs, shrink=0.5, aspect=10, pad=0.1,
+    cbar = plt.colorbar(m, ax=axs, shrink=0.5, aspect=10*num_plots, pad=0.1,
                         orientation='horizontal', anchor='S')
     cbar.set_label("Phase in rad")
     cbar.set_ticks([-np.pi, 0, np.pi])
