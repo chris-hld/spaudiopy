@@ -252,6 +252,7 @@ def spherical_function(f, azi, colat, title=None, fig=None):
 def sh_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None,
               fig=None):
     """Plot spherical harmonics coefficients as function on the sphere.
+    Evaluates the inverse SHT.
 
     Examples
     --------
@@ -772,6 +773,7 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
         ax.grid(True)
         ax.set_xlim([-np.pi - azi_steps/2, np.pi + azi_steps/2])
         ax.set_ylim([0 - ele_steps/2, np.pi + ele_steps/2])
+        ax.invert_xaxis()
         ax.invert_yaxis()
         ax.set_xticks(np.linspace(-np.pi, np.pi, 5))
         ax.set_xticklabels([r'$-\pi$', r'$-\pi/2$', r'$0$',
@@ -788,7 +790,7 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
             cbar.set_ticks([0, 0.5, np.max([1.0, np.max(_data)])])
         elif ip == 2:
             ax.set_xlabel('Azimuth')
-            ax.set_ylabel('Colatitude')
+            ax.set_ylabel('Zenith')
 
             ax.set_title(r'$\sigma_E$')
             cbar.set_ticks([0, 45, 90])
@@ -850,6 +852,7 @@ def doa(azi, colat, fs, p=None, size=250):
     # plot in reverse order so that first reflections are on top
     p = ax.scatter(azi[::-1], ele[::-1], s=s_plot[::-1], c=t_ms[::-1],
                    alpha=0.35)
+    ax.invert_xaxis()
     ax.set_xlabel("Azimuth in rad")
     ax.set_ylabel("Elevation in rad")
     ax.set_xticks([-np.pi, -np.pi/2, 0, np.pi/2, np.pi])
