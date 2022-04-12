@@ -428,6 +428,47 @@ def src_to_b(sig, src_azi, src_colat):
     return np.outer(g, sig)
 
 
+def src_to_sh(sig, src_azi, src_zen, N_sph, SH_type='real'):
+    """Source signal(s) plane wave encoded in spherical harmonics.
+    
+
+    Parameters
+    ----------
+    sig : (num_src, S) numpy.ndarray
+        Source signal(s).
+    src_azi : array_like
+    src_zen : array_like
+    N_sph : int
+    SH_type : 'real' (default) or 'complex', optional
+
+    Returns
+    -------
+    ((N_sph+1)**2, S) numpy.ndarray
+        Source signal(s) in SHD.
+    
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        src_sig = np.array([1, 0.5], ndmin=2).T * np.random.randn(2, 1000)
+        N_sph = 3
+        src_azi = [np.pi/2, -np.pi/3]
+        src_zen = [np.pi/4, np.pi/2]
+
+        sig_nm = spa.sph.src_to_sh(src_sig, src_azi, src_zen, N_sph)
+
+        spa.plots.sh_rms_map(sig_nm)
+
+    """
+    sig = np.atleast_2d(sig)
+    src_azi = utils.asarray_1d(src_azi)
+    src_zen = utils.asarray_1d(src_zen)
+
+    Y_nm = sh_matrix(N_sph, src_azi, src_zen, SH_type=SH_type)
+    return Y_nm.conj().T @ sig
+
+
 def bandlimited_dirac(N, d, w_n=None):
     r"""Order N spatially bandlimited Dirac pulse at central angle d.
 

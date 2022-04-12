@@ -493,6 +493,10 @@ def sh_rms_map(F_nm, INDB=False, w_n=None, SH_type=None, azi_steps=5,
         Modal weighting of beamformers that are evaluated on the grid.
     SH_type :  'complex' or 'real' spherical harmonics.
 
+    Examples
+    --------
+    See :py:mod:`spaudiopy.sph.src_to_sh`
+
     """
     F_nm = np.atleast_2d(F_nm)
     assert(F_nm.ndim == 2)
