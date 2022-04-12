@@ -64,7 +64,7 @@ def spectrum(x, fs, ylim=None, scale_mag=False, **kwargs):
 
 
 def freq_resp(freq, amp, to_db=True, smoothing_n=None, title=None,
-              labels=None, xlim=(10, 25000), ylim=(-30, 20)):
+              labels=None, xlim=(20, 24000), ylim=(-30, None)):
     """ Plot amplitude of frequency response over time frequency f.
 
     Parameters
