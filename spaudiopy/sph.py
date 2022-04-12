@@ -275,7 +275,7 @@ def calculate_grid_weights(azi, zen, order=None):
     return weights
 
 
-def N3D_to_SN3D(F_nm, sh_axis=0):
+def n3d_to_sn3d(F_nm, sh_axis=0):
     """Convert N3D (orthonormal) to SN3D (Schmidt semi-normalized) signals.
 
     Parameters
@@ -301,7 +301,7 @@ def N3D_to_SN3D(F_nm, sh_axis=0):
     return n_norm * F_nm
 
 
-def SN3D_to_N3D(F_nm, sh_axis=0):
+def sn3d_to_n3d(F_nm, sh_axis=0):
     """Convert SN3D (Schmidt semi-normalized) to N3D (orthonormal) signals.
 
     Parameters
@@ -417,15 +417,15 @@ def soundfield_to_b(sig, W_weight=None):
     return sh_to_b(F_nm, W_weight)
 
 
-def src_to_B(signal, src_azi, src_colat):
+def src_to_b(sig, src_azi, src_colat):
     """Get B format signal channels for source in direction azi/colat."""
-    signal = utils.asarray_1d(signal)
+    sig = utils.asarray_1d(sig)
     src_azi = utils.asarray_1d(src_azi)
     src_colat = utils.asarray_1d(src_colat)
     gw = np.ones(len(src_azi))
     gx, gy, gz = utils.sph2cart(src_azi, src_colat)
     g = np.c_[gw, gx, gy, gz]
-    return np.outer(g, signal)
+    return np.outer(g, sig)
 
 
 def bandlimited_dirac(N, d, w_n=None):
