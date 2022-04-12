@@ -263,7 +263,7 @@ def calculate_grid_weights(azi, zen, order=None):
     if order is None:  # search for max supported SHT order
         for itOrder in range(1,100):
             cond =  check_cond_sht(itOrder, azi, zen, 'real', np.inf)
-            if cond > 1.5*itOrder:
+            if cond > 2*(itOrder+1):  # experimental condition
                 order = itOrder-1
                 break
     assert(order>0)

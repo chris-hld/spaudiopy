@@ -144,7 +144,7 @@ def load_hrirs(fs, filename=None):
         if fs not in [44100, 48000, 96000]:
             raise NotImplementedError('44100, 48000, 96000'
                                       ' default available.')
-        default_file = '../data/' + 'HRTF_default_' + str(fs) + '.mat'
+        default_file = '../data/HRIRs/' + 'HRIRs_default_' + str(fs) + '.mat'
         current_file_dir = os.path.dirname(__file__)
         filename = os.path.join(current_file_dir, default_file)
 
@@ -187,10 +187,10 @@ def get_default_hrirs(grid_azi=None, grid_colat=None):
     Notes
     -----
     HRTFs in SH domain obtained from
-    http://dx.doi.org/10.14279/depositonce-5718.3
+    http://dx.doi.org/10.14279/depositonce-5718.5
 
     """
-    default_file = '../data/0 HRIRs neutral head orientation/' \
+    default_file = '../data/HRIRs/FABIAN/' \
                    'SphericalHarmonics/FABIAN_DIR_measured_HATO_0.mat'
     current_file_dir = os.path.dirname(__file__)
     filename = os.path.join(current_file_dir, default_file)
@@ -201,11 +201,12 @@ def get_default_hrirs(grid_azi=None, grid_colat=None):
     except FileNotFoundError:
         import requests, zipfile, io
         print("Downloading from https://depositonce.tu-berlin.de/handle/"
-              "11303/6153.3 ...")
+              "11303/6153.5 ...")
         r = requests.get('https://depositonce.tu-berlin.de/bitstream/11303/'
-                         '6153.3/8/FABIAN_HRTFs_NeutralHeadOrientation.zip')
+                         '6153.5/9/HRIRs_neutral_head_orientation_v4.zip')
         with zipfile.ZipFile(io.BytesIO(r.content)) as zip_ref:
-            zip_ref.extractall(os.path.join(current_file_dir, '../data/'))
+            zip_ref.extractall(os.path.join(current_file_dir,
+                                            '../data/HRIRs/FABIAN/'))
         file = loadmat(filename)
     # CTF already compensated in DIR
     # Extracting the data is a bit ugly here...
@@ -237,17 +238,20 @@ def get_default_hrirs(grid_azi=None, grid_colat=None):
                                                        SamplingRate,
                                                        fs_target)
 
-    savemat(os.path.join(current_file_dir, '../data/HRTF_default_44100.mat'),
+    savemat(os.path.join(current_file_dir, '../data/HRIRs/'
+                         'HRIRs_default_44100.mat'),
             {'hrir_l': hrir_l,
              'hrir_r': hrir_r,
              'azi': grid_azi, 'colat': grid_colat,
              'fs': 44100})
-    savemat(os.path.join(current_file_dir, '../data/HRTF_default_48000.mat'),
+    savemat(os.path.join(current_file_dir, '../data/HRIRs/'
+                         'HRIRs_default_48000.mat'),
             {'hrir_l': hrir_l_48k,
              'hrir_r': hrir_r_48k,
              'azi': grid_azi, 'colat': grid_colat,
              'fs': 48000})
-    savemat(os.path.join(current_file_dir, '../data/HRTF_default_96000.mat'),
+    savemat(os.path.join(current_file_dir, '../data/HRIRs/'
+                         'HRIRs_default_96000.mat'),
             {'hrir_l': hrir_l_96k,
              'hrir_r': hrir_r_96k,
              'azi': grid_azi, 'colat': grid_colat,
