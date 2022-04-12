@@ -511,7 +511,7 @@ def sh_rms_map(F_nm, INDB=False, w_n=None, SH_type=None, azi_steps=5,
     if w_n is None:
         w_n = sph.hypercardioid_modal_weights(N_sph)
     f_d = Y_smp @ np.diag(sph.repeat_per_order(w_n)) @ F_nm
-    rms_d = utils.rms(f_d, axis=1)
+    rms_d = np.abs(utils.rms(f_d, axis=1))
     
     if INDB:
         rms_d = utils.db(rms_d)
@@ -542,7 +542,7 @@ def sh_rms_map(F_nm, INDB=False, w_n=None, SH_type=None, azi_steps=5,
     plt.yticks([0, np.pi/2, np.pi],
                labels=[r"$0$", r"$\pi/2$", r"$\pi$", ])
     
-    cb = plt.colorbar(p, shrink=0.42)
+    cb = plt.colorbar(p, ax=ax, shrink=0.5)
     cb.set_label("RMS in dB" if INDB else "RMS")
     if title is not None:
         ax.set_title(title)
@@ -740,7 +740,7 @@ def polar(theta, r, INDB=True, rlim=None, title=None, ax=None):
     ax.set_rmax(rlim[1] + (0.5 if INDB else 0.03))
     ax.set_rticks(np.linspace(rlim[0], rlim[1], 5))
     ax.set_rlabel_position(6.5/8 * 360)
-    ax.legend(loc='lower right')
+    ax.legend(loc='lower right', bbox_to_anchor=(1.175,0.15))
     if title is not None:
         ax.set_title(title)
 
