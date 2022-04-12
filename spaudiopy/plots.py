@@ -478,6 +478,76 @@ def sh_coeffs_subplot(F_nm_list, SH_type=None, azi_steps=5, el_steps=3, titles=N
     cbar.set_ticklabels([r'$-\pi$', r'$0$', r'$\pi$'])
 
 
+def sh_rms_map(F_nm, INDB=False, w_n=None, SH_type=None, azi_steps=5,
+               zen_steps=3, title=None, fig=None):
+    """Plot spherical harmonic signal RMS as function on the sphere.
+    Evaluates the maxDI beamformer, if w_n is None.
+    
+    Parameters
+    ----------
+    F_nm : ((N+1)**2, S) numpy.ndarray
+        Matrix of spherical harmonics coefficients, Ambisonic signal.
+    INDB : bool
+        Plot in dB.
+    w_n : array_like
+        Modal weighting of beamformers that are evaluated on the grid.
+    SH_type :  'complex' or 'real' spherical harmonics.
+
+    """
+    F_nm = np.atleast_2d(F_nm)
+    assert(F_nm.ndim == 2)
+    if SH_type is None:
+        SH_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
+    N_sph = int(np.sqrt(F_nm.shape[0]) - 1)
+    
+    azi_steps = np.deg2rad(azi_steps)
+    zen_steps = np.deg2rad(zen_steps)
+    azi_plot, zen_plot = np.meshgrid(np.arange(np.pi, -(np.pi + azi_steps),
+                                                 -azi_steps),
+                                       np.arange(10e-3, np.pi + zen_steps,
+                                                 zen_steps))
+    
+    Y_smp = sph.sh_matrix(N_sph, azi_plot.ravel(), zen_plot.ravel(), SH_type)
+    if w_n is None:
+        w_n = sph.hypercardioid_modal_weights(N_sph)
+    f_d = Y_smp @ np.diag(sph.repeat_per_order(w_n)) @ F_nm
+    rms_d = utils.rms(f_d, axis=1)
+    
+    if INDB:
+        rms_d = utils.db(rms_d)
+    
+    if fig is None:
+        fig = plt.figure(constrained_layout=True)
+    ax = fig.gca()
+    ax.set_aspect('equal')
+
+    p = ax.pcolormesh(azi_plot, zen_plot, np.reshape(rms_d, azi_plot.shape))
+    ax.grid(True)
+
+    ax.invert_xaxis()
+    ax.invert_yaxis()
+    ax.set_xticks(np.linspace(-np.pi, np.pi, 5))
+    ax.set_xticklabels([r'$-\pi$', r'$-\pi/2$', r'$0$',
+                        r'$\pi/2$', r'$\pi$'])
+    ax.set_yticks(np.linspace(0, np.pi, 3))
+    ax.set_yticklabels([r'$0$', r'$\pi/2$', r'$\pi$'])
+    ax.set_xlabel('Azimuth')
+    ax.set_ylabel('Zenith')
+
+    plt.axhline(y=np.pi/2, color='grey', linestyle=':')
+    plt.axvline(color='grey', linestyle=':')
+    
+    plt.xticks([np.pi, np.pi/2, 0, -np.pi/2, -np.pi], 
+               labels=[r"$\pi$", r"$\pi/2$", "$0$", "$-\pi/2$", "$-\pi$"])
+    plt.yticks([0, np.pi/2, np.pi],
+               labels=[r"$0$", r"$\pi/2$", r"$\pi$", ])
+    
+    cb = plt.colorbar(p, shrink=0.42)
+    cb.set_label("RMS in dB" if INDB else "RMS")
+    if title is not None:
+        ax.set_title(title)
+
+
 def hull(hull, simplices=None, mark_invalid=True, title=None, draw_ls=True, 
          ax_lim=None, color=None, clim=None, fig=None):
     """Plot loudspeaker setup and valid simplices from its hull object.
