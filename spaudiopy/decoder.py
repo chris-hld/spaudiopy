@@ -1281,6 +1281,33 @@ def nearest_loudspeaker(src, hull):
     return gains
 
 
+def sh2bin(sig_nm, hrirs_nm):
+    """ Spherical Harmonic Domain signals to binaural renderer.
+    Ambisonic signals as N3D - ACN, i.e. real valued SH (time) signals.
+
+    Parameters
+    ----------
+    sig_nm : ((N_sph+1)**2, S) numpy.ndarray
+        Input signal (SHD / Ambisonics).
+    hrirs_nm : (2, (N_sph+1)**2, L)
+        Decoding IRs matrix, 2: left,right (stacked), real coeffs, L taps.
+
+    Returns
+    -------
+    (2, S+L-1) numpy.ndarray
+        Left and Right (stacked) binaural output signals.
+
+    """
+    assert(sig_nm.ndim == 2)
+    assert(hrirs_nm.ndim == 3)
+    assert(sig_nm.shape[0] == hrirs_nm.shape[1])
+    out_l = np.sum(signal.fftconvolve(sig_nm, np.squeeze(hrirs_nm[0,:,:]),
+                                      axes=-1), axis=0)
+    out_r = np.sum(signal.fftconvolve(sig_nm, np.squeeze(hrirs_nm[1,:,:]),
+                                      axes=-1), axis=0)
+    return np.vstack((out_l, out_r))
+
+
 # Parallel worker stuff -->
 def _create_shared_array(shared_array_shape, d_type='d'):
     """Allocate ctypes array from shared memory with lock."""
