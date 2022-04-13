@@ -48,7 +48,7 @@ def load_audio(filenames, fs=None):
     if not isinstance(filenames, (list, tuple)):
         filenames = [filenames]
     for file in filenames:
-        data, fs_file = sf.read(file)
+        data, fs_file = sf.read(os.path.expanduser(file))
         if data.ndim != 1:
             # detect and split interleaved wav
             for c in data.T:
@@ -102,11 +102,11 @@ def save_audio(signal, filename, fs=None, subtype='FLOAT'):
     else:
         raise NotImplementedError('Data type not supported.')
 
-    sf.write(filename, data, data_fs, subtype=subtype)
+    sf.write(os.path.expanduser(filename), data, data_fs, subtype=subtype)
 
 
 def load_hrirs(fs, filename=None):
-    """Convenience function to load 'HRTF.mat'.
+    """Convenience function to load 'HRIRs.mat'.
     The file contains ['hrir_l', 'hrir_r', 'fs', 'azi', 'colat'].
 
     Parameters
@@ -155,7 +155,7 @@ def load_hrirs(fs, filename=None):
             get_default_hrirs()
             mat = loadmat(filename)
     else:
-        mat = loadmat(filename)
+        mat = loadmat(os.path.expanduser(filename))
 
     if not filename == 'dummy':
         hrir_l = np.array(np.squeeze(mat['hrir_l']), dtype=float)
@@ -283,7 +283,7 @@ def load_sdm(filename, init_nan=True):
         fs(t).
 
     """
-    mat = loadmat(filename)
+    mat = loadmat(os.path.expanduser(filename))
     try:
         h = np.array(np.squeeze(mat['h_ref']), dtype=float)
     except KeyError:
@@ -307,7 +307,7 @@ def load_sdm(filename, init_nan=True):
 def load_sofa_data(filename):
     """Load .sofa file into python dictionary that contains the data in
     numpy arrays."""
-    with h5py.File(filename, 'r') as f:
+    with h5py.File(os.path.expanduser(filename), 'r') as f:
         out_dict = {}
         for key, value in f.items():
             out_dict[key] = np.squeeze(value)
@@ -431,7 +431,7 @@ def write_ssr_brirs_sdm(filename, sdm_p, sdm_phi, sdm_theta, fs,
 
 def load_layout(filename, listener_position=None, N_kernel=50):
     """Load loudspeaker layout from json configuration file."""
-    with open(filename, 'r') as f:
+    with open(os.path.expanduser(filename), 'r') as f:
         in_data = json.load(f)
 
     layout = in_data['LoudspeakerLayout']
@@ -503,5 +503,5 @@ def save_layout(filename, ls_layout, name='unknown', description='unknown'):
                             ls_layout.ambisonics_hull.imaginary_ls_idx) else 1.
         out_data['LoudspeakerLayout']['Loudspeakers'].append(ls_dict)
 
-    with open(filename, 'w') as outfile:
+    with open(os.path.expanduser(filename), 'w') as outfile:
         json.dump(out_data, outfile, indent=4)
