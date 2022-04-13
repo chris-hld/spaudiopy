@@ -259,6 +259,51 @@ def get_default_hrirs(grid_azi=None, grid_colat=None):
     print("Saved new default HRIRs.")
 
 
+def load_sofa_data(filename):
+    """Load .sofa file into python dictionary that contains the data in
+    numpy arrays."""
+    with h5py.File(os.path.expanduser(filename), 'r') as f:
+        out_dict = {}
+        for key, value in f.items():
+            out_dict[key] = np.squeeze(value)
+    return out_dict
+
+
+def load_sofa_hrirs(filename):
+    """ Load SOFA file containing HRIRs.    
+
+    Parameters
+    ----------
+    filename : string
+        SOFA filepath.
+
+    Returns
+    -------
+    HRIRs : sig.HRIRs instance
+        left : (g, h) numpy.ndarray
+            h(t) for grid position g.
+        right : (g, h) numpy.ndarray
+            h(t) for grid position g.
+        grid : (g, 2) pandas.dataframe
+            [azi: azimuth, colat: colatitude] for hrirs.
+        fs : int
+            fs(t).
+
+    """
+    sdata = load_sofa_data(os.path.expanduser(filename))
+    fs = int(sdata['Data.SamplingRate'])
+    irs = np.asarray(sdata['Data.IR'])
+    grid = np.asarray(sdata['SourcePosition'])
+    assert(abs((grid[:,2]-grid[:,2].mean())).mean() < 0.1) # Otherwise not r
+    grid_azi, grid_zen = np.deg2rad(grid[:,0]), np.pi/2 - np.deg2rad(grid[:,1])
+    assert(all(grid_zen > -10e-6))  # Otherwise not zen
+    irs_left = np.squeeze(irs[:,0,:])
+    irs_right = np.squeeze(irs[:,1,:])
+    irs_grid = pd.DataFrame({'azi': grid_azi, 'colat': grid_zen})
+    HRIRs = sig.HRIRs(irs_left, irs_right, irs_grid, fs)
+    return HRIRs
+
+
 def sofa_to_sh(filename, N_sph, SH_type='real'):
     """Load and transform SOFA IRs to the Spherical Harmonic Domain.
 
@@ -277,16 +322,13 @@ def sofa_to_sh(filename, N_sph, SH_type='real'):
     fs : int
 
     """
-    sdata = load_sofa_data(filename)
-    fs = int(sdata['Data.SamplingRate'])
-    irs = np.asarray(sdata['Data.IR'])
-    grid = np.asarray(sdata['SourcePosition'])
-    assert(abs((grid[:,2]-grid[:,2].mean())).mean() < 0.1) # Otherwise not r
-    grid_azi, grid_zen = np.deg2rad(grid[:,0]), np.pi/2 - np.deg2rad(grid[:,1])
-    assert(all(grid_zen > -10e-6))  # Otherwise not zen
+    hrirs = load_sofa_hrirs(filename)
+    fs = hrirs.fs
+    grid_azi, grid_zen = hrirs.grid['azi'], hrirs.grid['colat']
     # Pinv / lstsq since we can't be sure about the grid
     Y_pinv = np.linalg.pinv(sph.sh_matrix(N_sph, grid_azi, grid_zen, SH_type))
-    IRs_nm = Y_pinv @ np.swapaxes(irs, 0,1)
+    irs = np.stack((hrirs.left, hrirs.right), axis=0)
+    IRs_nm = Y_pinv @ irs
     return IRs_nm, fs
 
 
@@ -333,16 +375,6 @@ def load_sdm(filename, init_nan=True):
         sdm_colat[np.isnan(sdm_colat)] = np.pi / 2
     fs = int(mat['fs'])
     return h, sdm_azi, sdm_colat, fs
-
-
-def load_sofa_data(filename):
-    """Load .sofa file into python dictionary that contains the data in
-    numpy arrays."""
-    with h5py.File(os.path.expanduser(filename), 'r') as f:
-        out_dict = {}
-        for key, value in f.items():
-            out_dict[key] = np.squeeze(value)
-    return out_dict
 
 
 def write_ssr_brirs_loudspeaker(filename, ls_irs, hull, fs, subtype='FLOAT',
