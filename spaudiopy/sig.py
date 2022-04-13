@@ -197,7 +197,7 @@ class HRIRs:
     """Signal class for head-related impulse responses."""
 
     def __init__(self, left, right, grid, fs):
-        """Constructor."""
+        """Constructor. HRIRs of size [numDirs, numTaps]"""
         assert len(left) == len(right), "Signals must be of same length."
         self.left = left
         self.right = right
@@ -214,17 +214,17 @@ class HRIRs:
         """Enable [] operator, returns hrirs."""
         return self.left[key, :], self.right[key, :]
 
-    def nearest_hrirs(self, phi, theta):
+    def nearest_hrirs(self, azi, colat):
         """
         For a point on the sphere, select closest hrir defined on grid,
         based on the haversine distance.
 
         Parameters
         ----------
-        phi : float
+        azi : float
             Azimuth.
-        theta : float
-            Elevation (colat).
+        colat : float
+            Zenith / Colatitude.
 
         Returns
         -------
@@ -233,39 +233,39 @@ class HRIRs:
         h_r : (n,) array_like
             h(t) closest to [phi, theta].
         """
-        grid_phi = self.grid['azi'].values
-        grid_theta = self.grid['colat'].values
+        grid_azi = self.grid['azi'].values
+        grid_colat = self.grid['colat'].values
         # search closest gridpoint
-        d_idx = np.argmin(utils.haversine(grid_phi, grid_theta, phi, theta))
+        d_idx = np.argmin(utils.haversine(grid_azi, grid_colat, azi, colat))
         VERBOSE = False
         if VERBOSE:
             with open("selected_hrtf.txt", "a") as f:
                 f.write("idx {}, phi: {}, g_phi: {}, th: {}, g_th: {}".format(
                     d_idx,
-                    utils.rad2deg(phi), utils.rad2deg(grid_phi[d_idx]),
-                    utils.rad2deg(theta), utils.rad2deg(grid_theta[d_idx])))
+                    utils.rad2deg(azi), utils.rad2deg(grid_azi[d_idx]),
+                    utils.rad2deg(colat), utils.rad2deg(grid_colat[d_idx])))
                 f.write('\n')
         # get hrirs to that angle
         return self[d_idx]
 
-    def nearest(self, phi, theta):
+    def nearest(self, azi, colat):
         """
         Index of nearest hrir grid point based on haversine distance.
 
         Parameters
         ----------
-        phi : float
+        azi : float
             Azimuth.
-        theta : float
-            Colaitude.
+        colat : float
+            Zenith / Colatitude.
         Returns
         -------
         idx : int
             Index.
         """
-        grid_phi = self.grid['azi'].values
-        grid_theta = self.grid['colat'].values
-        return np.argmin(utils.haversine(grid_phi, grid_theta, phi, theta))
+        grid_azi = self.grid['azi'].values
+        grid_colat = self.grid['colat'].values
+        return np.argmin(utils.haversine(grid_azi, grid_colat, azi, colat))
 
 
 def trim_audio(A, start, stop):
