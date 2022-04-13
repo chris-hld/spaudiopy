@@ -522,12 +522,12 @@ def _invert_triplets(simplices, points):
 
 # part of parallel vbap:
 def _vbap_gains_single_source(src_idx, src, inverted_ls_triplets,
-                              valid_simplices):
+                              valid_simplices, norm=2):
     for face_idx, ls_base in enumerate(inverted_ls_triplets):
         # projecting src onto loudspeakers
         projection = np.dot(ls_base, src[src_idx, :])
         # normalization
-        projection /= np.sqrt(np.sum(projection**2))
+        projection /= np.linalg.norm(projection, ord=norm)
         if np.all(projection > -10e-6):
             assert(np.count_nonzero(projection) <= 3)
             # print(f"Source {src_idx}: Gains {projection}")
@@ -535,7 +535,8 @@ def _vbap_gains_single_source(src_idx, src, inverted_ls_triplets,
             break  # found valid gains
 
 
-def vbap(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
+def vbap(src, hull, norm=2, valid_simplices=None, retain_outside=False, 
+         jobs_count=1):
     """Loudspeaker gains for Vector Base Amplitude Panning decoding.
 
     Parameters
@@ -543,6 +544,8 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
     src : (n, 3) numpy.ndarray
         Cartesian coordinates of n sources to be rendered.
     hull : LoudspeakerSetup
+    norm : non-zero int, float
+        Gain normalization norm, e.g. 1: anechoic, 2: reverberant
     valid_simplices : (nsimplex, 3) numpy.ndarray
         Valid simplices employed for rendering, defaults hull.valid_simplices.
     retain_outside : bool, optional
@@ -611,7 +614,7 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
                 # projecting src onto loudspeakers
                 projection = np.dot(ls_base, src[src_idx, :])
                 # normalization
-                projection /= np.sqrt(np.sum(projection**2))
+                projection /= np.linalg.norm(projection, ord=norm)
                 if np.all(projection > -10e-6):
                     assert(np.count_nonzero(projection) <= 3)
                     # print(f"Source {src_idx}: Gains {projection}")
@@ -623,8 +626,8 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
         shared_array_shape = np.shape(gains)
         _arr_base = _create_shared_array(shared_array_shape)
         _arg_itr = zip(range(src_count),
-                       repeat(valid_simplices))
                        repeat(src), repeat(inverted_vbase),
+                       repeat(valid_simplices), repeat(norm))
         # execute
         with multiprocessing.Pool(processes=jobs_count,
                                   initializer=_init_shared_array,
@@ -643,7 +646,8 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
     return gains
 
 
-def vbip(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
+def vbip(src, hull, norm=2,valid_simplices=None, retain_outside=False,
+         jobs_count=1):
     """Loudspeaker gains for Vector Base Intensity Panning decoding.
 
     Parameters
@@ -651,6 +655,8 @@ def vbip(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
     src : (n, 3) numpy.ndarray
         Cartesian coordinates of n sources to be rendered.
     hull : LoudspeakerSetup
+    norm : non-zero int, float
+        Gain normalization norm, e.g. 1: anechoic, 2: reverberant
     valid_simplices : (nsimplex, 3) numpy.ndarray
         Valid simplices employed for rendering, defaults hull.valid_simplices.
     retain_outside : bool, optional
@@ -689,7 +695,7 @@ def vbip(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
 
     # Renormalize
     g = np.sqrt(g_sq)
-    g_norm = np.linalg.norm(g, axis=1)
+    g_norm = np.linalg.norm(g, ord=norm, axis=1)
     g[g_norm > 0., :] /= (g_norm[g_norm > 0.][:, np.newaxis])
     return g
 

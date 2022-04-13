@@ -75,7 +75,7 @@ src = np.array([1, 0.5, 2.5])
 src_azi, src_colat, _ = utils.cart2sph(*src.tolist())
 
 # %% VBAP
-gains_vbap = decoder.vbap(src, ls_setup)
+gains_vbap = decoder.vbap(src, ls_setup, norm=1)  # norm1 because binaural
 
 
 # %% Ambisonic decoding
@@ -112,8 +112,8 @@ G_vbip = decoder.vbip(_grid, ls_setup)
 # %% Look at some performance measures
 plots.decoder_performance(ls_setup, 'NLS')
 plots.decoder_performance(ls_setup, 'VBAP')
-plots.decoder_performance(ls_setup, 'VBAP', retain_outside=True)
-plt.suptitle('VBAP with imaginary loudspeaker')
+plots.decoder_performance(ls_setup, 'VBAP', norm=1, retain_outside=True)
+plt.suptitle('VBAP with imaginary loudspeaker and norm1')
 plots.decoder_performance(ls_setup, 'VBIP', retain_outside=True)
 plt.suptitle('VBIP with imaginary loudspeaker')
 plots.decoder_performance(ls_setup, 'EPAD')
