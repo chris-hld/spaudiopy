@@ -259,6 +259,37 @@ def get_default_hrirs(grid_azi=None, grid_colat=None):
     print("Saved new default HRIRs.")
 
 
+def sofa_to_sh(filename, N_sph, SH_type='real'):
+    """Load and transform SOFA IRs to the Spherical Harmonic Domain.
+
+    Parameters
+    ----------
+    filename : string
+        SOFA file name.
+    N_sph : int
+        Spherical Harmonic Transform order.
+    SH_type : 'real' (default) or 'complex' spherical harmonics.
+
+    Returns
+    -------
+    IRs_nm : (2, (N_sph+1)**2, S) numpy.ndarray
+        Left and right (stacked) SH coefficients.
+    fs : int
+
+    """
+    sdata = load_sofa_data(filename)
+    fs = int(sdata['Data.SamplingRate'])
+    irs = np.asarray(sdata['Data.IR'])
+    grid = np.asarray(sdata['SourcePosition'])
+    assert(abs((grid[:,2]-grid[:,2].mean())).mean() < 0.1) # Otherwise not r
+    grid_azi, grid_zen = np.deg2rad(grid[:,0]), np.pi/2 - np.deg2rad(grid[:,1])
+    assert(all(grid_zen > -10e-6))  # Otherwise not zen
+    # Pinv / lstsq since we can't be sure about the grid
+    Y_pinv = np.linalg.pinv(sph.sh_matrix(N_sph, grid_azi, grid_zen, SH_type))
+    IRs_nm = Y_pinv @ np.swapaxes(irs, 0,1)
+    return IRs_nm, fs
+
+
 def load_sdm(filename, init_nan=True):
     """Convenience function to load 'SDM.mat'.
     The file contains
