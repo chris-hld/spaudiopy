@@ -75,12 +75,12 @@ class LoudspeakerSetup:
         self.a = 1
 
         # Triangulation of points
-        _hull = get_hull(self.x, self.y, self.z)
-        self.points = _hull.points
-        self.npoints = _hull.npoints
-        self.nsimplex = _hull.nsimplex
-        self.vertices = _hull.vertices
-        self.simplices = _hull.simplices
+        self._hull = get_hull(self.x, self.y, self.z)
+        self.points = self._hull.points
+        self.npoints = self._hull.npoints
+        self.nsimplex = self._hull.nsimplex
+        self.vertices = self._hull.vertices
+        self.simplices = self._hull.simplices
         self.simplices = sort_vertices(self.simplices)
         self.centroids = calculate_centroids(self)
         self.face_areas = calculate_face_areas(self)
@@ -92,6 +92,9 @@ class LoudspeakerSetup:
         self._encloses_listener = check_listener_inside(self,
                                                         self.listener_position)
         self.valid_simplices = self._encloses_listener
+
+        # VBAP
+        self.inverted_vbase = None  # populated by VBAP
 
         # see 'ambisonics_setup()'
         self.ambisonics_hull = []
@@ -587,19 +590,24 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
     if valid_simplices is None:
         valid_simplices = hull.valid_simplices
 
+    # inverted LS vector base
+    if hull.inverted_vbase is None:
+        inverted_vbase = _invert_triplets(valid_simplices, hull.points)
+        hull.inverted_vbase = inverted_vbase
+    else:
+        inverted_vbase = hull.inverted_vbase
+
     src = np.atleast_2d(src)
     assert(src.shape[1] == 3)
     src_count = src.shape[0]
 
     ls_count = hull.npoints
-    # Base
-    inverted_ls_triplets = _invert_triplets(valid_simplices, hull.points)
 
     gains = np.zeros([src_count, ls_count])
 
     if (jobs_count == 1) or (src_count < 10):
         for src_idx in range(src_count):
-            for face_idx, ls_base in enumerate(inverted_ls_triplets):
+            for face_idx, ls_base in enumerate(inverted_vbase):
                 # projecting src onto loudspeakers
                 projection = np.dot(ls_base, src[src_idx, :])
                 # normalization
@@ -615,8 +623,8 @@ def vbap(src, hull, valid_simplices=None, retain_outside=False, jobs_count=1):
         shared_array_shape = np.shape(gains)
         _arr_base = _create_shared_array(shared_array_shape)
         _arg_itr = zip(range(src_count),
-                       repeat(src), repeat(inverted_ls_triplets),
                        repeat(valid_simplices))
+                       repeat(src), repeat(inverted_vbase),
         # execute
         with multiprocessing.Pool(processes=jobs_count,
                                   initializer=_init_shared_array,
