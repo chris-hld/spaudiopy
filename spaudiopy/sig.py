@@ -13,6 +13,7 @@ Avoid code duplications (and errors) by defining a few custom classes here.
 
 """
 
+import os
 import copy
 from warnings import warn
 
@@ -56,7 +57,7 @@ class MonoSignal:
     @classmethod
     def from_file(cls, filename, fs=None):
         """Alternative constructor, load signal from filename."""
-        sig, fs_file = sf.read(filename)
+        sig, fs_file = sf.read(os.path.expanduser(filename))
         if fs is not None:
             if fs != fs_file:
                 raise ValueError("File: Found different fs:" + str(fs_file))
@@ -72,7 +73,7 @@ class MonoSignal:
 
     def save(self, filename):
         """Save to file."""
-        IO.save_audio(self, filename)
+        IO.save_audio(self, os.path.expanduser(filename))
 
     def trim(self, start, stop):
         """Trim audio to start and stop in seconds."""
@@ -129,7 +130,7 @@ class MultiSignal(MonoSignal):
     @classmethod
     def from_file(cls, filename, fs=None):
         """Alternative constructor, load signal from filename."""
-        sig, fs_file = sf.read(filename)
+        sig, fs_file = sf.read(os.path.expanduser(filename))
         if fs is not None:
             if fs != fs_file:
                 raise ValueError("File: Found different fs:" + str(fs_file))
