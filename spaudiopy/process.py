@@ -86,6 +86,54 @@ def resample_hrirs(hrir_l, hrir_r, fs_hrir, fs_target, jobs_count=1):
     return hrir_l_resampled, hrir_r_resampled, fs_hrir
 
 
+def resample_signal(s_time, fs_current, fs_target, axis=-1):
+    """
+    Resample time signal.
+
+    Parameters
+    ----------
+    s_time : numpy.ndarray
+        Time signal, or signals stacked.
+    fs_current : int
+    fs_target : int
+    axis : int, optional
+        Axis along which to resample. The default is -1.
+
+    Returns
+    -------
+    single_spec_resamp : numpy.ndarray.
+
+    """
+    s_time = np.atleast_2d(s_time)
+    s_time_resamp = resampy.resample(s_time, fs_current, fs_target, axis=axis)
+    return np.squeeze(s_time_resamp)
+
+
+def resample_spectrum(single_spec, fs_current, fs_target, axis=-1):
+    """
+    Resample single sided spectrum, as e.g. from np.fft.rfft().
+
+    Parameters
+    ----------
+    single_spec : numpy.ndarray
+        Single sided spectrum, or spectra stacked.
+    fs_current : int
+    fs_target : int
+    axis : int, optional
+        Axis along which to resample. The default is -1.
+
+    Returns
+    -------
+    single_spec_resamp : numpy.ndarray.
+
+    """
+    single_spec = np.atleast_2d(single_spec)
+    s_time = np.fft.irfft(single_spec, axis=axis)
+    s_time_resamp = resampy.resample(s_time, fs_current, fs_target, axis=axis)
+    single_spec_resamp = np.fft.rfft(s_time_resamp, axis=axis)
+    return np.squeeze(single_spec_resamp)
+
+
 def match_loudness(sig_in, sig_target):
     """
     Match loundess of input to target, based on RMS and avoid clipping.
