@@ -16,7 +16,6 @@ import os
 import sys
 from subprocess import check_output
 from datetime import date
-todays_date = date.today()
 
 
 sys.path.insert(0, os.path.abspath('../../'))
@@ -25,7 +24,7 @@ sys.path.insert(0, os.path.abspath('../../'))
 # -- Project information -----------------------------------------------------
 
 project = 'spaudiopy'
-copyright = str(todays_date.year) + ', Chris Hold'
+copyright = str(date.today().year) + ', Chris Hold'
 author = 'Chris Hold'
 
 # The short X.Y version.
