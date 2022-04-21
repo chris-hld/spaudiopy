@@ -134,6 +134,44 @@ def resample_spectrum(single_spec, fs_current, fs_target, axis=-1):
     return np.squeeze(single_spec_resamp)
 
 
+def itds_from_hrirs(hrirs, f_cut=800, upsample=8):
+    """Calculate ITDs from HRIRs by upsampled and filtered cross-correlation.
+
+    Parameters
+    ----------
+    hrirs : sig.HRIRs
+    f_cut : float, optional
+        Low-pass cutoff frequency. The default is 800.
+    upsample : int, optional
+        Upsampling factor. The default is 8.
+
+    Returns
+    -------
+    itd : array_like
+        ITD per grid point, positive value indicates left ear first.
+
+    """
+    assert(isinstance(hrirs, sig.HRIRs))
+    fs = hrirs.fs
+    sos = signal.butter(4, f_cut, 'low', fs=fs, output='sos')
+
+    hrirs_l_us, hrirs_r_us, _ = resample_hrirs(hrirs.left, hrirs.right,
+                                               hrirs.fs, upsample*hrirs.fs)
+
+    hrirs_l_us = signal.sosfiltfilt(sos, hrirs_l_us, axis=-1)
+    hrirs_r_us = signal.sosfiltfilt(sos, hrirs_r_us, axis=-1)
+
+    maxidx = np.zeros(hrirs.grid_points)
+    for idx, hrirs_dir in enumerate(zip(hrirs_l_us, hrirs_r_us)):
+        maxidx[idx] = np.argmax(np.correlate(hrirs_dir[0], hrirs_dir[1],
+                                             mode='same'))
+    maxidx -= hrirs_l_us.shape[1]//2
+    # alternative
+    # maxidx = np.argmax(hrirs_l_us, axis=-1) - np.argmax(hrirs_r_us, axis=-1)
+    itd = -maxidx / (upsample*fs)
+    return itd
+
+
 def ilds_from_hrirs(hrirs, f_cut=800):
     """Calculate ILDs from HRIRs by high-passed broad-band RMS difference.
 
