@@ -134,6 +134,32 @@ def resample_spectrum(single_spec, fs_current, fs_target, axis=-1):
     return np.squeeze(single_spec_resamp)
 
 
+def ilds_from_hrirs(hrirs, f_cut=800):
+    """Calculate ILDs from HRIRs by high-passed broad-band RMS difference.
+
+    Parameters
+    ----------
+    hrirs : sig.HRIRs
+    f_cut : float, optional
+        Low-pass cutoff frequency. The default is 800.
+
+    Returns
+    -------
+    rms_diff : array_like
+        ILD per grid point, positive value indicates left ear louder.
+
+    """
+    assert(isinstance(hrirs, sig.HRIRs))
+    fs = hrirs.fs
+    sos = signal.butter(4, f_cut, 'high', fs=fs, output='sos')
+
+    hrirs_l_f = signal.sosfiltfilt(sos, hrirs.left, axis=-1)
+    hrirs_r_f = signal.sosfiltfilt(sos, hrirs.right, axis=-1)
+
+    rms_diff = utils.rms(hrirs_l_f, axis=-1) - utils.rms(hrirs_r_f, axis=-1)
+    return rms_diff
+
+
 def match_loudness(sig_in, sig_target):
     """
     Match loundess of input to target, based on RMS and avoid clipping.

@@ -542,7 +542,7 @@ def sh_rms_map(F_nm, INDB=False, w_n=None, SH_type=None, azi_steps=5,
     plt.axvline(color='grey', linestyle=':')
     
     plt.xticks([np.pi, np.pi/2, 0, -np.pi/2, -np.pi], 
-               labels=[r"$\pi$", r"$\pi/2$", "$0$", "$-\pi/2$", "$-\pi$"])
+               labels=[r"$\pi$", r"$\pi/2$", r"$0$", r"$-\pi/2$", r"$-\pi$"])
     plt.yticks([0, np.pi/2, np.pi],
                labels=[r"$0$", r"$\pi/2$", r"$\pi$", ])
     
