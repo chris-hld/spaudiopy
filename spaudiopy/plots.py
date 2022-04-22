@@ -22,6 +22,7 @@ from scipy.spatial import ConvexHull
 from . import utils
 from . import sph
 from . import decoder
+from . import process
 
 
 def spectrum(x, fs, ylim=None, scale_mag=False, **kwargs):
@@ -946,6 +947,68 @@ def doa(azi, colat, fs, p=None, size=250):
         ax.legend(handles, labels, loc="upper right", title="p(t)")
     except AttributeError:  # mpl < 3.3.0
         pass
+
+
+def hrir_ild_itd(hrirs, plevels=50, fig=None):
+    """Plot HRIR ILDs and ITDs.
+
+    Parameters
+    ----------
+    hrirs : sig.HRIRs
+    plevels : int, optional
+        Contour levels. The default is 50.
+    fig : plt.figure, optional
+
+    Returns
+    -------
+    None.
+
+    """
+    itds = process.itds_from_hrirs(hrirs)
+    ilds = process.ilds_from_hrirs(hrirs)
+
+    pazi = np.fmod(hrirs.grid['azi'] + np.pi, 2*np.pi) - np.pi
+    pzen = hrirs.grid['colat']
+    if fig is None:
+        fig = plt.figure(constrained_layout=True)
+    ax1 = fig.add_subplot(2, 1, 1)
+    ax2 = fig.add_subplot(2, 1, 2, sharex=ax1, sharey=ax1)
+    ax1.invert_xaxis()
+    ax1.invert_yaxis()
+
+    pclim = max(abs(ilds))
+    p1 = ax1.tricontourf(pazi, pzen, ilds, levels=plevels,
+                         cmap='RdYlBu', vmin=-pclim, vmax=pclim)
+    ax1.set_title("ILD")
+    pclim = max(abs(1000 * itds))
+    p2 = ax2.tricontourf(pazi, pzen, 1000 * itds, levels=plevels,
+                         cmap='RdYlBu', vmin=-pclim, vmax=pclim)
+    ax2.set_title("ITD")
+
+    for axit in [ax1, ax2]:
+        axit.set_aspect('equal')
+        axit.grid(True)
+
+        axit.set_xticks(np.linspace(-np.pi, np.pi, 5))
+        axit.set_xticklabels([r'$-\pi$', r'$-\pi/2$', r'$0$',
+                             r'$\pi/2$', r'$\pi$'])
+        axit.set_yticks(np.linspace(0, np.pi, 3))
+        axit.set_yticklabels([r'$0$', r'$\pi/2$', r'$\pi$'])
+        axit.set_ylabel('Zenith')
+
+        axit.axhline(y=np.pi/2, color='grey', linestyle=':')
+        axit.axvline(color='grey', linestyle=':')
+
+        axit.set_xticks([np.pi, np.pi/2, 0, -np.pi/2, -np.pi],
+                labels=[r"$\pi$", r"$\pi/2$", "$0$", r"$-\pi/2$", r"$-\pi$"])
+        axit.set_yticks([0, np.pi/2, np.pi],
+                        labels=[r"$0$", r"$\pi/2$", r"$\pi$", ])
+
+    ax2.set_xlabel('Azimuth')
+    cb1 = plt.colorbar(p1, ax=ax1)
+    cb1.set_label("ILD RMS")
+    cb2 = plt.colorbar(p2, ax=ax2)
+    cb2.set_label("ITD in ms")
 
 
 def set_aspect_equal3d(ax=None, XYZlim=None):
