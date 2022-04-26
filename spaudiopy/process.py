@@ -167,7 +167,7 @@ def ilds_from_hrirs(hrirs, f_cut=1000, INDB=True):
     return rms_diff
 
 
-def itds_from_hrirs(hrirs, f_cut=1000, upsample=8):
+def itds_from_hrirs(hrirs, f_cut=1000, upsample=4):
     """Calculate ITDs from HRIRs by upsampled and filtered cross-correlation.
 
     Parameters
