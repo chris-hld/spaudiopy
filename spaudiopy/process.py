@@ -35,7 +35,7 @@ memory = Memory(cachedir)
 
 
 @memory.cache
-def resample_hrirs(hrir_l, hrir_r, fs_hrir, fs_target, jobs_count=1):
+def resample_hrirs(hrir_l, hrir_r, fs_hrir, fs_target, jobs_count=None):
     """
     Resample HRIRs to new SamplingRate(t), using multiprocessing.
 
