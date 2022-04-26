@@ -19,6 +19,7 @@ from warnings import warn
 
 import numpy as np
 from scipy import signal as scysig
+import pandas as pd
 import soundfile as sf
 try:
     import sounddevice as sd
@@ -35,7 +36,7 @@ class MonoSignal:
     """Signal class for a MONO channel audio signal."""
 
     def __init__(self, signal, fs):
-        """Constructor
+        """Constructor.
 
         Parameters
         ----------
@@ -68,7 +69,7 @@ class MonoSignal:
         return cls(sig, fs)
 
     def copy(self):
-        """Return an independent (deep) copy of the signal."""
+        """Return an independent (deep) copy of the instance."""
         return copy.deepcopy(self)
 
     def save(self, filename):
@@ -101,7 +102,7 @@ class MultiSignal(MonoSignal):
     """Signal class for a MULTI channel audio signal."""
 
     def __init__(self, signals, fs=None):
-        """Constructor
+        """Constructor.
 
         Parameters
         ----------
@@ -186,6 +187,7 @@ class AmbiBSignal(MultiSignal):
     @classmethod
     def sh_to_b(cls, multisig):
         """Alternative constructor, convert from sig.Multisignal.
+
         Assumes ACN channel order.
         """
         assert isinstance(multisig, MultiSignal)
@@ -197,8 +199,25 @@ class HRIRs:
     """Signal class for head-related impulse responses."""
 
     def __init__(self, left, right, grid, fs):
-        """Constructor. HRIRs of size [numDirs, numTaps]"""
+        """Constructor.
+
+        Parameters
+        ----------
+        left : (numDirs, numTaps) ndarray
+            Left ear HRIRs.
+        right : numDirs, numTaps ndarray
+            Right ear HRIRs.
+        grid : pd.DataFrame, containing 'azi' and 'colat'
+        fs : int
+
+        """
+        left = np.asarray(left)
+        right = np.asarray(right)
         assert len(left) == len(right), "Signals must be of same length."
+        assert left.ndim == 2
+        assert right.ndim == 2
+        assert isinstance(grid, pd.DataFrame)
+
         self.left = left
         self.right = right
         self.grid = grid
@@ -214,10 +233,34 @@ class HRIRs:
         """Enable [] operator, returns hrirs."""
         return self.left[key, :], self.right[key, :]
 
-    def nearest_hrirs(self, azi, colat):
+    def copy(self):
+        """Return an independent (deep) copy of the instance."""
+        return copy.deepcopy(self)
+
+    def update_hrirs(self, left, right):
+        """Update and replace HRIRs in place.
+
+        Parameters
+        ----------
+        left : (numDirs, numTaps) ndarray
+            Left ear HRIRs.
+        right : numDirs, numTaps ndarray
+            Right ear HRIRs.
+
+        Returns
+        -------
+        None.
+
         """
-        For a point on the sphere, select closest hrir defined on grid,
-        based on the haversine distance.
+        assert len(left) == len(right)
+        assert len(left) == len(self.grid)
+        self.left = np.asarray(left)
+        self.right = np.asarray(right)
+
+    def nearest_hrirs(self, azi, colat):
+        """For a point on the sphere, select closest hrir defined on grid.
+
+        Based on the haversine distance.
 
         Parameters
         ----------
@@ -258,6 +301,7 @@ class HRIRs:
             Azimuth.
         colat : float
             Zenith / Colatitude.
+
         Returns
         -------
         idx : int
