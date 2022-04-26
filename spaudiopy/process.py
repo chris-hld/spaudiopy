@@ -134,21 +134,21 @@ def resample_spectrum(single_spec, fs_current, fs_target, axis=-1):
     return np.squeeze(single_spec_resamp)
 
 
-def itds_from_hrirs(hrirs, f_cut=800, upsample=8):
+def itds_from_hrirs(hrirs, f_cut=1000, upsample=8):
     """Calculate ITDs from HRIRs by upsampled and filtered cross-correlation.
 
     Parameters
     ----------
     hrirs : sig.HRIRs
     f_cut : float, optional
-        Low-pass cutoff frequency. The default is 800.
+        Low-pass cutoff frequency. The default is 1000.
     upsample : int, optional
         Upsampling factor. The default is 8.
 
     Returns
     -------
     itd : array_like
-        ITD per grid point, positive value indicates left ear first.
+        ITD in seconds per grid point, positive value indicates left ear first.
 
     """
     assert(isinstance(hrirs, sig.HRIRs))
@@ -172,20 +172,21 @@ def itds_from_hrirs(hrirs, f_cut=800, upsample=8):
     return itd
 
 
-def ilds_from_hrirs(hrirs, f_cut=800):
-    """Calculate ILDs from HRIRs by high-passed broad-band RMS difference.
+def ilds_from_hrirs(hrirs, f_cut=1000, INDB=True):
+    """Calculate ILDs from HRIRs by high-passed broad-band RMS.
 
     Parameters
     ----------
     hrirs : sig.HRIRs
     f_cut : float, optional
-        Low-pass cutoff frequency. The default is 800.
+        Low-pass cutoff frequency. The default is 1000.
 
     Returns
     -------
-    rms_diff : array_like
+    ild : array_like
         ILD per grid point, positive value indicates left ear louder.
-
+    INDB : bool, optional
+        ILD in dB RMS ratio, otherwise as RMS difference. The default is TRUE.
     """
     assert(isinstance(hrirs, sig.HRIRs))
     fs = hrirs.fs
@@ -194,7 +195,13 @@ def ilds_from_hrirs(hrirs, f_cut=800):
     hrirs_l_f = signal.sosfiltfilt(sos, hrirs.left, axis=-1)
     hrirs_r_f = signal.sosfiltfilt(sos, hrirs.right, axis=-1)
 
-    rms_diff = utils.rms(hrirs_l_f, axis=-1) - utils.rms(hrirs_r_f, axis=-1)
+    if INDB:
+        rms_diff = utils.db(utils.rms(hrirs_l_f, axis=-1) /
+                            utils.rms(hrirs_r_f, axis=-1))
+    else:
+        rms_diff = utils.rms(hrirs_l_f, axis=-1) - \
+                   utils.rms(hrirs_r_f, axis=-1)
+
     return rms_diff
 
 
