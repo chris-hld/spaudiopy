@@ -963,9 +963,13 @@ def hrir_ild_itd(hrirs, plevels=50, fig=None):
     -------
     None.
 
+    See Also
+    --------
+    spaudiopy.process.ilds_from_hrirs : Calculating ILDs with defaults (in dB).
+    spaudiopy.process.itds_from_hrirs : Calculating ITDs with defaults.
     """
+    ilds = process.ilds_from_hrirs(hrirs, INDB=True)
     itds = process.itds_from_hrirs(hrirs)
-    ilds = process.ilds_from_hrirs(hrirs)
 
     pazi = np.fmod(hrirs.grid['azi'] + np.pi, 2*np.pi) - np.pi
     pzen = hrirs.grid['colat']
@@ -1006,7 +1010,7 @@ def hrir_ild_itd(hrirs, plevels=50, fig=None):
 
     ax2.set_xlabel('Azimuth')
     cb1 = plt.colorbar(p1, ax=ax1)
-    cb1.set_label("ILD RMS")
+    cb1.set_label("ILD in dB")
     cb2 = plt.colorbar(p2, ax=ax2)
     cb2.set_label("ITD in ms")
 
