@@ -252,10 +252,8 @@ class HRIRs:
         None.
 
         """
-        assert len(left) == len(right)
-        assert len(left) == len(self.grid)
-        self.left = np.asarray(left)
-        self.right = np.asarray(right)
+        # reinitialize
+        self.__init__(left, right, self.grid, self.fs)
 
     def nearest_hrirs(self, azi, colat):
         """For a point on the sphere, select closest hrir defined on grid.
