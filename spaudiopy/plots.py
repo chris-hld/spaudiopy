@@ -949,7 +949,7 @@ def doa(azi, colat, fs, p=None, size=250):
         pass
 
 
-def hrir_ild_itd(hrirs, plevels=50, fig=None):
+def hrir_ild_itd(hrirs, plevels=50, title=None, fig=None):
     """Plot HRIR ILDs and ITDs.
 
     Parameters
@@ -957,6 +957,7 @@ def hrir_ild_itd(hrirs, plevels=50, fig=None):
     hrirs : sig.HRIRs
     plevels : int, optional
         Contour levels. The default is 50.
+    title : string, optional.
     fig : plt.figure, optional
 
     Returns
@@ -1013,6 +1014,8 @@ def hrir_ild_itd(hrirs, plevels=50, fig=None):
     cb1.set_label("ILD in dB")
     cb2 = plt.colorbar(p2, ax=ax2)
     cb2.set_label("ITD in ms")
+    if title is not None:
+        plt.suptitle(title)
 
 
 def set_aspect_equal3d(ax=None, XYZlim=None):
