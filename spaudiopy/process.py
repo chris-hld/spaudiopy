@@ -300,6 +300,38 @@ def lagrange_delay(N, delay):
     return h
 
 
+def frac_octave_smoothing(a, smoothing_n, WEIGHTED=True):
+    """Fractional octave (weighted) smoothing.
+
+    Parameters
+    ----------
+    a : (n,) array_like
+        Input spectrum.
+    smoothing_n : int
+        smoothing_n / 8 octave band.
+    WEIGHTED : bool, optional
+        Use (hamming) weighting on mean around center. The default is True.
+
+    Returns
+    -------
+    smoothed_a : (n,) np.array
+
+    """
+    a = utils.asarray_1d(a)
+    smooth = np.zeros_like(a)
+    num_smpls = len(a)
+    for idx in range(num_smpls):
+        k_lo = np.floor(idx / (2**(1/(2*smoothing_n))))
+        k_hi = np.clip(np.ceil(idx * (2**(1/(2*smoothing_n)))), 1, num_smpls)
+        if WEIGHTED:
+            win = np.hamming(k_hi-k_lo)  # hamming is good because never 0
+        else:
+            win = np.ones(int(k_hi-k_lo))
+        smooth[idx] = 1/np.sum(win) * np.sum((win * a[k_lo.astype(int):
+                                                      k_hi.astype(int)]))
+    return smooth
+
+
 def frac_octave_filterbank(n, N_out, fs, f_low, f_high=None, mode='energy',
                            overlap=0.5, slope_l=3):
     r"""Fractional octave band filterbank.
