@@ -276,8 +276,8 @@ def b_to_stereo(Ambi_B):
 
 
 def lagrange_delay(N, delay):
-    """
-    Return fractional delay filter using lagrange interpolation.
+    """Return fractional delay filter using lagrange interpolation.
+
     For best results, delay should be near N/2 +/- 1.
 
     Parameters
@@ -301,8 +301,9 @@ def lagrange_delay(N, delay):
 
 
 def frac_octave_filterbank(n, N_out, fs, f_low, f_high=None, mode='energy',
-                           overlap=0.5, l=3):
-    """ Fractional octave band filterbank.
+                           overlap=0.5, slope_l=3):
+    r"""Fractional octave band filterbank.
+
     Design of digital fractional-octave-band filters with energy conservation
     and perfect reconstruction.
 
@@ -322,7 +323,7 @@ def frac_octave_filterbank(n, N_out, fs, f_low, f_high=None, mode='energy',
         'energy' produces -3dB at crossover, 'amplitude' -6dB.
     overlap : float
         Band overlap, should be between [0, 0.5].
-    l : int
+    slope_l : int
         Band transition slope, implemented as recursion order `l`.
 
     Returns
@@ -357,7 +358,7 @@ def frac_octave_filterbank(n, N_out, fs, f_low, f_high=None, mode='energy',
         ax[0].semilogx(f, gs.T)
         ax[0].set_title('Band gains')
         ax[1].semilogx(f, np.sum(np.abs(gs)**2, axis=0))
-        ax[1].set_title(r'$\sum |g| ^ 2$')
+        ax[1].set_title(r"$\sum |g| ^ 2$")
         for a_idx in ax:
             a_idx.grid(True)
             a_idx.set_xlim([20, fs//2])
@@ -412,7 +413,7 @@ def frac_octave_filterbank(n, N_out, fs, f_low, f_high=None, mode='energy',
         phi = (p / P[b_idx])
         phi[np.isnan(phi)] = 1.
         # recursion eq. 20
-        for l_i in range(l):
+        for l_i in range(slope_l):
             phi = np.sin(np.pi / 2 * phi)
 
         # shift phi to [0, 1]
@@ -446,7 +447,7 @@ def frac_octave_filterbank(n, N_out, fs, f_low, f_high=None, mode='energy',
 
 
 def subband_levels(x, width, fs, power=False, axis=-1):
-    """Computes the level/power in each subband of subband signals."""
+    """Compute the level/power in each subband of subband signals."""
     N = x.shape[1]
 
     if power is False:
