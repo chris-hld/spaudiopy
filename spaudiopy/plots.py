@@ -44,11 +44,11 @@ def spectrum(x, fs, ylim=None, scale_mag=False, **kwargs):
 
     specs = []
     for s in x:
+        assert(s.ndim == 1)
         # rfft returns half sided spectrum
         mag = np.abs(np.fft.rfft(s))
         # Scale the amplitude (factor two for mirrored frequencies)
-        mag = mag / len(s)
-        assert(mag.ndim == 1)
+        mag = mag / bins
         if bins % 2:
             # odd
             mag[1:] *= 2.
@@ -64,14 +64,19 @@ def spectrum(x, fs, ylim=None, scale_mag=False, **kwargs):
     freq_resp(freq, specs, ylim=ylim, **kwargs)
 
 
-def freq_resp(freq, amp, to_db=True, smoothing_n=None, title=None,
-              labels=None, xlim=(20, 24000), ylim=(-30, None)):
+def freq_resp(freq, amp, INDB=True, smoothing_n=None, xlim=(20, 24000), 
+              ylim=(-30, None), title=None, labels=None, ax=None):
     """ Plot magnitude of frequency response over time frequency f.
 
     Parameters
     ----------
     f : frequency array
     amp : array_like, list of array_like
+    INDB : bool
+        Plot in dB.
+    smoothing_n : int
+        Forwarded to process.frac_octave_smoothing()
+    
 
     Examples
     --------
@@ -86,27 +91,20 @@ def freq_resp(freq, amp, to_db=True, smoothing_n=None, title=None,
 
     assert(all(len(a) == len(freq) for a in amp))
 
-    if to_db:
+    if INDB:
         # Avoid zeros in spec for dB
         amp = [utils.db(np.clip(a, 10e-15, None)) for a in amp]
 
     if smoothing_n is not None:
         smoothed = []
         for a in amp:
-            smooth = np.zeros_like(a)
-            for idx in range(len(a)):
-                k_lo = idx / (2**(1/(2*smoothing_n)))
-                k_hi = idx * (2**(1/(2*smoothing_n)))
-                smooth[idx] = np.mean(a[np.floor(k_lo).astype(int):
-                                        np.ceil(k_hi).astype(int) + 1])
-            smoothed.append(smooth)
+            smoothed.append(process.frac_octave_smoothing(a, smoothing_n, True))
         amp = smoothed
 
-    fig, ax = plt.subplots()
+    if ax is None:
+        fig, ax = plt.subplots()
     [ax.semilogx(freq, a.flat) for a in amp]
 
-    if title is not None:
-        plt.title(title)
     if smoothing_n is not None:
         if labels is None:
             labels = [None] * len(amp)
@@ -116,11 +114,13 @@ def freq_resp(freq, amp, to_db=True, smoothing_n=None, title=None,
     if labels is not None:
         ax.legend(labels)
 
-    plt.xlabel('Frequency in Hz')
-    plt.ylabel('Magnitude in dB')
-    plt.xlim(xlim)
-    plt.ylim(ylim)
-    plt.grid(True)
+    ax.set_xlabel('Frequency in Hz')
+    ax.set_ylabel('Magnitude in dB')
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+    ax.grid(True)
+    if title is not None:
+        plt.title(title)
 
 
 def transfer_function(freq, H, title=None, xlim=(10, 25000)):
