@@ -152,7 +152,7 @@ def ilds_from_hrirs(hrirs, f_cut=1000, INDB=True):
     """
     assert(isinstance(hrirs, sig.HRIRs))
     fs = hrirs.fs
-    sos = signal.butter(4, f_cut, 'high', fs=fs, output='sos')
+    sos = signal.butter(2, f_cut, 'high', fs=fs, output='sos')
 
     hrirs_l_f = signal.sosfiltfilt(sos, hrirs.left, axis=-1)
     hrirs_r_f = signal.sosfiltfilt(sos, hrirs.right, axis=-1)
@@ -186,7 +186,7 @@ def itds_from_hrirs(hrirs, f_cut=1000, upsample=4):
     """
     assert(isinstance(hrirs, sig.HRIRs))
     fs = hrirs.fs
-    sos = signal.butter(4, f_cut, 'low', fs=fs, output='sos')
+    sos = signal.butter(2, f_cut, 'low', fs=fs, output='sos')
 
     hrirs_l_us, hrirs_r_us, _ = resample_hrirs(hrirs.left, hrirs.right,
                                                hrirs.fs, upsample*hrirs.fs)
