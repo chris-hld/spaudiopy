@@ -535,7 +535,7 @@ def _vbap_gains_single_source(src_idx, src, inverted_ls_triplets,
             break  # found valid gains
 
 
-def vbap(src, hull, norm=2, valid_simplices=None, retain_outside=False, 
+def vbap(src, hull, norm=2, valid_simplices=None, retain_outside=False,
          jobs_count=1):
     """Loudspeaker gains for Vector Base Amplitude Panning decoding.
 
@@ -646,7 +646,7 @@ def vbap(src, hull, norm=2, valid_simplices=None, retain_outside=False,
     return gains
 
 
-def vbip(src, hull, norm=2,valid_simplices=None, retain_outside=False,
+def vbip(src, hull, norm=2, valid_simplices=None, retain_outside=False,
          jobs_count=1):
     """Loudspeaker gains for Vector Base Intensity Panning decoding.
 
@@ -1282,7 +1282,8 @@ def nearest_loudspeaker(src, hull):
 
 
 def sh2bin(sig_nm, hrirs_nm):
-    """ Spherical Harmonic Domain signals to binaural renderer.
+    """Spherical Harmonic Domain signals to binaural renderer.
+
     Ambisonic signals as N3D - ACN, i.e. real valued SH (time) signals.
 
     Parameters
@@ -1297,13 +1298,16 @@ def sh2bin(sig_nm, hrirs_nm):
     (2, S+L-1) numpy.ndarray
         Left and Right (stacked) binaural output signals.
 
+    See Also
+    --------
+    :py:func:`spaudiopy.decoder.magls_bin` : MagLS binaural decoder.
     """
     assert(sig_nm.ndim == 2)
     assert(hrirs_nm.ndim == 3)
     assert(sig_nm.shape[0] == hrirs_nm.shape[1])
-    out_l = np.sum(signal.oaconvolve(sig_nm, np.squeeze(hrirs_nm[0,:,:]),
+    out_l = np.sum(signal.oaconvolve(sig_nm, np.squeeze(hrirs_nm[0, :, :]),
                                      axes=-1), axis=0)
-    out_r = np.sum(signal.oaconvolve(sig_nm, np.squeeze(hrirs_nm[1,:,:]),
+    out_r = np.sum(signal.oaconvolve(sig_nm, np.squeeze(hrirs_nm[1, :, :]),
                                      axes=-1), axis=0)
     return np.vstack((out_l, out_r))
 
