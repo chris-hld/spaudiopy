@@ -1301,10 +1301,10 @@ def sh2bin(sig_nm, hrirs_nm):
     assert(sig_nm.ndim == 2)
     assert(hrirs_nm.ndim == 3)
     assert(sig_nm.shape[0] == hrirs_nm.shape[1])
-    out_l = np.sum(signal.fftconvolve(sig_nm, np.squeeze(hrirs_nm[0,:,:]),
-                                      axes=-1), axis=0)
-    out_r = np.sum(signal.fftconvolve(sig_nm, np.squeeze(hrirs_nm[1,:,:]),
-                                      axes=-1), axis=0)
+    out_l = np.sum(signal.oaconvolve(sig_nm, np.squeeze(hrirs_nm[0,:,:]),
+                                     axes=-1), axis=0)
+    out_r = np.sum(signal.oaconvolve(sig_nm, np.squeeze(hrirs_nm[1,:,:]),
+                                     axes=-1), axis=0)
     return np.vstack((out_l, out_r))
 
 
