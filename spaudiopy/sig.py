@@ -90,6 +90,14 @@ class MonoSignal:
         h = utils.asarray_1d(h)
         self.signal = scysig.convolve(self.signal, h, **kwargs)
         return self
+    
+    def resample(self, fs_new):
+        """Resample signal to new sampling rate fs_new."""
+        if fs_new == self.fs:
+            warn("Same sampling rate requested, no resampling.")
+        else:
+            sig_resamp = pcs.resample_signal(self.signal, self.fs, fs_new)
+            self.__init__(sig_resamp, fs_new)
 
     def play(self, gain=1, wait=True):
         """Play sound signal. Adjust gain and wait until finished."""
@@ -142,7 +150,7 @@ class MultiSignal(MonoSignal):
         return cls([*sig.T], fs=fs)
 
     def get_signals(self):
-        """Return ndarray of signals, stacked along rows."""
+        """Return ndarray of signals, stacked along rows (nCH, nSmps)."""
         return np.asarray([x.signal for x in self.channel])
 
     def trim(self, start, stop):
@@ -161,6 +169,15 @@ class MultiSignal(MonoSignal):
             h = utils.asarray_1d(h)
             c.signal = scysig.convolve(c, h, **kwargs)
         return self
+
+    def resample(self, fs_new):
+        """Resample signal to new sampling rate fs_new."""
+        if fs_new == self.fs:
+            warn("Same sampling rate requested, no resampling.")
+        else:
+            sig_resamp = pcs.resample_signal(self.get_signals(),
+                                             self.fs, fs_new, axis=-1)
+            self.__init__([*sig_resamp], fs_new)
 
     def play(self, gain=1, wait=True):
         """Play sound signal. Adjust gain and wait until finished."""
