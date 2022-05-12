@@ -949,7 +949,7 @@ def doa(azi, colat, fs, p=None, size=250):
         pass
 
 
-def hrir_ild_itd(hrirs, plevels=50, title=None, fig=None):
+def hrir_ild_itd(hrirs, plevels=50, pclims=(None,None), title=None, fig=None):
     """Plot HRIR ILDs and ITDs.
 
     Parameters
@@ -957,6 +957,8 @@ def hrir_ild_itd(hrirs, plevels=50, title=None, fig=None):
     hrirs : sig.HRIRs
     plevels : int, optional
         Contour levels. The default is 50.
+    pclims : (2,), optional
+        Set the plot color limits for ild and itd, e.g. (20, 0.75)
     title : string, optional.
     fig : plt.figure, optional
 
@@ -981,13 +983,21 @@ def hrir_ild_itd(hrirs, plevels=50, title=None, fig=None):
     ax1.invert_xaxis()
     ax1.invert_yaxis()
 
-    pclim = max(abs(ilds))
+    if pclims[0] is None:
+        pclim_ild = max(abs(ilds))
+    else:
+        pclim_ild = pclims[0]
     p1 = ax1.tricontourf(pazi, pzen, ilds, levels=plevels,
-                         cmap='RdYlBu', vmin=-pclim, vmax=pclim)
+                         cmap='RdYlBu', vmin=-pclim_ild, vmax=pclim_ild)
     ax1.set_title("ILD")
+    
+    if pclims[1] is None:
+        pclim_itd = max(abs(1000 * itds))
+    else:
+        pclim_itd = pclims[1]
     pclim = max(abs(1000 * itds))
     p2 = ax2.tricontourf(pazi, pzen, 1000 * itds, levels=plevels,
-                         cmap='RdYlBu', vmin=-pclim, vmax=pclim)
+                         cmap='RdYlBu', vmin=-pclim_itd, vmax=pclim_itd)
     ax2.set_title("ITD")
 
     for axit in [ax1, ax2]:
