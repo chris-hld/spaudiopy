@@ -92,16 +92,16 @@ def angle_between(v1, v2, vi=None):
     return np.arccos(np.clip(a, -1.0, 1.0))
 
 
-def rotation_euler(gamma=0, beta=0, alpha=0):
+def rotation_euler(yaw=0, pitch=0, roll=0):
     """Matrix rotating by Yaw (around z), pitch (around y), roll (around x).
     See https://mathworld.wolfram.com/RotationMatrix.html
     """
-    Rx = np.array([[1, 0, 0], [0, np.cos(alpha), np.sin(alpha)],
-                   [0, -np.sin(alpha), np.cos(alpha)]])
-    Ry = np.array([[np.cos(beta), 0, -np.sin(beta)], [0, 1, 0],
-                   [np.sin(beta), 0, np.cos(beta)]])
-    Rz = np.array([[np.cos(gamma), np.sin(gamma), 0],
-                   [-np.sin(gamma), np.cos(gamma), 0], [0, 0, 1]])
+    Rx = np.array([[1, 0, 0], [0, np.cos(roll), np.sin(roll)],
+                   [0, -np.sin(roll), np.cos(roll)]])
+    Ry = np.array([[np.cos(pitch), 0, -np.sin(pitch)], [0, 1, 0],
+                   [np.sin(pitch), 0, np.cos(pitch)]])
+    Rz = np.array([[np.cos(yaw), np.sin(yaw), 0],
+                   [-np.sin(yaw), np.cos(yaw), 0], [0, 0, 1]])
     return Rz@Ry@Rx
 
 
