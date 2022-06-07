@@ -92,6 +92,46 @@ def angle_between(v1, v2, vi=None):
     return np.arccos(np.clip(a, -1.0, 1.0))
 
 
+def rotation_euler(gamma=0, beta=0, alpha=0):
+    """Matrix rotating by Yaw (around z), pitch (around y), roll (around x).
+    See https://mathworld.wolfram.com/RotationMatrix.html
+    """
+    Rx = np.array([[1, 0, 0], [0, np.cos(alpha), np.sin(alpha)],
+                   [0, -np.sin(alpha), np.cos(alpha)]])
+    Ry = np.array([[np.cos(beta), 0, -np.sin(beta)], [0, 1, 0],
+                   [np.sin(beta), 0, np.cos(beta)]])
+    Rz = np.array([[np.cos(gamma), np.sin(gamma), 0],
+                   [-np.sin(gamma), np.cos(gamma), 0], [0, 0, 1]])
+    return Rz@Ry@Rx
+
+
+def rotation_rodrigues(k, theta):
+    """Matrix rotating around axis defined by unit vector k, by angle theta.
+    See https://mathworld.wolfram.com/RodriguesRotationFormula.html
+    """
+    assert(len(k) == 3)
+    if theta > 10e-10:
+        k = k / np.linalg.norm(k)
+        K = np.array([[0, -k[2], k[1]], [k[2], 0, -k[0]], [-k[1], k[0], 0]])
+        R = np.eye(3) + np.sin(theta)*K + (1-np.cos(theta)) * K@K
+    else :
+        R = np.eye(3)
+    return R
+
+
+def rotation_vecvec(f, t):
+    """Matrix rotating from vector f to vector t, forces unit length."""
+    assert(len(f) == 3)
+    assert(len(t) == 3)
+    f = f / np.linalg.norm(f)
+    t = t / np.linalg.norm(t)
+    k = np.cross(f,t)
+    if (np.linalg.norm(k) < 10e-15):
+        raise ValueError("Can not find rotation axis (axis flip?).")
+    R = rotation_rodrigues(k, np.arccos(np.dot(f,t)))
+    return R
+
+
 def haversine(azi1, colat1, azi2, colat2, r=1):
     """Calculate the spherical distance between two points on the sphere.
     The spherical distance is central angle for r=1.
