@@ -5,8 +5,6 @@ pytest
 
 Test algorithms.
 """
-import os
-import sys
 import pytest
 
 import numpy as np
@@ -14,12 +12,10 @@ from numpy.testing import assert_allclose
 
 import spaudiopy as spa
 
-#current_file_dir = os.path.dirname(__file__)
-#sys.path.insert(0, os.path.abspath(os.path.join(
-#                current_file_dir, '..')))
 
 # SH Order
 N_SPHS = [1, 3, 5]  # higher orders might need more tolerance
+
 
 @pytest.mark.parametrize('test_n_sph', N_SPHS)
 def test_spat_filter_bank(test_n_sph):
@@ -39,3 +35,15 @@ def test_spat_filter_bank(test_n_sph):
     # Perfect Reconstruction
     assert_allclose(in_nm, out_nm)
 
+
+@pytest.mark.parametrize('test_n_sph', N_SPHS)
+def test_calculate_grid_weights(test_n_sph):
+    N_sph = test_n_sph
+    vecs = spa.grids.load_t_design(degree=2*N_sph)
+    azi, zen, _ = spa.utils.cart2sph(*vecs.T)
+
+    q_weights_t = spa.grids.calculate_grid_weights(azi, zen)
+    q_weights = 4*np.pi / len(q_weights_t) * np.ones_like(q_weights_t)
+
+    # Perfect Reconstruction
+    assert_allclose(q_weights_t, q_weights)

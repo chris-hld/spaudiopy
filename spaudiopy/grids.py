@@ -16,19 +16,50 @@ import os
 import numpy as np
 from warnings import warn
 from scipy.io import loadmat
-from . import utils
+from . import sph
+
+
+def calculate_grid_weights(azi, zen, order=None):
+    """Approximate quadrature weights by pseudo-inverse.
+
+    Parameters
+    ----------
+    azi : (Q,) array_like
+        Azimuth.
+    zen : (Q,) array_like
+        Zenith / Colatitude.
+    order : int, optional
+        Supported order N, searched if not provided.
+
+    Returns
+    -------
+    weights : (Q,) array_like
+        Grid / Quadrature weights.
+
+    References
+    ----------
+    Fornberg, B., & Martel, J. M. (2014). On spherical harmonics based
+    numerical quadrature over the surface of a sphere.
+    Advances in Computational Mathematics.
+
+    """
+    if order is None:  # search for max supported SHT order
+        for itOrder in range(1, 100):
+            cond = sph.check_cond_sht(itOrder, azi, zen, 'real', np.inf)
+            if cond > 2*(itOrder+1):  # experimental condition
+                order = itOrder-1
+                break
+    assert(order > 0)
+    Y = sph.sh_matrix(order, azi, zen, 'real')
+    P_leftinv = np.linalg.pinv(Y)
+    weights = np.sqrt(4*np.pi) * P_leftinv[0, :]
+    if (np.abs(np.sum(weights) - 4*np.pi) > 0.01) or np.any(weights < 0):
+        warn('Could not calculate weights')
+    return weights
 
 
 def load_t_design(degree):
     """Return the unit coordinates of minimal T-designs.
-
-    The designs have been copied from:
-    http://neilsloane.com/sphdesigns/
-    and should be referenced as:
-
-        "McLaren's Improved Snub Cube and Other New Spherical Designs in
-        Three Dimensions", R. H. Hardin and N. J. A. Sloane, Discrete and
-        Computational Geometry, 15 (1996), pp. 429-441.
 
     Parameters
     ----------
@@ -43,6 +74,16 @@ def load_t_design(degree):
     Notes
     -----
     Degree must be >= 2 * SH_order for spherical harmonic transform (SHT).
+
+    References
+    ----------
+    The designs have been copied from:
+    http://neilsloane.com/sphdesigns/
+    and should be referenced as:
+
+        "McLaren's Improved Snub Cube and Other New Spherical Designs in
+        Three Dimensions", R. H. Hardin and N. J. A. Sloane, Discrete and
+        Computational Geometry, 15 (1996), pp. 429-441.
 
     Examples
     --------
@@ -74,9 +115,6 @@ def load_n_design(degree):
     (Chebyshev-type quadrature rules). Seem to be equivalent but more
     modern t-designs.
 
-    The designs have been copied from:
-    https://homepage.univie.ac.at/manuel.graef/quadrature.php
-
     Parameters
     ----------
     degree : int
@@ -86,6 +124,11 @@ def load_n_design(degree):
     -------
     vecs : (M, 3) numpy.ndarray
         Coordinates of points.
+
+    References
+    ----------
+    The designs have been copied from:
+    https://homepage.univie.ac.at/manuel.graef/quadrature.php
 
     Examples
     --------
@@ -116,9 +159,6 @@ def load_n_design(degree):
 def load_lebedev(degree):
     """Return the unit coordinates of Lebedev grid.
 
-    The designs have been copied from:
-    https://people.sc.fsu.edu/~jburkardt/datasets/sphere_lebedev_rule/sphere_lebedev_rule.html
-
     Parameters
     ----------
     degree : int
@@ -130,6 +170,11 @@ def load_lebedev(degree):
         Coordinates of points.
     weights : array_like
         Quadrature weights.
+
+    References
+    ----------
+    The designs have been copied from:
+    https://people.sc.fsu.edu/~jburkardt/datasets/sphere_lebedev_rule/sphere_lebedev_rule.html
 
     Examples
     --------
@@ -164,14 +209,6 @@ def load_lebedev(degree):
 def load_Fliege_Maier_nodes(grid_order):
     """Return Fliege-Maier grid nodes with associated weights.
 
-    The designs have been copied from:
-    http://www.personal.soton.ac.uk/jf1w07/nodes/nodes.html
-    and should be referenced as:
-
-        "A two-stage approach for computing cubature formulae for the sphere.",
-        Jorg Fliege and Ulrike Maier, Mathematik 139T, Universitat Dortmund,
-        Fachbereich Mathematik, Universitat Dortmund, 44221. 1996.
-
     Parameters
     ----------
     grid_order : int
@@ -183,6 +220,16 @@ def load_Fliege_Maier_nodes(grid_order):
         Coordinates of points.
     weights : array_like
         Quadrature weights.
+
+    References
+    ----------
+    The designs have been copied from:
+    http://www.personal.soton.ac.uk/jf1w07/nodes/nodes.html
+    and should be referenced as:
+
+        "A two-stage approach for computing cubature formulae for the sphere.",
+        Jorg Fliege and Ulrike Maier, Mathematik 139T, Universitat Dortmund,
+        Fachbereich Mathematik, Universitat Dortmund, 44221. 1996.
 
     Examples
     --------
@@ -212,9 +259,6 @@ def load_Fliege_Maier_nodes(grid_order):
 def load_maxDet(degree):
     """Return Maximum Determinant (Fekete, Extremal) points on the sphere.
 
-    The designs have been copied from:
-    https://web.maths.unsw.edu.au/~rsw/Sphere/MaxDet/
-
     Parameters
     ----------
     degree : int
@@ -226,6 +270,11 @@ def load_maxDet(degree):
         Coordinates of points.
     weights : array_like
         Quadrature weights.
+
+    References
+    ----------
+    The designs have been copied from:
+    https://web.maths.unsw.edu.au/~rsw/Sphere/MaxDet/
 
     Examples
     --------
@@ -260,8 +309,6 @@ def load_maxDet(degree):
 def equal_angle(n):
     """Equi-angular sampling points on a sphere.
 
-    According to (cf. Rafaely book, sec.3.2)
-
     Parameters
     ----------
     n : int
@@ -275,6 +322,10 @@ def equal_angle(n):
         Colatitude.
     weights : array_like
         Quadrature weights.
+
+    References
+    ----------
+    Rafaely, B. (2015). Fundamentals of Spherical Array Processing., sec.3.2
 
     Examples
     --------
@@ -304,8 +355,6 @@ def equal_angle(n):
 def gauss(n):
     """Gauss-Legendre sampling points on sphere.
 
-    According to (cf. Rafaely book, sec.3.3)
-
     Parameters
     ----------
     n : int
@@ -319,6 +368,10 @@ def gauss(n):
         Colatitude.
     weights : array_like
         Quadrature weights.
+
+    References
+    ----------
+    Rafaely, B. (2015). Fundamentals of Spherical Array Processing., sec.3.3
 
     Examples
     --------

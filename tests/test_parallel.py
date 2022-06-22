@@ -5,8 +5,6 @@ pytest
 
 Test parallel computing.
 """
-import os
-import sys
 import pytest
 
 import numpy as np
@@ -14,11 +12,9 @@ from numpy.testing import assert_allclose
 
 import spaudiopy as spa
 
-#current_file_dir = os.path.dirname(__file__)
-#sys.path.insert(0, os.path.abspath(os.path.join(
-#                current_file_dir, '..')))
 
 JOB_COUNTS = [1, 2, None]
+
 
 @pytest.mark.parametrize('test_jobs', JOB_COUNTS)
 def test_pseudo_intensity(test_jobs):
@@ -91,4 +87,3 @@ def test_resample_hrirs(test_jobs):
                                                                  test_jobs)
     assert_allclose([hrir_l_rsmp_t, hrir_r_rsmp_t],
                     [hrir_l_rsmp_r, hrir_r_rsmp_r])
-

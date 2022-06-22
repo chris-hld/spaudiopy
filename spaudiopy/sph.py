@@ -235,45 +235,6 @@ def check_cond_sht(N, azi, colat, SH_type, lim=None):
     return c
 
 
-def calculate_grid_weights(azi, zen, order=None):
-    """Approximate quadrature weights by pseudo-inverse.
-    
-    Parameters
-    ----------
-    azi : (Q,) array_like
-        Azimuth.
-    zen : (Q,) array_like
-        Zenith / Colatitude.
-    order : int, optional
-        Supported order N, searched if not provided.
-    
-    Returns
-    -------
-    weights : (Q,) array_like
-        Grid / Quadrature weights.
-    
-    References
-    ---------
-    Fornberg, B., & Martel, J. M. (2014). On spherical harmonics based 
-    numerical quadrature over the surface of a sphere. 
-    Advances in Computational Mathematics.
-
-    """
-    if order is None:  # search for max supported SHT order
-        for itOrder in range(1,100):
-            cond =  check_cond_sht(itOrder, azi, zen, 'real', np.inf)
-            if cond > 2*(itOrder+1):  # experimental condition
-                order = itOrder-1
-                break
-    assert(order>0)
-    Y = sh_matrix(order, azi, zen, 'real')
-    P_leftinv = np.linalg.pinv(Y)
-    weights = np.sqrt(4*np.pi) * P_leftinv[0, :]
-    if (np.abs(np.sum(weights) - 4*np.pi) > 0.01) or np.any(weights < 0):
-        print('Could not calculate weights')
-    return weights
-
-
 def n3d_to_sn3d(F_nm, sh_axis=0):
     """Convert N3D (orthonormal) to SN3D (Schmidt semi-normalized) signals.
 
