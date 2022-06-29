@@ -134,14 +134,14 @@ def resample_spectrum(single_spec, fs_current, fs_target, axis=-1):
     return np.squeeze(single_spec_resamp)
 
 
-def ilds_from_hrirs(hrirs, f_cut=1000, INDB=True):
-    """Calculate ILDs from HRIRs by high-passed broad-band RMS.
+def ilds_from_hrirs(hrirs, f_cut=(1e3, 20e3), INDB=True):
+    """Calculate ILDs from HRIRs by high/band-passed broad-band RMS.
 
     Parameters
     ----------
     hrirs : sig.HRIRs
-    f_cut : float, optional
-        Low-pass cutoff frequency. The default is 1000.
+    f_cut : float (2,), optional
+        Band-pass cutoff frequencies. The default is (1000, 20000).
 
     Returns
     -------
@@ -152,7 +152,7 @@ def ilds_from_hrirs(hrirs, f_cut=1000, INDB=True):
     """
     assert(isinstance(hrirs, sig.HRIRs))
     fs = hrirs.fs
-    sos = signal.butter(2, f_cut, 'high', fs=fs, output='sos')
+    sos = signal.butter(2, f_cut, 'bandpass', fs=fs, output='sos')
 
     hrirs_l_f = signal.sosfiltfilt(sos, hrirs.left, axis=-1)
     hrirs_r_f = signal.sosfiltfilt(sos, hrirs.right, axis=-1)
@@ -167,14 +167,14 @@ def ilds_from_hrirs(hrirs, f_cut=1000, INDB=True):
     return rms_diff
 
 
-def itds_from_hrirs(hrirs, f_cut=1000, upsample=4):
+def itds_from_hrirs(hrirs, f_cut=(100, 1e3), upsample=4):
     """Calculate ITDs from HRIRs by upsampled and filtered cross-correlation.
 
     Parameters
     ----------
     hrirs : sig.HRIRs
-    f_cut : float, optional
-        Low-pass cutoff frequency. The default is 1000.
+    f_cut : float (2,), optional
+        Band-pass cutoff frequencies. The default is (100, 1000).
     upsample : int, optional
         Upsampling factor. The default is 8.
 
@@ -186,7 +186,7 @@ def itds_from_hrirs(hrirs, f_cut=1000, upsample=4):
     """
     assert(isinstance(hrirs, sig.HRIRs))
     fs = hrirs.fs
-    sos = signal.butter(2, f_cut, 'low', fs=fs, output='sos')
+    sos = signal.butter(2, f_cut, 'bandpass', fs=fs, output='sos')
 
     hrirs_l_us, hrirs_r_us, _ = resample_hrirs(hrirs.left, hrirs.right,
                                                hrirs.fs, upsample*hrirs.fs)
