@@ -949,8 +949,8 @@ def doa(azi, colat, fs, p=None, size=250):
         pass
 
 
-def hrir_ild_itd(hrirs, plevels=50, pclims=(None,None), title=None, fig=None):
-    """Plot HRIR ILDs and ITDs.
+def hrirs_ild_itd(hrirs, plevels=50, pclims=(None,None), title=None, fig=None):
+    """Plot ILDs and ITDs of HRIRs.
 
     Parameters
     ----------
