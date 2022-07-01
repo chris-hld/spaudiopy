@@ -167,41 +167,46 @@ def ilds_from_hrirs(hrirs, f_cut=(1e3, 20e3), INDB=True):
     return rms_diff
 
 
-def itds_from_hrirs(hrirs, f_cut=(100, 1e3), upsample=4):
-    """Calculate ITDs from HRIRs by upsampled and filtered cross-correlation.
+def itds_from_hrirs(hrirs, f_cut=(100, 1.5e3), upsample=4):
+    """Calculate ITDs from HRIRs inter-aural cross-correlation (IACC).
+
+    The method calculates IACC on energy of upsampled, filtered HRIRs.
 
     Parameters
     ----------
     hrirs : sig.HRIRs
     f_cut : float (2,), optional
-        Band-pass cutoff frequencies. The default is (100, 1000).
+        Band-pass cutoff frequencies. The default is (100, 1500).
     upsample : int, optional
-        Upsampling factor. The default is 8.
+        Upsampling factor. The default is 4.
 
     Returns
     -------
     itd : array_like
         ITD in seconds per grid point, positive value indicates left ear first.
+    
+    References
+    ----------
+    Andreopoulou, A., & Katz, B. F. G. (2017). Identification of perceptually 
+    relevant methods of inter-aural time difference estimation. JASA.
 
     """
     assert(isinstance(hrirs, sig.HRIRs))
-    fs = hrirs.fs
-    sos = signal.butter(2, f_cut, 'bandpass', fs=fs, output='sos')
-
+    fs_rs = upsample*hrirs.fs
     hrirs_l_us, hrirs_r_us, _ = resample_hrirs(hrirs.left, hrirs.right,
-                                               hrirs.fs, upsample*hrirs.fs)
-
+                                               hrirs.fs, fs_rs)
+    sos = signal.butter(2, f_cut, 'bandpass', fs=fs_rs, output='sos')
     hrirs_l_us = signal.sosfiltfilt(sos, hrirs_l_us, axis=-1)
     hrirs_r_us = signal.sosfiltfilt(sos, hrirs_r_us, axis=-1)
 
     maxidx = np.zeros(hrirs.grid_points)
     for idx, hrirs_dir in enumerate(zip(hrirs_l_us, hrirs_r_us)):
-        maxidx[idx] = np.argmax(np.correlate(hrirs_dir[0], hrirs_dir[1],
+        maxidx[idx] = np.argmax(np.correlate(hrirs_dir[0]**2, hrirs_dir[1]**2,
                                              mode='same'))
     maxidx -= hrirs_l_us.shape[1]//2
     # alternative
     # maxidx = np.argmax(hrirs_l_us, axis=-1) - np.argmax(hrirs_r_us, axis=-1)
-    itd = -maxidx / (upsample*fs)
+    itd = -maxidx / fs_rs
     return itd
 
 
