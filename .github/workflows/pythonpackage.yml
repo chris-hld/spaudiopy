@@ -53,4 +53,4 @@ jobs:
         python -c 'import spaudiopy; print(spaudiopy.__version__)'
     - name: Test with pytest
       run: |
-        pytest -v --durations=0
+        pytest -v --durations=0 --log-cli-level=INFO

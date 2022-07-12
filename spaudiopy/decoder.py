@@ -22,6 +22,7 @@ import copy
 import multiprocessing
 from itertools import repeat
 from warnings import warn
+import logging
 
 import numpy as np
 import scipy.spatial as scyspat
@@ -190,7 +191,7 @@ class LoudspeakerSetup:
         """
         self.characteristic_order = self.get_characteristic_order()
         if N_kernel is None:
-            print('Setting Ambisonics order =', self.characteristic_order)
+            warn('Setting setup kernel order =', self.characteristic_order)
             N_kernel = self.characteristic_order
         if(not update_hull and imaginary_ls is not None):
             warn('Not updating hull but imaginary_ls position given.')
@@ -621,7 +622,7 @@ def vbap(src, hull, norm=2, valid_simplices=None, retain_outside=False,
                     gains[src_idx, valid_simplices[face_idx]] = projection
                     break  # found valid gains
     else:
-        warn("Using %i processes..." % jobs_count)
+        logging.info("Using %i processes..." % jobs_count)
         # preparation
         shared_array_shape = np.shape(gains)
         _arr_base = _create_shared_array(shared_array_shape)

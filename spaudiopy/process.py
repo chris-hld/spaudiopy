@@ -24,6 +24,7 @@ import pickle
 from scipy import signal
 from joblib import Memory
 import multiprocessing
+import logging
 
 from . import utils
 from . import sph
@@ -71,7 +72,7 @@ def resample_hrirs(hrir_l, hrir_r, fs_hrir, fs_target, jobs_count=None):
         hrir_l_resampled = resampy.resample(hrir_l, fs_hrir, fs_target, axis=1)
         hrir_r_resampled = resampy.resample(hrir_r, fs_hrir, fs_target, axis=1)
     elif jobs_count > 1:
-        print("Using %i processes..." % jobs_count)
+        logging.info("Using %i processes..." % jobs_count)
         with multiprocessing.Pool(processes=jobs_count) as pool:
             results = pool.starmap(resampy.resample,
                                    map(lambda x: (x, fs_hrir, fs_target),
