@@ -50,7 +50,7 @@ jobs:
         echo "backend : TkAgg" > ~/.matplotlib/matplotlibrc
     - name: Import package
       run: |
-        python -c 'import spaudiopy; print(spaudiopy.__version__)'
+        python -c 'import spaudiopy; print("spaudio v:", spaudiopy.__version__)'
     - name: Test with pytest
       run: |
         pytest -v --durations=0 --log-cli-level=INFO
