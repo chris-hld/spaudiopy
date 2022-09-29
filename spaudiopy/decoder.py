@@ -74,6 +74,9 @@ class LoudspeakerSetup:
 
         # amplitude decay exponent
         self.a = 1
+        
+        # Loudspeaker static gains
+        self.ls_gains = np.ones(len(self.d))  # Available, but not used, yet
 
         # Triangulation of points
         self._hull = get_hull(self.x, self.y, self.z)

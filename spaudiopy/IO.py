@@ -507,12 +507,10 @@ def load_layout(filename, listener_position=None, N_kernel=50):
     r = np.array([ls['Radius'] for ls in ls_data])
     try:
         # not actually used, yet
-        gain = np.array([ls['Gain'] for ls in ls_data])
-        if np.any(gain != 1.):
-            warn('Additional gain handling not implemented.')
+        ls_gains = np.array([ls['Gain'] for ls in ls_data])
     except KeyError as e:
-        warn('KeyError : {}, will return empty!'.format(e))
-        gain = []
+        warn('KeyError : {}, will return unit gain!'.format(e))
+        ls_gains = np.ones_like(azi)
     try:
         isImaginary = np.array([ls['IsImaginary'] for ls in ls_data])
     except KeyError as e:
@@ -526,6 +524,7 @@ def load_layout(filename, listener_position=None, N_kernel=50):
 
     ls_layout = decoder.LoudspeakerSetup(ls_x, ls_y, ls_z,
                                          listener_position=listener_position)
+    ls_layout.ls_gains = ls_gains
     # then add imaginary loudspeakers to ambisonics setup
     imag_x, imag_y, imag_z = utils.sph2cart(utils.deg2rad(azi[isImaginary]),
                                             utils.deg2rad(90-ele[isImaginary]),
@@ -563,7 +562,8 @@ def save_layout(filename, ls_layout, name='unknown', description='unknown'):
                                     ls_layout.ambisonics_hull.imaginary_ls_idx)
         ls_dict['Channel'] = ls_idx + 1
         ls_dict['Gain'] = 0. if ls_idx in np.asarray(
-                            ls_layout.ambisonics_hull.imaginary_ls_idx) else 1.
+                            ls_layout.ambisonics_hull.imaginary_ls_idx) else \
+                            ls_layout.ls_gains[ls_idx]
         out_data['LoudspeakerLayout']['Loudspeakers'].append(ls_dict)
 
     with open(os.path.expanduser(filename), 'w') as outfile:
