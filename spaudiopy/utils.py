@@ -83,6 +83,7 @@ def vecs2dirs(vecs, positive_azi=True):
 def angle_between(v1, v2, vi=None):
     """Angle between point v1 and v2(s) with initial point vi."""
     v1 = asarray_1d(v1)
+    v2 = np.asarray(v2)
     if vi is not None:
         v1 = v1 - vi
         v2 = v2 - vi
