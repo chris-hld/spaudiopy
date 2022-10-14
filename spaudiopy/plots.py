@@ -210,7 +210,7 @@ def spherical_function(f, azi, colat, title=None, fig=None):
 
     if fig is None:
         fig = plt.figure(constrained_layout=True)
-    ax = fig.gca(projection='3d')
+    ax = plt.axes(fig, projection='3d')
     ax.view_init(25, 230)
 
     p_tri = ax.plot_trisurf(x, y, z,
@@ -283,7 +283,7 @@ def sh_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None,
 
     if fig is None:
         fig = plt.figure(constrained_layout=True)
-    ax = fig.gca(projection='3d')
+    ax = plt.axes(fig, projection='3d')
     ax.view_init(25, 230)
 
     m = cm.ScalarMappable(cmap=cm.hsv,
@@ -341,7 +341,7 @@ def sh_coeffs_overlay(F_nm_list, SH_type=None, azi_steps=5, el_steps=3,
 
     if fig is None:
         fig = plt.figure(constrained_layout=True)
-    ax = fig.gca(projection='3d')
+    ax = plt.axes(fig, projection='3d')
     ax.view_init(25, 230)
 
     # m = cm.ScalarMappable(cmap=cm.hsv,
@@ -523,7 +523,7 @@ def sh_rms_map(F_nm, INDB=False, w_n=None, SH_type=None, azi_steps=5,
     
     if fig is None:
         fig = plt.figure(constrained_layout=True)
-    ax = fig.gca()
+    ax = plt.axes(fig)
     ax.set_aspect('equal')
 
     p = ax.pcolormesh(azi_plot, zen_plot, np.reshape(rms_d, azi_plot.shape))
@@ -616,7 +616,7 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, draw_ls=True,
 
     if fig is None:
         fig = plt.figure(constrained_layout=True)
-    ax = fig.gca(projection='3d')
+    ax = plt.axes(fig, projection='3d')
     ax.view_init(25, 230)
 
     # valid
@@ -666,7 +666,7 @@ def hull_normals(hull, plot_face_normals=True, plot_vertex_normals=True):
     z = hull.points[:, 2]
 
     fig = plt.figure(constrained_layout=True)
-    ax = fig.gca(projection='3d')
+    ax = plt.axes(fig, projection='3d')
     ax.view_init(25, 230)
     ax.plot_trisurf(x, y, z,
                     triangles=hull.simplices,
@@ -722,7 +722,7 @@ def polar(theta, r, INDB=True, rlim=None, title=None, ax=None):
     """
     if ax is None:
         fig = plt.figure()
-        ax = fig.gca(projection='polar')
+        ax = plt.axes(fig, projection='polar')
     # Split in pos and neg part and set rest NaN for plots
     rpos = np.copy(r)
     rpos[r < 0] = np.nan
