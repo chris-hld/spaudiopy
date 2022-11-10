@@ -105,7 +105,7 @@ def save_audio(signal, filename, fs=None, subtype='FLOAT'):
     sf.write(os.path.expanduser(filename), data, data_fs, subtype=subtype)
 
 
-def load_hrirs(fs, filename=None):
+def load_hrirs(fs, filename=None, jobs_count=None):
     """Convenience function to load 'HRIRs.mat'.
     The file contains ['hrir_l', 'hrir_r', 'fs', 'azi', 'colat'].
 
@@ -115,6 +115,8 @@ def load_hrirs(fs, filename=None):
         fs(t).
     filename : string, optional
         HRTF.mat file or default set, or 'dummy' for debugging.
+    jobs_count : int or None, optional
+        Number of parallel jobs for resample_hrirs() in get_default_hrirs(), 'None' employs 'cpu_count'.
 
     Returns
     -------
@@ -152,7 +154,7 @@ def load_hrirs(fs, filename=None):
             mat = loadmat(filename)
         except FileNotFoundError:
             warn("No default hrirs. Generating them...")
-            get_default_hrirs()
+            get_default_hrirs(jobs_count=jobs_count)
             mat = loadmat(filename)
     else:
         mat = loadmat(os.path.expanduser(filename))
@@ -174,7 +176,7 @@ def load_hrirs(fs, filename=None):
     return HRIRs
 
 
-def get_default_hrirs(grid_azi=None, grid_colat=None):
+def get_default_hrirs(grid_azi=None, grid_colat=None, jobs_count=None):
     """Creates the default HRIRs loaded by load_hrirs() by inverse SHT.
     By default it renders onto a gauss grid of order N=35, and additionally
     resamples fs to 48kHz.
@@ -183,6 +185,8 @@ def get_default_hrirs(grid_azi=None, grid_colat=None):
     ----------
     grid_azi : array_like, optional
     grid_colat : array_like, optional
+    jobs_count : int or None, optional
+        Number of parallel jobs for resample_hrirs(), 'None' employs 'cpu_count'.
 
     Notes
     -----
@@ -232,11 +236,13 @@ def get_default_hrirs(grid_azi=None, grid_colat=None):
     fs_target = 48000
     hrir_l_48k, hrir_r_48k, _ = process.resample_hrirs(hrir_l, hrir_r,
                                                        SamplingRate,
-                                                       fs_target)
+                                                       fs_target,
+                                                       jobs_count=jobs_count)
     fs_target = 96000
     hrir_l_96k, hrir_r_96k, _ = process.resample_hrirs(hrir_l, hrir_r,
                                                        SamplingRate,
-                                                       fs_target)
+                                                       fs_target,
+                                                       jobs_count=jobs_count)
 
     savemat(os.path.join(current_file_dir, '../data/HRIRs/'
                          'HRIRs_default_44100.mat'),
