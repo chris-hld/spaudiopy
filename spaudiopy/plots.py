@@ -93,7 +93,7 @@ def freq_resp(freq, amp, INDB=True, smoothing_n=None, xlim=(20, 24000),
 
     if INDB:
         # Avoid zeros in spec for dB
-        amp = [utils.db(np.clip(a, 10e-15, None)) for a in amp]
+        amp = [utils.db(np.clip(np.abs(a), 10e-15, None)) for a in amp]
 
     if smoothing_n is not None:
         smoothed = []
