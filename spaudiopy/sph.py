@@ -188,7 +188,7 @@ def sht_lstsq(f, N, azi, colat, SH_type, Y_nm=None):
         f = f[:, np.newaxis]  # upgrade to handle 1D arrays
     if Y_nm is None:
         Y_nm = sh_matrix(N, azi, colat, SH_type)
-    return np.linalg.lstsq(Y_nm, f)[0]
+    return np.linalg.lstsq(Y_nm, f, rcond=None)[0]
 
 
 def inverse_sht(F_nm, azi, colat, SH_type, N=None, Y_nm=None):
