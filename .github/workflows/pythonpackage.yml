@@ -10,14 +10,14 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
+  build_job:
 
     name: Test on ${{ matrix.os }} with Python ${{ matrix.python-version }} 
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macOS-latest, windows-latest]
-        python-version: [3.8, 3.9]
+        python-version: [3.8, 3.9, 3.x]
 
     steps:
     - uses: actions/checkout@v2
@@ -54,3 +54,4 @@ jobs:
     - name: Test with pytest
       run: |
         pytest -v --durations=0 --log-cli-level=INFO
+
