@@ -106,7 +106,7 @@ plots.sh_coeffs(np.sqrt(2) * np.array([1, 0, 0, -1]), 'complex',
 # %%
 # Look at simple B format generator
 sig2 = np.ones(8)
-B = sph.src_to_B(sig2, np.pi / 4, np.pi / 4)
+B = sph.src_to_b(sig2, np.pi / 4, np.pi / 4)
 B_nm = sph.b_to_sh(B)
 plots.sh_coeffs(B_nm[:, 0], title="Sig 2 B")
 
