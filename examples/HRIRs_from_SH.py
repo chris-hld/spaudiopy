@@ -130,7 +130,7 @@ plots.freq_resp(freq, [np.fft.rfft(hrir_l_hp[plt_idx, :]),
 fs_target = 48000
 hrir_l_hp48k, hrir_r_hp48k, _ = process.resample_hrirs(hrir_l_hp, hrir_r_hp,
                                                        SamplingRate,
-                                                       fs_target)
+                                                       fs_target, jobs_count=1)
 print("Resampled HRIR:", hrir_l_hp48k.shape)
 freq = np.fft.rfftfreq(hrir_l_hp48k.shape[1], d=1. / SamplingRate)
 plots.freq_resp(freq, [np.fft.rfft(hrir_l_hp48k[plt_idx, :]),

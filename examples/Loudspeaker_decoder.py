@@ -123,7 +123,7 @@ plots.decoder_performance(ls_setup, 'ALLRAP2')
 
 # %% Binauralize
 fs = 44100
-hrirs = IO.load_hrirs(fs)
+hrirs = IO.load_hrirs(fs, jobs_count=1)
 
 l_vbap_ir, r_vbap_ir = ls_setup.binauralize(ls_setup.loudspeaker_signals(
                                             gains_vbap), fs)
