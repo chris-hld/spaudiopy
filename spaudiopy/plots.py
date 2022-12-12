@@ -23,6 +23,7 @@ from . import utils
 from . import sph
 from . import decoder
 from . import process
+from . import grids
 
 
 def spectrum(x, fs, ylim=None, scale_mag=False, **kwargs):
@@ -479,8 +480,8 @@ def sh_coeffs_subplot(F_nm_list, SH_type=None, azi_steps=5, el_steps=3, titles=N
     cbar.set_ticklabels([r'$-\pi$', r'$0$', r'$\pi$'])
 
 
-def sh_rms_map(F_nm, INDB=False, w_n=None, SH_type=None, azi_steps=5,
-               zen_steps=3, title=None, fig=None):
+def sh_rms_map(F_nm, INDB=False, w_n=None, SH_type=None, n_plot=50,
+               title=None, fig=None):
     """Plot spherical harmonic signal RMS as function on the sphere.
     Evaluates the maxDI beamformer, if w_n is None.
     
@@ -493,6 +494,8 @@ def sh_rms_map(F_nm, INDB=False, w_n=None, SH_type=None, azi_steps=5,
     w_n : array_like
         Modal weighting of beamformers that are evaluated on the grid.
     SH_type :  'complex' or 'real' spherical harmonics.
+    n_plot : int
+        Plotting precision (grid degree).
 
     Examples
     --------
@@ -504,13 +507,13 @@ def sh_rms_map(F_nm, INDB=False, w_n=None, SH_type=None, azi_steps=5,
     if SH_type is None:
         SH_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
     N_sph = int(np.sqrt(F_nm.shape[0]) - 1)
-    
-    azi_steps = np.deg2rad(azi_steps)
-    zen_steps = np.deg2rad(zen_steps)
-    azi_plot, zen_plot = np.meshgrid(np.arange(np.pi, -(np.pi + azi_steps),
-                                                 -azi_steps),
-                                       np.arange(10e-3, np.pi + zen_steps,
-                                                 zen_steps))
+
+    vp = grids.load_n_design(n_plot)
+    azi_plot, zen_plot, _ = utils.cart2sph(*vp.T)
+    azi_plot = np.concatenate((azi_plot,
+                               [np.pi, 0, -np.pi, np.pi, 0, -np.pi]))
+    zen_plot = np.concatenate((zen_plot,
+                               [0, 0, 0, np.pi, np.pi, np.pi]))
     
     Y_smp = sph.sh_matrix(N_sph, azi_plot.ravel(), zen_plot.ravel(), SH_type)
     if w_n is None:
@@ -527,7 +530,8 @@ def sh_rms_map(F_nm, INDB=False, w_n=None, SH_type=None, azi_steps=5,
     ax = fig.add_subplot()
     ax.set_aspect('equal')
 
-    p = ax.pcolormesh(azi_plot, zen_plot, np.reshape(rms_d, azi_plot.shape))
+    p = ax.tricontourf(azi_plot, zen_plot, rms_d, levels=100,
+                       vmin=0 if not INDB else None)
     ax.grid(True)
 
     ax.invert_xaxis()
