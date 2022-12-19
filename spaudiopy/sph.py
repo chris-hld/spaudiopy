@@ -209,7 +209,8 @@ def inverse_sht(F_nm, azi, colat, SH_type, N=None, Y_nm=None):
     f : (Q, S)
         The spherical function(S) evaluated at Q directions 'azi/colat'.
     """
-    assert(F_nm.ndim == 2)
+    if F_nm.ndim == 1:
+        F_nm = F_nm[:, np.newaxis]  # upgrade to handle 1D arrays
     if N is None:
         N = int(np.sqrt(F_nm.shape[0]) - 1)
     if Y_nm is None:
