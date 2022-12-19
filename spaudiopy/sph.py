@@ -24,11 +24,11 @@ from scipy import special as scyspecial
 from . import utils
 
 
-def sh_matrix(N, azi, colat, SH_type='complex', weights=None):
-    r"""Matrix of spherical harmonics up to order N for given angles.
+def sh_matrix(N, azi, colat, SH_type='complex'):
+    r"""Evaluates the spherical harmonics up to order N for given angles.
 
-    Computes a matrix of spherical harmonics up to order :math:`N`
-    for the given angles/grid.
+    Matrix returns spherical harmonics up to order :math:`N`
+    evaluated at the given angles/grid.
 
     .. math::
 
@@ -66,8 +66,6 @@ def sh_matrix(N, azi, colat, SH_type='complex', weights=None):
     colat : (Q,) array_like
         Colatitude.
     SH_type :  'complex' or 'real' spherical harmonics.
-    weights : (Q,) array_like, optional
-        Quadrature weights.
 
     Returns
     -------
@@ -85,8 +83,6 @@ def sh_matrix(N, azi, colat, SH_type='complex', weights=None):
         Q = 1
     else:
         Q = len(azi)
-    if weights is None:
-        weights = np.ones(Q)
     if SH_type == 'complex':
         Ymn = np.zeros([Q, (N+1)**2], dtype=np.complex_)
     elif SH_type == 'real':
@@ -98,17 +94,17 @@ def sh_matrix(N, azi, colat, SH_type='complex', weights=None):
     for n in range(N+1):
         for m in range(-n, n+1):
             if SH_type == 'complex':
-                Ymn[:, idx] = weights * scyspecial.sph_harm(m, n, azi, colat)
+                Ymn[:, idx] = scyspecial.sph_harm(m, n, azi, colat)
             elif SH_type == 'real':
                 if m == 0:
-                    Ymn[:, idx] = weights * np.real(
+                    Ymn[:, idx] = np.real(
                                   scyspecial.sph_harm(0, n, azi, colat))
                 if m < 0:
-                    Ymn[:, idx] = weights * np.sqrt(2) * (-1) ** abs(m) * \
+                    Ymn[:, idx] = np.sqrt(2) * (-1) ** abs(m) * \
                                   np.imag(
                                   scyspecial.sph_harm(abs(m), n, azi, colat))
                 if m > 0:
-                    Ymn[:, idx] = weights * np.sqrt(2) * (-1) ** abs(m) * \
+                    Ymn[:, idx] = np.sqrt(2) * (-1) ** abs(m) * \
                                   np.real(
                                   scyspecial.sph_harm(abs(m), n, azi, colat))
 
