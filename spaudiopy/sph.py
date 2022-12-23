@@ -21,7 +21,7 @@
 import numpy as np
 from scipy import special as scyspecial
 
-from . import utils
+from . import utils, grids
 
 
 def sh_matrix(N, azi, colat, SH_type='complex'):
@@ -1038,3 +1038,44 @@ def design_spat_filterbank(N_sph, sec_azi, sec_zen, c_n, SH_type, mode):
         raise ValueError("Mode not implemented: " + mode)
 
     return A, B
+
+
+def sh_mult(a_nm, b_nm, sh_type):
+    """Multiply SH vector a_nm and b_nm in (discrete) space.
+
+    Parameters
+    ----------
+    a_nm : ((N1+1)**2,), array_like
+        SH coefficients.
+    b_nm : ((N2+1)**2,), array_like
+        SH coefficients.
+    sh_type : 'real' or 'complex'
+
+    Returns
+    -------
+    c_nm : ((N1+N2+1)**2,), array_like
+        SH coefficients.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        spa.plots.sh_coeffs(4*spa.sph.sh_mult([1, 0, 1, 0], [0, 1, 0, 0],
+                                              'real'))
+
+    """
+    a_nm = np.asfarray(a_nm)
+    b_nm = np.asfarray(b_nm)
+    N1 = int(np.sqrt(len(a_nm)) - 1)
+    N2 = int(np.sqrt(len(a_nm)) - 1)
+    N_out = N1 + N2
+
+    # get discretization points
+    v = grids.load_t_design(2*N_out)
+    v_dirs = utils.vecs2dirs(v)
+
+    c_nm = sht(inverse_sht(a_nm, v_dirs[:, 0], v_dirs[:, 1], SH_type=sh_type) *
+               inverse_sht(b_nm, v_dirs[:, 0], v_dirs[:, 1], SH_type=sh_type),
+               N=N_out, azi=v_dirs[:, 0], colat=v_dirs[:, 1], SH_type=sh_type)
+    return c_nm
