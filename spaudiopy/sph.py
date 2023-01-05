@@ -1079,3 +1079,51 @@ def sh_mult(a_nm, b_nm, sh_type):
                inverse_sht(b_nm, v_dirs[:, 0], v_dirs[:, 1], SH_type=sh_type),
                N=N_out, azi=v_dirs[:, 0], colat=v_dirs[:, 1], SH_type=sh_type)
     return c_nm
+
+
+def eb_music(cov_x, numSrc, dirs_azi, dirs_zen):
+    """Eigenbeam Multiple Signal Classification (EB-MUSIC).
+
+    Parameters
+    ----------
+    cov_x : (L, L) numpy.2darray
+        Signal covariance.
+    numSrc : int
+        Number of sources.
+    dirs_azi : (g,) array_like
+    dirs_zen : (g,) array_like
+
+    Returns
+    -------
+    P_music : (g,) array_like
+        MUSIC (psuedo-) spectrum.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        N_sph = 3
+        numSrc = 3
+        x = spa.sph.src_to_sh(np.random.randn(numSrc, 1000),
+                              [np.pi/2, -np.pi/4, np.pi/3],
+                              [np.pi/3, np.pi/2, 2/3 * np.pi], N_sph)
+
+        X = x @ x.T
+        vecs, _ = spa.grids.load_maxDet(50)
+        dirs = spa.utils.vecs2dirs(vecs)
+        P_music = spa.sph.eb_music(X, numSrc, dirs[:,0], dirs[:,1])
+        spa.plots.spherical_function_map(P_music, dirs[:,0], dirs[:,1],
+                                        TODB=True, title="MUSIC spectrum")
+
+    """
+    assert(cov_x.shape[0] == cov_x.shape[1])
+    N_sph = int(np.sqrt(cov_x.shape[0]) - 1)
+    dirs_azi = utils.asarray_1d(dirs_azi)
+    dirs_zen = utils.asarray_1d(dirs_zen)
+    Y = sh_matrix(N_sph, dirs_azi, dirs_zen, SH_type='real')
+    _, v = np.linalg.eigh(cov_x)
+    Qn = v[:, :-numSrc]
+    a = (Qn.T @ Y.T)
+    P_music = 1/np.sum(a * a + 10e-12, 0)
+    return P_music
