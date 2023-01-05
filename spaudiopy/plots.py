@@ -558,6 +558,55 @@ def sh_rms_map(F_nm, INDB=False, w_n=None, SH_type=None, n_plot=50,
         ax.set_title(title)
 
 
+def spherical_function_map(f, azi, zen, TODB=False, title=None, fig=None):
+    """Plot function 1D vector f over azi and zen, can also convert to dB.
+    
+    Examples
+    --------
+    See :py:mod:`spaudiopy.sph.eb_music`
+
+    """
+    f = utils.asarray_1d(np.real_if_close(f))
+    azi = utils.asarray_1d(azi)
+    zen = utils.asarray_1d(zen)
+    azi[azi > np.pi] = azi[azi > np.pi] - 2* np.pi
+
+    if TODB:
+        f = utils.db(f)
+    
+    if fig is None:
+        fig = plt.figure(constrained_layout=True)
+
+    ax = fig.add_subplot()
+    ax.set_aspect('equal')
+
+    p = ax.scatter(azi, zen, c=f, alpha=0.8, edgecolor='none')
+    ax.grid(True)
+
+    ax.invert_xaxis()
+    ax.invert_yaxis()
+    ax.set_xticks(np.linspace(-np.pi, np.pi, 5))
+    ax.set_xticklabels([r'$-\pi$', r'$-\pi/2$', r'$0$',
+                        r'$\pi/2$', r'$\pi$'])
+    ax.set_yticks(np.linspace(0, np.pi, 3))
+    ax.set_yticklabels([r'$0$', r'$\pi/2$', r'$\pi$'])
+    ax.set_xlabel('Azimuth')
+    ax.set_ylabel('Zenith')
+
+    plt.axhline(y=np.pi/2, color='grey', linestyle=':')
+    plt.axvline(color='grey', linestyle=':')
+    
+    plt.xticks([np.pi, np.pi/2, 0, -np.pi/2, -np.pi], 
+               labels=[r"$\pi$", r"$\pi/2$", r"$0$", r"$-\pi/2$", r"$-\pi$"])
+    plt.yticks([0, np.pi/2, np.pi],
+               labels=[r"$0$", r"$\pi/2$", r"$\pi$", ])
+    
+    cb = plt.colorbar(p, ax=ax, shrink=0.5)
+    cb.set_label("in dB" if TODB else None)
+    if title is not None:
+        ax.set_title(title)
+
+
 def hull(hull, simplices=None, mark_invalid=True, title=None, draw_ls=True, 
          ax_lim=None, color=None, clim=None, fig=None):
     """Plot loudspeaker setup and valid simplices from its hull object.
