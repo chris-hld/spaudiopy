@@ -247,7 +247,7 @@ def spherical_function(f, azi, colat, title=None, fig=None):
         plt.title(title)
 
 
-def sh_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None,
+def sh_coeffs(F_nm, sh_type=None, azi_steps=5, el_steps=3, title=None,
               fig=None):
     """Plot spherical harmonics coefficients as function on the sphere.
     Evaluates the inverse SHT.
@@ -259,8 +259,8 @@ def sh_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None,
     """
     F_nm = utils.asarray_1d(F_nm)
     F_nm = F_nm[:, np.newaxis]
-    if SH_type is None:
-        SH_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
+    if sh_type is None:
+        sh_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
 
     phi_plot, theta_plot = np.meshgrid(np.linspace(0., 2 * np.pi,
                                                    int(360 / azi_steps)),
@@ -268,7 +268,7 @@ def sh_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None,
                                                    int(180 / el_steps)))
 
     f_plot = sph.inverse_sht(F_nm, phi_plot.ravel(), theta_plot.ravel(),
-                             SH_type)
+                             sh_type)
     f_r = np.abs(f_plot)
     f_ang = np.angle(f_plot)
 
@@ -318,7 +318,7 @@ def sh_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None,
         plt.title(title)
 
 
-def sh_coeffs_overlay(F_nm_list, SH_type=None, azi_steps=5, el_steps=3,
+def sh_coeffs_overlay(F_nm_list, sh_type=None, azi_steps=5, el_steps=3,
                       title=None, fig=None):
     """Overlay spherical harmonics coefficients plot.
 
@@ -348,10 +348,10 @@ def sh_coeffs_overlay(F_nm_list, SH_type=None, azi_steps=5, el_steps=3,
     for idx, F_nm in enumerate(F_nm_list):
         F_nm = utils.asarray_1d(F_nm)
         F_nm = F_nm[:, np.newaxis]
-        if SH_type is None:
-            SH_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
+        if sh_type is None:
+            sh_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
         f_plot = sph.inverse_sht(F_nm, phi_plot.ravel(), theta_plot.ravel(),
-                                 SH_type)
+                                 sh_type)
         f_r = np.abs(f_plot)
         f_ang = np.angle(f_plot)
 
@@ -393,7 +393,7 @@ def sh_coeffs_overlay(F_nm_list, SH_type=None, azi_steps=5, el_steps=3,
         plt.title(title)
 
 
-def sh_coeffs_subplot(F_nm_list, SH_type=None, azi_steps=5, el_steps=3,
+def sh_coeffs_subplot(F_nm_list, sh_type=None, azi_steps=5, el_steps=3,
                       titles=None, fig=None):
     """Plot spherical harmonics coefficients list as function on the sphere.
 
@@ -417,11 +417,11 @@ def sh_coeffs_subplot(F_nm_list, SH_type=None, azi_steps=5, el_steps=3,
     for idx_p, ax in enumerate(axs):
         F_nm = utils.asarray_1d(F_nm_list[idx_p])
         F_nm = F_nm[:, np.newaxis]
-        if SH_type is None:
-            SH_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
+        if sh_type is None:
+            sh_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
 
         f_plot = sph.inverse_sht(F_nm, phi_plot.ravel(), theta_plot.ravel(),
-                                 SH_type)
+                                 sh_type)
         f_r = np.abs(f_plot)
         f_ang = np.angle(f_plot)
 
@@ -471,7 +471,7 @@ def sh_coeffs_subplot(F_nm_list, SH_type=None, azi_steps=5, el_steps=3,
     cbar.set_ticklabels([r'$-\pi$', r'$0$', r'$\pi$'])
 
 
-def sh_rms_map(F_nm, TODB=False, w_n=None, SH_type=None, n_plot=50,
+def sh_rms_map(F_nm, TODB=False, w_n=None, sh_type=None, n_plot=50,
                title=None, fig=None):
     """Plot spherical harmonic signal RMS as function on the sphere.
     Evaluates the maxDI beamformer, if w_n is None.
@@ -484,7 +484,7 @@ def sh_rms_map(F_nm, TODB=False, w_n=None, SH_type=None, n_plot=50,
         Plot in dB.
     w_n : array_like
         Modal weighting of beamformers that are evaluated on the grid.
-    SH_type :  'complex' or 'real' spherical harmonics.
+    sh_type :  'complex' or 'real' spherical harmonics.
     n_plot : int
         Plotting precision (grid degree).
 
@@ -495,8 +495,8 @@ def sh_rms_map(F_nm, TODB=False, w_n=None, SH_type=None, n_plot=50,
     """
     F_nm = np.atleast_2d(F_nm)
     assert(F_nm.ndim == 2)
-    if SH_type is None:
-        SH_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
+    if sh_type is None:
+        sh_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
     N_sph = int(np.sqrt(F_nm.shape[0]) - 1)
 
     vp = grids.load_n_design(n_plot)
@@ -506,7 +506,7 @@ def sh_rms_map(F_nm, TODB=False, w_n=None, SH_type=None, n_plot=50,
     zen_plot = np.concatenate((zen_plot,
                                [0, 0, 0, np.pi, np.pi, np.pi]))
 
-    Y_smp = sph.sh_matrix(N_sph, azi_plot.ravel(), zen_plot.ravel(), SH_type)
+    Y_smp = sph.sh_matrix(N_sph, azi_plot.ravel(), zen_plot.ravel(), sh_type)
     if w_n is None:
         w_n = sph.hypercardioid_modal_weights(N_sph)
     f_d = Y_smp @ np.diag(sph.repeat_per_order(w_n)) @ F_nm
@@ -827,7 +827,7 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
         else:
             N_sph = hull.get_characteristic_order()
         Y_in = sph.sh_matrix(N_sph, phi_plot.flatten(), theta_plot.flatten(),
-                             SH_type='real').T
+                             sh_type='real').T
 
     # Switch renderer
     if renderer_type.lower() == 'vbap':

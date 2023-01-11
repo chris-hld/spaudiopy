@@ -801,12 +801,12 @@ def allrap(src, hull, N_sph=None, jobs_count=1):
     _s_azi, _s_colat, _s_r = utils.cart2sph(src[:, 0],
                                             src[:, 1],
                                             src[:, 2])
-    Y_s = sph.sh_matrix(N_sph, _s_azi, _s_colat, SH_type='real')
+    Y_s = sph.sh_matrix(N_sph, _s_azi, _s_colat, sh_type='real')
     # kernel
     _k_azi, _k_colat, _k_r = utils.cart2sph(kernel_hull.points[:, 0],
                                             kernel_hull.points[:, 1],
                                             kernel_hull.points[:, 2])
-    Y_k = sph.sh_matrix(N_sph, _k_azi, _k_colat, SH_type='real')
+    Y_k = sph.sh_matrix(N_sph, _k_azi, _k_colat, sh_type='real')
 
     # discretized (band-limited) ambisonic panning function
     G_bld = Y_s @ np.diag(a_nm) @ Y_k.T
@@ -890,12 +890,12 @@ def allrap2(src, hull, N_sph=None, jobs_count=1):
     _s_azi, _s_colat, _s_r = utils.cart2sph(src[:, 0],
                                             src[:, 1],
                                             src[:, 2])
-    Y_s = sph.sh_matrix(N_sph, _s_azi, _s_colat, SH_type='real')
+    Y_s = sph.sh_matrix(N_sph, _s_azi, _s_colat, sh_type='real')
     # kernel
     _k_azi, _k_colat, _k_r = utils.cart2sph(kernel_hull.points[:, 0],
                                             kernel_hull.points[:, 1],
                                             kernel_hull.points[:, 2])
-    Y_k = sph.sh_matrix(N_sph, _k_azi, _k_colat, SH_type='real')
+    Y_k = sph.sh_matrix(N_sph, _k_azi, _k_colat, sh_type='real')
 
     # discretized (band-limited) ambisonic panning function
     G_bld = Y_s @ np.diag(a_nm) @ Y_k.T
@@ -976,7 +976,7 @@ def allrad(F_nm, hull, N_sph=None, jobs_count=1):
                                             kernel_hull.points[:, 1],
                                             kernel_hull.points[:, 2])
     # band-limited Dirac
-    Y_bld = sph.sh_matrix(N_sph, _k_azi, _k_colat, SH_type='real')
+    Y_bld = sph.sh_matrix(N_sph, _k_azi, _k_colat, sh_type='real')
 
     # ALLRAD Decoder
     D = 4 * np.pi / J * G_k.T @ Y_bld
@@ -1055,7 +1055,7 @@ def allrad2(F_nm, hull, N_sph=None, jobs_count=1):
                                             kernel_hull.points[:, 1],
                                             kernel_hull.points[:, 2])
     # band-limited Dirac
-    Y_bld = sph.sh_matrix(N_sph, _k_azi, _k_colat, SH_type='real')
+    Y_bld = sph.sh_matrix(N_sph, _k_azi, _k_colat, sh_type='real')
 
     # ALLRAD2 Decoder
     D = 4 * np.pi / J * G_k.T @ Y_bld
@@ -1109,7 +1109,7 @@ def sad(F_nm, hull, N_sph=None):
     assert(N_sph_in >= N_sph)  # for now
 
     ls_azi, ls_colat, ls_r = utils.cart2sph(*hull.points.T)
-    Y_ls = sph.sh_matrix(N_sph, ls_azi, ls_colat, SH_type='real')
+    Y_ls = sph.sh_matrix(N_sph, ls_azi, ls_colat, sh_type='real')
 
     D = Y_ls
     D *= np.sqrt(4*np.pi / (N_sph+1)**2)
@@ -1163,7 +1163,7 @@ def mad(F_nm, hull, N_sph=None):
     assert(N_sph_in >= N_sph)  # for now
 
     ls_azi, ls_colat, ls_r = utils.cart2sph(*hull.points.T)
-    Y_ls = sph.sh_matrix(N_sph, ls_azi, ls_colat, SH_type='real')
+    Y_ls = sph.sh_matrix(N_sph, ls_azi, ls_colat, sh_type='real')
 
     D = (np.linalg.pinv(Y_ls)).T
     D *= np.sqrt(L / (N_sph+1)**2)  # Energy to unity (on t-design)
@@ -1231,7 +1231,7 @@ def epad(F_nm, hull, N_sph=None):
 
     # SVD of LS base
     ls_azi, ls_colat, ls_r = utils.cart2sph(*hull.points.T)
-    Y_ls = sph.sh_matrix(N_sph, ls_azi, ls_colat, SH_type='real')
+    Y_ls = sph.sh_matrix(N_sph, ls_azi, ls_colat, sh_type='real')
     U, S, VH = np.linalg.svd(Y_ls)
     # Set singular values to identity and truncate
     S_new = np.eye(L, (N_sph+1)**2)
