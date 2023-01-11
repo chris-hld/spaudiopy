@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Spatial Decomposition Method (SDM).
+"""Parametric Spatial Audio (PARSA).
 
 .. plot::
     :context: reset
@@ -12,8 +12,8 @@
 
 **Memory cached functions**
 
-.. autofunction:: spaudiopy.sdm.pseudo_intensity(ambi_b, win_len=33, f_bp=None, smoothing_order=5, jobs_count=1)
-.. autofunction:: spaudiopy.sdm.render_bsdm(sdm_p, sdm_phi, sdm_theta, hrirs, jobs_count=None)
+.. autofunction:: spaudiopy.parsa.pseudo_intensity(ambi_b, win_len=33, f_bp=None, smoothing_order=5, jobs_count=1)
+.. autofunction:: spaudiopy.parsa.render_bsdm(sdm_p, sdm_phi, sdm_theta, hrirs, jobs_count=None)
 
 """
 
@@ -250,7 +250,7 @@ def render_binaural_loudspeaker_sdm(sdm_p, ls_gains, ls_setup, fs,
     fs : int
     post_eq_func : None, 'default' or function
         Post EQ applied to the loudspeaker signals. 'default' calls
-        'sdm.post_equalization', 'None' disables (not recommended).
+        'parsa.post_equalization', 'None' disables (not recommended).
         You can also provide your custom post-eq-function with the signature
         `post_eq_func(ls_sigs, sdm_p, fs, ls_setup, **kwargs)`.
 

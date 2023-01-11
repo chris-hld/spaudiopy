@@ -12,7 +12,7 @@
    process
    utils
    grids
-   sdm
+   parsa
    plot
 
 """
@@ -37,7 +37,7 @@ from . import grids
 from . import io
 from . import plot
 from . import process
-from . import sdm
+from . import parsa
 from . import sph
 from . import sig
 from . import utils
