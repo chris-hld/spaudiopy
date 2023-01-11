@@ -15,7 +15,7 @@
                                  np.sqrt(4/3*np.pi) * np.array([0, 0, 1, 0]),
                                  np.sqrt(4/3*np.pi) * np.array([0, 0, 0, 1])],
                                 titles=["$Y_{0, 0}$", "$Y_{1, -1}$",
-                                       "$Y_{1, 0}$", "$Y_{1, 1}$"])
+                                        "$Y_{1, 0}$", "$Y_{1, 1}$"])
 """
 
 import numpy as np
@@ -25,7 +25,7 @@ from . import utils, grids
 
 
 def sh_matrix(N_sph, azi, colat, sh_type='complex'):
-    r"""Evaluates the spherical harmonics up to order N_sph for given angles.
+    r"""Evaluates the spherical harmonics up to order `N_sph` for given angles.
 
     Matrix returns spherical harmonics up to order :math:`N`
     evaluated at the given angles/grid.
