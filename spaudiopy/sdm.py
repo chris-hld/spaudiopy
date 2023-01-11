@@ -27,7 +27,6 @@ import multiprocessing
 
 from scipy import signal
 from . import utils
-from . import sig
 from . import process as pcs
 
 

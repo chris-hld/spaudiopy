@@ -26,9 +26,8 @@ from joblib import Memory
 import multiprocessing
 import logging
 
-from . import utils
-from . import sph
-from . import sig
+from . import utils, sph, sig
+
 
 # Prepare Caching
 cachedir = './.spa_cache_dir'

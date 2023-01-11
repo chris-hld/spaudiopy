@@ -27,7 +27,7 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
-from spaudiopy import utils, IO, sig, decoder, sph, plots, grids
+from spaudiopy import io, utils, sig, decoder, sph, plots, grids
 
 
 # %% User setup
@@ -57,7 +57,7 @@ elif setupname == "graz":
     aperture_limit = 90
     opening_limit = 135
     blacklist = None
-    ls_setup = IO.load_layout("../data/ls_layouts/Graz.json",
+    ls_setup = io.load_layout("../data/ls_layouts/Graz.json",
                               listener_position=listener_position)
     ls_setup.pop_triangles(normal_limit, aperture_limit, opening_limit,
                            blacklist)
@@ -123,7 +123,7 @@ plots.decoder_performance(ls_setup, 'ALLRAP2')
 
 # %% Binauralize
 fs = 44100
-hrirs = IO.load_hrirs(fs, jobs_count=1)
+hrirs = io.load_hrirs(fs, jobs_count=1)
 
 l_vbap_ir, r_vbap_ir = ls_setup.binauralize(ls_setup.loudspeaker_signals(
                                             gains_vbap), fs)
@@ -212,7 +212,7 @@ if LISTEN:
     plt.tight_layout()
 
 # Auralize with SSR-BRS renderer
-IO.write_ssr_brirs_loudspeaker('allrap_brirs.wav',
+io.write_ssr_brirs_loudspeaker('allrap_brirs.wav',
                                ls_setup.loudspeaker_signals(gains_allrap2),
                                ls_setup, fs)
 

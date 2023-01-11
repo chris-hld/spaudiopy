@@ -19,11 +19,7 @@ from matplotlib import cm, colors, tri
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 from scipy.spatial import ConvexHull
 
-from . import utils
-from . import sph
-from . import decoder
-from . import process
-from . import grids
+from . import utils, sph, decoder, process, grids
 
 
 def spectrum(x, fs, ylim=None, scale_mag=False, **kwargs):
