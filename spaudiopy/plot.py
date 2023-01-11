@@ -538,7 +538,7 @@ def sh_rms_map(F_nm, TODB=False, w_n=None, sh_type=None, n_plot=50,
     plt.axhline(y=np.pi/2, color='grey', linestyle=':')
     plt.axvline(color='grey', linestyle=':')
 
-    plt.xticks([np.pi, np.pi/2, 0, -np.pi/2, -np.pi], 
+    plt.xticks([np.pi, np.pi/2, 0, -np.pi/2, -np.pi],
                labels=[r"$\pi$", r"$\pi/2$", r"$0$", r"$-\pi/2$", r"$-\pi$"])
     plt.yticks([0, np.pi/2, np.pi],
                labels=[r"$0$", r"$\pi/2$", r"$\pi$", ])
@@ -560,7 +560,7 @@ def spherical_function_map(f, azi, zen, TODB=False, title=None, fig=None):
     f = utils.asarray_1d(np.real_if_close(f))
     azi = utils.asarray_1d(azi)
     zen = utils.asarray_1d(zen)
-    azi[azi > np.pi] = azi[azi > np.pi] - 2* np.pi
+    azi[azi > np.pi] = azi[azi > np.pi] - 2*np.pi
 
     if TODB:
         f = utils.db(f)
@@ -587,7 +587,7 @@ def spherical_function_map(f, azi, zen, TODB=False, title=None, fig=None):
     plt.axhline(y=np.pi/2, color='grey', linestyle=':')
     plt.axvline(color='grey', linestyle=':')
 
-    plt.xticks([np.pi, np.pi/2, 0, -np.pi/2, -np.pi], 
+    plt.xticks([np.pi, np.pi/2, 0, -np.pi/2, -np.pi],
                labels=[r"$\pi$", r"$\pi/2$", r"$0$", r"$-\pi/2$", r"$-\pi$"])
     plt.yticks([0, np.pi/2, np.pi],
                labels=[r"$0$", r"$\pi/2$", r"$\pi$", ])
@@ -598,7 +598,7 @@ def spherical_function_map(f, azi, zen, TODB=False, title=None, fig=None):
         ax.set_title(title)
 
 
-def hull(hull, simplices=None, mark_invalid=True, title=None, draw_ls=True, 
+def hull(hull, simplices=None, mark_invalid=True, title=None, draw_ls=True,
          ax_lim=None, color=None, clim=None, fig=None):
     """Plot loudspeaker setup and valid simplices from its hull object.
 
