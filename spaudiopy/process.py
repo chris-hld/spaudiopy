@@ -140,13 +140,14 @@ def ilds_from_hrirs(hrirs, f_cut=(1e3, 20e3), TODB=True):
     hrirs : sig.HRIRs
     f_cut : float (2,), optional
         Band-pass cutoff frequencies. The default is (1000, 20000).
+    TODB : bool, optional
+        ILD in dB RMS ratio, otherwise as RMS difference. The default is TRUE.
 
     Returns
     -------
     ild : array_like
         ILD per grid point, positive value indicates left ear louder.
-    TODB : bool, optional
-        ILD in dB RMS ratio, otherwise as RMS difference. The default is TRUE.
+
     """
     assert(isinstance(hrirs, sig.HRIRs))
     fs = hrirs.fs
@@ -185,7 +186,7 @@ def itds_from_hrirs(hrirs, f_cut=(100, 1.5e3), upsample=4):
 
     References
     ----------
-    Andreopoulou, A., & Katz, B. F. G. (2017). Identification of perceptually 
+    Andreopoulou, A., & Katz, B. F. G. (2017). Identification of perceptually
     relevant methods of inter-aural time difference estimation. JASA.
 
     """
