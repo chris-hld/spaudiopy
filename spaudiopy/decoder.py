@@ -14,7 +14,7 @@
     ls_dirs = np.array([[-80, -45, 0, 45, 80, -60, -30, 30, 60],
                         [0, 0, 0, 0, 0, 60, 60, 60, 60]])
     ls_x, ls_y, ls_z = spa.utils.sph2cart(spa.utils.deg2rad(ls_dirs[0, :]),
-                                          spa.utils.deg2rad(90 - ls_dirs[1, :]))
+                                          spa.utils.deg2rad(90-ls_dirs[1, :]))
 
 """
 
@@ -171,8 +171,8 @@ class LoudspeakerSetup:
                          imaginary_ls=None):
         """Prepare loudspeaker hull for ambisonic rendering.
         Sets the `kernel_hull` as an n-design of twice `N_kernel`,
-        and updates the ambisonic hull with an additional imaginary loudspeaker,
-        if desired.
+        and updates the ambisonic hull with an additional imaginary
+        loudspeaker, if desired.
 
         Parameters
         ----------
@@ -1335,7 +1335,8 @@ def magls_bin(hrirs, N_sph, f_trans=None, hf_cont='angle', hf_delay=(0, 0)):
     hf_cont : ['delay', 'avg', 'angle'], optional
         High Frequency phase continuation method . The default is 'angle'.
     hf_delay : (2,), optional
-        High frequency (additional) group delay in smpls. The default is (0, 0).
+        High frequency (additional) group delay in smpls.
+        The default is (0, 0).
 
     Raises
     ------

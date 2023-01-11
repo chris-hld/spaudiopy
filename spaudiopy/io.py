@@ -486,7 +486,7 @@ def write_ssr_brirs_sdm(filename, sdm_p, sdm_phi, sdm_theta, fs,
     for angle in range(0, 360):
         sdm_phi_rot = sdm_phi - np.deg2rad(angle)
         ir_l, ir_r = parsa.render_bsdm(sdm_p, sdm_phi_rot, sdm_theta,
-                                     hrirs=hrirs)
+                                       hrirs=hrirs)
         # left
         ssr_brirs[2 * angle, :] = ir_l
         # right
@@ -571,8 +571,8 @@ def save_layout(filename, ls_layout, name='unknown', description='unknown'):
                                     ls_layout.ambisonics_hull.imaginary_ls_idx)
         ls_dict['Channel'] = ls_idx + 1
         ls_dict['Gain'] = 0. if ls_idx in np.asarray(
-                            ls_layout.ambisonics_hull.imaginary_ls_idx) else \
-                            ls_layout.ls_gains[ls_idx]
+                           ls_layout.ambisonics_hull.imaginary_ls_idx) else \
+                           ls_layout.ls_gains[ls_idx]
         out_data['LoudspeakerLayout']['Loudspeakers'].append(ls_dict)
 
     with open(os.path.expanduser(filename), 'w') as outfile:
