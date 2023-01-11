@@ -24,7 +24,7 @@ from . import utils, sph, decoder, process, grids
 
 def spectrum(x, fs, ylim=None, scale_mag=False, **kwargs):
     """Positive (single sided) amplitude spectrum of time signal x.
-    kwargs are forwarded to plots.freq_resp().
+    kwargs are forwarded to plot.freq_resp().
 
     Parameters
     ----------
@@ -320,11 +320,11 @@ def sh_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None,
 
 def sh_coeffs_overlay(F_nm_list, SH_type=None, azi_steps=5, el_steps=3,
                       title=None, fig=None):
-    """Overlay spherical harmonics coefficients plots.
+    """Overlay spherical harmonics coefficients plot.
 
     Examples
     --------
-    See :py:mod:`spaudiopy.plots.sh_coeffs`
+    See :py:mod:`spaudiopy.plot.sh_coeffs`
 
     """
     phi_plot, theta_plot = np.meshgrid(np.linspace(0., 2 * np.pi,
@@ -949,7 +949,7 @@ def doa(azi, colat, fs, p=None, size=250):
         azi, colat, r = spa.utils.cart2sph(x, y, z)
 
         ps = 1 / np.exp(np.linspace(0, 3, n))
-        spa.plots.doa(azi, colat, fs, ps)
+        spa.plot.doa(azi, colat, fs, ps)
 
     """
     # t in ms

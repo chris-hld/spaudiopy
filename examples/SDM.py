@@ -3,7 +3,7 @@
 
 import numpy as np
 
-from spaudiopy import io, sig, sdm, plots, utils, decoder
+from spaudiopy import plot, sig, sdm, utils, decoder
 
 LISTEN = True
 
@@ -28,7 +28,7 @@ sdm_p = ambi_ir.W
 sdm_azi, sdm_colat, _ = sdm.pseudo_intensity(ambi_ir, f_bp=(100, 5000))
 
 # Show first 10000 samples DOA
-plots.doa(sdm_azi[:10000], sdm_colat[:10000], fs, p=sdm_p[:10000])
+plot.doa(sdm_azi[:10000], sdm_colat[:10000], fs, p=sdm_p[:10000])
 
 
 # - SDM Decoding:

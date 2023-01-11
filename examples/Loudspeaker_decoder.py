@@ -27,7 +27,7 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
-from spaudiopy import io, utils, sig, decoder, sph, plots, grids
+from spaudiopy import io, plot, utils, sig, decoder, sph, grids
 
 
 # %% User setup
@@ -68,7 +68,7 @@ else:
 
 # %% Show setup
 ls_setup.show()
-plots.hull_normals(ls_setup)
+plot.hull_normals(ls_setup)
 
 # Test source location
 src = np.array([1, 0.5, 2.5])
@@ -84,7 +84,7 @@ N_e = ls_setup.get_characteristic_order()
 ls_setup.ambisonics_setup(update_hull=True, N_kernel=20)
 
 # Show ALLRAP hulls
-plots.hull(ls_setup.ambisonics_hull, title='Ambisonic hull')
+plot.hull(ls_setup.ambisonics_hull, title='Ambisonic hull')
 
 # ALLRAP
 gains_allrap = decoder.allrap(src, ls_setup, N_sph=N_e)
@@ -110,15 +110,15 @@ G_allrap2 = decoder.allrap2(_grid, ls_setup)
 G_vbip = decoder.vbip(_grid, ls_setup)
 
 # %% Look at some performance measures
-plots.decoder_performance(ls_setup, 'NLS')
-plots.decoder_performance(ls_setup, 'VBAP')
-plots.decoder_performance(ls_setup, 'VBAP', norm=1, retain_outside=True)
+plot.decoder_performance(ls_setup, 'NLS')
+plot.decoder_performance(ls_setup, 'VBAP')
+plot.decoder_performance(ls_setup, 'VBAP', norm=1, retain_outside=True)
 plt.suptitle('VBAP with imaginary loudspeaker and norm1')
-plots.decoder_performance(ls_setup, 'VBIP', retain_outside=True)
+plot.decoder_performance(ls_setup, 'VBIP', retain_outside=True)
 plt.suptitle('VBIP with imaginary loudspeaker')
-plots.decoder_performance(ls_setup, 'EPAD')
-plots.decoder_performance(ls_setup, 'ALLRAP')
-plots.decoder_performance(ls_setup, 'ALLRAP2')
+plot.decoder_performance(ls_setup, 'EPAD')
+plot.decoder_performance(ls_setup, 'ALLRAP')
+plot.decoder_performance(ls_setup, 'ALLRAP2')
 
 
 # %% Binauralize
