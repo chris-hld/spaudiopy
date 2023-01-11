@@ -313,7 +313,7 @@ def load_sofa_hrirs(filename):
     return HRIRs
 
 
-def sofa_to_sh(filename, N_sph, SH_type='real'):
+def sofa_to_sh(filename, N_sph, sh_type='real'):
     """Load and transform SOFA IRs to the Spherical Harmonic Domain.
 
     Parameters
@@ -322,7 +322,7 @@ def sofa_to_sh(filename, N_sph, SH_type='real'):
         SOFA file name.
     N_sph : int
         Spherical Harmonic Transform order.
-    SH_type : 'real' (default) or 'complex' spherical harmonics.
+    sh_type : 'real' (default) or 'complex' spherical harmonics.
 
     Returns
     -------
@@ -335,7 +335,7 @@ def sofa_to_sh(filename, N_sph, SH_type='real'):
     fs = hrirs.fs
     grid_azi, grid_zen = hrirs.grid['azi'], hrirs.grid['colat']
     # Pinv / lstsq since we can't be sure about the grid
-    Y_pinv = np.linalg.pinv(sph.sh_matrix(N_sph, grid_azi, grid_zen, SH_type))
+    Y_pinv = np.linalg.pinv(sph.sh_matrix(N_sph, grid_azi, grid_zen, sh_type))
     irs = np.stack((hrirs.left, hrirs.right), axis=0)
     IRs_nm = Y_pinv @ irs
     return IRs_nm, fs

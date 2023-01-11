@@ -60,7 +60,7 @@ def test_tDesign(expected_dirs):
 def test_realSH(expected_Ynm):
     vecs = spa.grids.load_t_design(2*N)
     dirs = spa.utils.vecs2dirs(vecs)
-    Y_nm = spa.sph.sh_matrix(N, dirs[:, 0], dirs[:, 1], SH_type='real')
+    Y_nm = spa.sph.sh_matrix(N, dirs[:, 0], dirs[:, 1], sh_type='real')
     assert(np.allclose(Y_nm, expected_Ynm))
 
 
@@ -68,7 +68,7 @@ def test_realSH(expected_Ynm):
 def test_cpxSH(expected_Ynm):
     vecs = spa.grids.load_t_design(2*N)
     dirs = spa.utils.vecs2dirs(vecs)
-    Y_nm = spa.sph.sh_matrix(N, dirs[:, 0], dirs[:, 1], SH_type='complex')
+    Y_nm = spa.sph.sh_matrix(N, dirs[:, 0], dirs[:, 1], sh_type='complex')
     assert(np.allclose(Y_nm, expected_Ynm))
 
 
