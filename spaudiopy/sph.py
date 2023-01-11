@@ -1063,7 +1063,7 @@ def sh_mult(a_nm, b_nm, sh_type):
         :context: close-figs
 
         spa.plot.sh_coeffs(4*spa.sph.sh_mult([1, 0, 1, 0], [0, 1, 0, 0],
-                                              'real'))
+                                             'real'))
 
     """
     a_nm = np.asfarray(a_nm)
@@ -1078,7 +1078,7 @@ def sh_mult(a_nm, b_nm, sh_type):
 
     c_nm = sht(inverse_sht(a_nm, v_dirs[:, 0], v_dirs[:, 1], sh_type=sh_type) *
                inverse_sht(b_nm, v_dirs[:, 0], v_dirs[:, 1], sh_type=sh_type),
-               N=N_out, azi=v_dirs[:, 0], colat=v_dirs[:, 1], sh_type=sh_type)
+               N_out, azi=v_dirs[:, 0], colat=v_dirs[:, 1], sh_type=sh_type)
     return c_nm
 
 
