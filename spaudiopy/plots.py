@@ -61,7 +61,7 @@ def spectrum(x, fs, ylim=None, scale_mag=False, **kwargs):
     freq_resp(freq, specs, ylim=ylim, **kwargs)
 
 
-def freq_resp(freq, amp, INDB=True, smoothing_n=None, xlim=(20, 24000), 
+def freq_resp(freq, amp, INDB=True, smoothing_n=None, xlim=(20, 24000),
               ylim=(-30, None), title=None, labels=None, ax=None):
     """ Plot magnitude of frequency response over time frequency f.
 
@@ -73,7 +73,7 @@ def freq_resp(freq, amp, INDB=True, smoothing_n=None, xlim=(20, 24000),
         Plot in dB.
     smoothing_n : int
         Forwarded to process.frac_octave_smoothing()
-    
+
 
     Examples
     --------
@@ -393,8 +393,8 @@ def sh_coeffs_overlay(F_nm_list, SH_type=None, azi_steps=5, el_steps=3,
         plt.title(title)
 
 
-def sh_coeffs_subplot(F_nm_list, SH_type=None, azi_steps=5, el_steps=3, titles=None,
-                      fig=None):
+def sh_coeffs_subplot(F_nm_list, SH_type=None, azi_steps=5, el_steps=3,
+                      titles=None, fig=None):
     """Plot spherical harmonics coefficients list as function on the sphere.
 
     Examples
@@ -475,7 +475,7 @@ def sh_rms_map(F_nm, INDB=False, w_n=None, SH_type=None, n_plot=50,
                title=None, fig=None):
     """Plot spherical harmonic signal RMS as function on the sphere.
     Evaluates the maxDI beamformer, if w_n is None.
-    
+
     Parameters
     ----------
     F_nm : ((N+1)**2, S) numpy.ndarray
@@ -505,16 +505,16 @@ def sh_rms_map(F_nm, INDB=False, w_n=None, SH_type=None, n_plot=50,
                                [np.pi, 0, -np.pi, np.pi, 0, -np.pi]))
     zen_plot = np.concatenate((zen_plot,
                                [0, 0, 0, np.pi, np.pi, np.pi]))
-    
+
     Y_smp = sph.sh_matrix(N_sph, azi_plot.ravel(), zen_plot.ravel(), SH_type)
     if w_n is None:
         w_n = sph.hypercardioid_modal_weights(N_sph)
     f_d = Y_smp @ np.diag(sph.repeat_per_order(w_n)) @ F_nm
     rms_d = np.abs(utils.rms(f_d, axis=1))
-    
+
     if INDB:
         rms_d = utils.db(rms_d)
-    
+
     if fig is None:
         fig = plt.figure(constrained_layout=True)
 
@@ -537,12 +537,12 @@ def sh_rms_map(F_nm, INDB=False, w_n=None, SH_type=None, n_plot=50,
 
     plt.axhline(y=np.pi/2, color='grey', linestyle=':')
     plt.axvline(color='grey', linestyle=':')
-    
+
     plt.xticks([np.pi, np.pi/2, 0, -np.pi/2, -np.pi], 
                labels=[r"$\pi$", r"$\pi/2$", r"$0$", r"$-\pi/2$", r"$-\pi$"])
     plt.yticks([0, np.pi/2, np.pi],
                labels=[r"$0$", r"$\pi/2$", r"$\pi$", ])
-    
+
     cb = plt.colorbar(p, ax=ax, shrink=0.5)
     cb.set_label("RMS in dB" if INDB else "RMS")
     if title is not None:
@@ -551,7 +551,7 @@ def sh_rms_map(F_nm, INDB=False, w_n=None, SH_type=None, n_plot=50,
 
 def spherical_function_map(f, azi, zen, TODB=False, title=None, fig=None):
     """Plot function 1D vector f over azi and zen, can also convert to dB.
-    
+
     Examples
     --------
     See :py:mod:`spaudiopy.sph.eb_music`
@@ -564,7 +564,7 @@ def spherical_function_map(f, azi, zen, TODB=False, title=None, fig=None):
 
     if TODB:
         f = utils.db(f)
-    
+
     if fig is None:
         fig = plt.figure(constrained_layout=True)
 
@@ -586,12 +586,12 @@ def spherical_function_map(f, azi, zen, TODB=False, title=None, fig=None):
 
     plt.axhline(y=np.pi/2, color='grey', linestyle=':')
     plt.axvline(color='grey', linestyle=':')
-    
+
     plt.xticks([np.pi, np.pi/2, 0, -np.pi/2, -np.pi], 
                labels=[r"$\pi$", r"$\pi/2$", r"$0$", r"$-\pi/2$", r"$-\pi$"])
     plt.yticks([0, np.pi/2, np.pi],
                labels=[r"$0$", r"$\pi/2$", r"$\pi$", ])
-    
+
     cb = plt.colorbar(p, ax=ax, shrink=0.5)
     cb.set_label("in dB" if TODB else None)
     if title is not None:
@@ -684,7 +684,7 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, draw_ls=True,
             ax.scatter(co[0], co[1], co[2], c='black', s=20, alpha=0.5,
                        zorder=2)
             ax.text(co[0], co[1], co[2], s, zorder=2)
-    
+
     # origin
     ax.scatter(0, 0, 0, s=30, c='darkgray', marker='+')
 
@@ -791,7 +791,7 @@ def polar(theta, r, INDB=True, rlim=None, title=None, ax=None):
     ax.set_rmax(rlim[1] + (0.5 if INDB else 0.03))
     ax.set_rticks(np.linspace(rlim[0], rlim[1], 5))
     ax.set_rlabel_position(6.5/8 * 360)
-    ax.legend(loc='lower right', bbox_to_anchor=(1.175,0.15))
+    ax.legend(loc='lower right', bbox_to_anchor=(1.175, 0.15))
     if title is not None:
         ax.set_title(title)
 
@@ -995,7 +995,7 @@ def doa(azi, colat, fs, p=None, size=250):
         pass
 
 
-def hrirs_ild_itd(hrirs, plevels=50, pclims=(None,None), title=None, fig=None):
+def hrirs_ild_itd(hrirs, plevels=50, pclims=(None, None), title=None, fig=None):
     """Plot ILDs and ITDs of HRIRs.
 
     Parameters
@@ -1036,12 +1036,11 @@ def hrirs_ild_itd(hrirs, plevels=50, pclims=(None,None), title=None, fig=None):
     p1 = ax1.tricontourf(pazi, pzen, ilds, levels=plevels,
                          cmap='RdYlBu', vmin=-pclim_ild, vmax=pclim_ild)
     ax1.set_title("ILD")
-    
+
     if pclims[1] is None:
         pclim_itd = max(abs(1000 * itds))
     else:
         pclim_itd = pclims[1]
-    pclim = max(abs(1000 * itds))
     p2 = ax2.tricontourf(pazi, pzen, 1000 * itds, levels=plevels,
                          cmap='RdYlBu', vmin=-pclim_itd, vmax=pclim_itd)
     ax2.set_title("ITD")

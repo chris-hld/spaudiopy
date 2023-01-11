@@ -16,8 +16,6 @@
 
 """
 
-from itertools import repeat
-
 import numpy as np
 import resampy
 import pickle
@@ -184,7 +182,7 @@ def itds_from_hrirs(hrirs, f_cut=(100, 1.5e3), upsample=4):
     -------
     itd : array_like
         ITD in seconds per grid point, positive value indicates left ear first.
-    
+
     References
     ----------
     Andreopoulou, A., & Katz, B. F. G. (2017). Identification of perceptually 

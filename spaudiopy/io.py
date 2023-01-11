@@ -77,7 +77,7 @@ def save_audio(signal, filename, fs=None, subtype='FLOAT'):
     Parameters
     ----------
     signal : sig. MonoSignal, sig.MultiSignal or np.ndarray
-        Audio Signal, forwarded to sf.write(); (frames x channels). 
+        Audio Signal, forwarded to sf.write(); (frames x channels).
     filename : string
         Audio file name.
     fs : int
@@ -116,7 +116,8 @@ def load_hrirs(fs, filename=None, jobs_count=None):
     filename : string, optional
         HRTF.mat file or default set, or 'dummy' for debugging.
     jobs_count : int or None, optional
-        Number of parallel jobs for resample_hrirs() in get_default_hrirs(), 'None' employs 'cpu_count'.
+        Number of parallel jobs for resample_hrirs() in get_default_hrirs(),
+        'None' employs 'cpu_count'.
 
     Returns
     -------
@@ -186,7 +187,8 @@ def get_default_hrirs(grid_azi=None, grid_colat=None, jobs_count=None):
     grid_azi : array_like, optional
     grid_colat : array_like, optional
     jobs_count : int or None, optional
-        Number of parallel jobs for resample_hrirs(), 'None' employs 'cpu_count'.
+        Number of parallel jobs for resample_hrirs(),
+        'None' employs 'cpu_count'.
 
     Notes
     -----
@@ -198,7 +200,7 @@ def get_default_hrirs(grid_azi=None, grid_colat=None, jobs_count=None):
                    'SphericalHarmonics/FABIAN_DIR_measured_HATO_0.mat'
     current_file_dir = os.path.dirname(__file__)
     filename = os.path.join(current_file_dir, default_file)
-    # %% Load HRTF
+    # Load HRTF
     try:
         file = loadmat(filename)
 
@@ -223,16 +225,16 @@ def get_default_hrirs(grid_azi=None, grid_colat=None, jobs_count=None):
     if (grid_azi is None) and (grid_colat is None):
         grid_azi, grid_colat, _ = grids.gauss(35)  # grid positions
 
-    # %% Inverse SHT
+    # Inverse SHT
     HRTF_l = sph.inverse_sht(SH_l, grid_azi, grid_colat, 'complex')
     HRTF_r = sph.inverse_sht(SH_r, grid_azi, grid_colat, 'complex')
     assert HRTF_l.shape == HRTF_r.shape
-    # %%
+    # ifft
     hrir_l = np.fft.irfft(HRTF_l)  # creates 256 samples(t)
     hrir_r = np.fft.irfft(HRTF_r)  # creates 256 samples(t)
     assert hrir_l.shape == hrir_r.shape
 
-    # %% Resample
+    # Resample
     fs_target = 48000
     hrir_l_48k, hrir_r_48k, _ = process.resample_hrirs(hrir_l, hrir_r,
                                                        SamplingRate,
@@ -276,7 +278,7 @@ def load_sofa_data(filename):
 
 
 def load_sofa_hrirs(filename):
-    """ Load SOFA file containing HRIRs.    
+    """ Load SOFA file containing HRIRs.
 
     Parameters
     ----------
@@ -300,11 +302,12 @@ def load_sofa_hrirs(filename):
     fs = int(sdata['Data.SamplingRate'])
     irs = np.asarray(sdata['Data.IR'])
     grid = np.asarray(sdata['SourcePosition'])
-    assert(abs((grid[:,2]-grid[:,2].mean())).mean() < 0.1) # Otherwise not r
-    grid_azi, grid_zen = np.deg2rad(grid[:,0]), np.pi/2 - np.deg2rad(grid[:,1])
+    assert(abs((grid[:, 2]-grid[:, 2].mean())).mean() < 0.1)  # Otherwise not r
+    grid_azi, grid_zen = np.deg2rad(grid[:, 0]), np.pi/2 - np.deg2rad(
+                                                            grid[:, 1])
     assert(all(grid_zen > -10e-6))  # Otherwise not zen
-    irs_left = np.squeeze(irs[:,0,:])
-    irs_right = np.squeeze(irs[:,1,:])
+    irs_left = np.squeeze(irs[:, 0, :])
+    irs_right = np.squeeze(irs[:, 1, :])
     irs_grid = pd.DataFrame({'azi': grid_azi, 'colat': grid_zen})
     HRIRs = sig.HRIRs(irs_left, irs_right, irs_grid, fs)
     return HRIRs

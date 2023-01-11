@@ -387,7 +387,7 @@ def src_to_b(sig, src_azi, src_colat):
 
 def src_to_sh(sig, src_azi, src_zen, N_sph, SH_type='real'):
     """Source signal(s) plane wave encoded in spherical harmonics.
-    
+
 
     Parameters
     ----------
@@ -402,7 +402,7 @@ def src_to_sh(sig, src_azi, src_zen, N_sph, SH_type='real'):
     -------
     ((N_sph+1)**2, S) numpy.ndarray
         Source signal(s) in SHD.
-    
+
     Examples
     --------
     .. plot::
@@ -984,8 +984,8 @@ def design_spat_filterbank(N_sph, sec_azi, sec_zen, c_n, SH_type, mode):
 
     References
     ----------
-    Hold, C., Schlecht, S. J., Politis, A., & Pulkki, V. (2021). 
-    Spatial Filter Bank in the Spherical Harmonic Domain : 
+    Hold, C., Schlecht, S. J., Politis, A., & Pulkki, V. (2021).
+    Spatial Filter Bank in the Spherical Harmonic Domain :
     Reconstruction and Application. WASPAA 2021.
 
     Examples

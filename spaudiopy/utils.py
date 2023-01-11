@@ -115,7 +115,7 @@ def rotation_rodrigues(k, theta):
         k = k / np.linalg.norm(k)
         K = np.array([[0, -k[2], k[1]], [k[2], 0, -k[0]], [-k[1], k[0], 0]])
         R = np.eye(3) + np.sin(theta)*K + (1-np.cos(theta)) * K@K
-    else :
+    else:
         R = np.eye(3)
     return R
 
@@ -126,10 +126,10 @@ def rotation_vecvec(f, t):
     assert(len(t) == 3)
     f = f / np.linalg.norm(f)
     t = t / np.linalg.norm(t)
-    k = np.cross(f,t)
+    k = np.cross(f, t)
     if (np.linalg.norm(k) < 10e-15):
         raise ValueError("Can not find rotation axis (axis flip?).")
-    R = rotation_rodrigues(k, np.arccos(np.dot(f,t)))
+    R = rotation_rodrigues(k, np.arccos(np.dot(f, t)))
     return R
 
 
