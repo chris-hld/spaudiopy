@@ -40,7 +40,7 @@ s_pos = np.array(utils.sph2cart(sdm_azi, sdm_colat)).T
 ls_gains = decoder.nearest_loudspeaker(s_pos, ls_setup)
 assert len(ls_gains) == len(sdm_p)
 ir_ls_l, ir_ls_r = parsa.render_binaural_loudspeaker_sdm(sdm_p, ls_gains,
-                                                       ls_setup, fs)
+                                                         ls_setup, fs)
 
 # Render some examples
 s_in = sig.MonoSignal.from_file('../data/piano_mono.flac', fs)

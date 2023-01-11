@@ -95,7 +95,8 @@ def freq_resp(freq, amp, TODB=True, smoothing_n=None, xlim=(20, 24000),
     if smoothing_n is not None:
         smoothed = []
         for a in amp:
-            smoothed.append(process.frac_octave_smoothing(a, smoothing_n, True))
+            smoothed.append(process.frac_octave_smoothing(a, smoothing_n,
+                                                          WEIGHTED=True))
         amp = smoothed
 
     if ax is None:
@@ -995,7 +996,8 @@ def doa(azi, colat, fs, p=None, size=250):
         pass
 
 
-def hrirs_ild_itd(hrirs, plevels=50, pclims=(None, None), title=None, fig=None):
+def hrirs_ild_itd(hrirs, plevels=50, pclims=(None, None), title=None,
+                  fig=None):
     """Plot ILDs and ITDs of HRIRs.
 
     Parameters
