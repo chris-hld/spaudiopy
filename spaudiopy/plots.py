@@ -266,12 +266,10 @@ def sh_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None,
     if SH_type is None:
         SH_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
 
-    azi_steps = np.deg2rad(azi_steps)
-    el_steps = np.deg2rad(el_steps)
-    phi_plot, theta_plot = np.meshgrid(np.arange(0., 2 * np.pi + azi_steps,
-                                                 azi_steps),
-                                       np.arange(10e-3, np.pi + el_steps,
-                                                 el_steps))
+    phi_plot, theta_plot = np.meshgrid(np.linspace(0., 2 * np.pi,
+                                                   int(360 / azi_steps)),
+                                       np.linspace(10e-8, np.pi - 10e-8,
+                                                   int(180 / el_steps)))
 
     f_plot = sph.inverse_sht(F_nm, phi_plot.ravel(), theta_plot.ravel(),
                              SH_type)
@@ -333,12 +331,10 @@ def sh_coeffs_overlay(F_nm_list, SH_type=None, azi_steps=5, el_steps=3,
     See :py:mod:`spaudiopy.plots.sh_coeffs`
 
     """
-    azi_steps = np.deg2rad(azi_steps)
-    el_steps = np.deg2rad(el_steps)
-    phi_plot, theta_plot = np.meshgrid(np.arange(0., 2 * np.pi + azi_steps,
-                                                 azi_steps),
-                                       np.arange(10e-3, np.pi + el_steps,
-                                                 el_steps))
+    phi_plot, theta_plot = np.meshgrid(np.linspace(0., 2 * np.pi,
+                                                   int(360 / azi_steps)),
+                                       np.linspace(10e-8, np.pi - 10e-8,
+                                                   int(180 / el_steps)))
 
     if fig is None:
         fig = plt.figure(constrained_layout=True)
@@ -411,12 +407,11 @@ def sh_coeffs_subplot(F_nm_list, SH_type=None, azi_steps=5, el_steps=3, titles=N
 
     """
     num_plots = len(F_nm_list)
-    azi_steps = np.deg2rad(azi_steps)
-    el_steps = np.deg2rad(el_steps)
-    phi_plot, theta_plot = np.meshgrid(np.arange(0., 2 * np.pi + azi_steps,
-                                                 azi_steps),
-                                       np.arange(10e-3, np.pi + el_steps,
-                                                 el_steps))
+
+    phi_plot, theta_plot = np.meshgrid(np.linspace(0., 2 * np.pi,
+                                                   int(360 / azi_steps)),
+                                       np.linspace(10e-8, np.pi - 10e-8,
+                                                   int(180 / el_steps)))
 
     if fig is None:
         fig = plt.figure(figsize=plt.figaspect(1 / num_plots),
