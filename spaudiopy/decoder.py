@@ -28,7 +28,7 @@ import numpy as np
 import scipy.spatial as scyspat
 from scipy import signal
 
-from . import io, utils, sph, sig, plots, grids
+from . import io, plot, utils, sph, sig, grids
 
 shared_array = None
 
@@ -304,8 +304,8 @@ class LoudspeakerSetup:
         return (sig_in[:, np.newaxis] * ls_gains).T
 
     def show(self, title='Loudspeaker Setup', **kwargs):
-        """Plot hull object, calls plots.hull()."""
-        plots.hull(self, title=title, **kwargs)
+        """Plot hull object, calls plot.hull()."""
+        plot.hull(self, title=title, **kwargs)
 
 
 def get_hull(x, y, z):
@@ -576,10 +576,10 @@ def vbap(src, hull, norm=2, valid_simplices=None, retain_outside=False,
         ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
                                opening_limit=150)
 
-        spa.plots.decoder_performance(ls_setup, 'VBAP')
+        spa.plot.decoder_performance(ls_setup, 'VBAP')
 
         ls_setup.ambisonics_setup(update_hull=True)
-        spa.plots.decoder_performance(ls_setup, 'VBAP', retain_outside=True)
+        spa.plot.decoder_performance(ls_setup, 'VBAP', retain_outside=True)
         plt.suptitle('VBAP with imaginary loudspeaker')
 
     """
@@ -682,10 +682,10 @@ def vbip(src, hull, norm=2, valid_simplices=None, retain_outside=False,
         ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
                                opening_limit=150)
 
-        spa.plots.decoder_performance(ls_setup, 'VBIP')
+        spa.plot.decoder_performance(ls_setup, 'VBIP')
 
         ls_setup.ambisonics_setup(update_hull=True)
-        spa.plots.decoder_performance(ls_setup, 'VBIP', retain_outside=True)
+        spa.plot.decoder_performance(ls_setup, 'VBIP', retain_outside=True)
         plt.suptitle('VBIP with imaginary loudspeaker')
 
     """
@@ -767,7 +767,7 @@ def allrap(src, hull, N_sph=None, jobs_count=1):
                                opening_limit=150)
         ls_setup.ambisonics_setup(update_hull=True)
 
-        spa.plots.decoder_performance(ls_setup, 'ALLRAP')
+        spa.plot.decoder_performance(ls_setup, 'ALLRAP')
 
     """
     if hull.ambisonics_hull:
@@ -852,7 +852,7 @@ def allrap2(src, hull, N_sph=None, jobs_count=1):
                                opening_limit=150)
         ls_setup.ambisonics_setup(update_hull=True)
 
-        spa.plots.decoder_performance(ls_setup, 'ALLRAP2')
+        spa.plot.decoder_performance(ls_setup, 'ALLRAP2')
 
     """
     if hull.ambisonics_hull:
@@ -941,7 +941,7 @@ def allrad(F_nm, hull, N_sph=None, jobs_count=1):
                                opening_limit=150)
         ls_setup.ambisonics_setup(update_hull=True)
 
-        spa.plots.decoder_performance(ls_setup, 'ALLRAD')
+        spa.plot.decoder_performance(ls_setup, 'ALLRAD')
 
     """
     if hull.ambisonics_hull:
@@ -1026,7 +1026,7 @@ def allrad2(F_nm, hull, N_sph=None, jobs_count=1):
                                opening_limit=150)
         ls_setup.ambisonics_setup(update_hull=True)
 
-        spa.plots.decoder_performance(ls_setup, 'ALLRAD2')
+        spa.plot.decoder_performance(ls_setup, 'ALLRAD2')
 
     """
     if not hull.ambisonics_hull:
@@ -1095,7 +1095,7 @@ def sad(F_nm, hull, N_sph=None):
         ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
                                opening_limit=150)
 
-        spa.plots.decoder_performance(ls_setup, 'SAD')
+        spa.plot.decoder_performance(ls_setup, 'SAD')
 
     """
     if N_sph is None:
@@ -1149,7 +1149,7 @@ def mad(F_nm, hull, N_sph=None):
         ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
                                opening_limit=150)
 
-        spa.plots.decoder_performance(ls_setup, 'MAD')
+        spa.plot.decoder_performance(ls_setup, 'MAD')
 
     """
     if N_sph is None:
@@ -1209,9 +1209,9 @@ def epad(F_nm, hull, N_sph=None):
         ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
                                opening_limit=150)
 
-        spa.plots.decoder_performance(ls_setup, 'EPAD')
+        spa.plot.decoder_performance(ls_setup, 'EPAD')
 
-        spa.plots.decoder_performance(ls_setup, 'EPAD', N_sph=2,
+        spa.plot.decoder_performance(ls_setup, 'EPAD', N_sph=2,
                                       title='$N_{sph}=2$')
 
     """
@@ -1269,7 +1269,7 @@ def nearest_loudspeaker(src, hull):
         ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
                                opening_limit=150)
 
-        spa.plots.decoder_performance(ls_setup, 'NLS')
+        spa.plot.decoder_performance(ls_setup, 'NLS')
 
     """
     src = np.atleast_2d(src)

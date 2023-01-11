@@ -10,7 +10,7 @@
 
     import spaudiopy as spa
 
-    spa.plots.sh_coeffs_subplot([np.sqrt(4*np.pi) * np.array([1, 0, 0, 0]),
+    spa.plot.sh_coeffs_subplot([np.sqrt(4*np.pi) * np.array([1, 0, 0, 0]),
                                  np.sqrt(4/3*np.pi) * np.array([0, 1, 0, 0]),
                                  np.sqrt(4/3*np.pi) * np.array([0, 0, 1, 0]),
                                  np.sqrt(4/3*np.pi) * np.array([0, 0, 0, 1])],
@@ -415,7 +415,7 @@ def src_to_sh(sig, src_azi, src_zen, N_sph, SH_type='real'):
 
         sig_nm = spa.sph.src_to_sh(src_sig, src_azi, src_zen, N_sph)
 
-        spa.plots.sh_rms_map(sig_nm)
+        spa.plot.sh_rms_map(sig_nm)
 
     """
     sig = np.atleast_2d(sig)
@@ -470,7 +470,7 @@ def bandlimited_dirac(N, d, w_n=None):
         dirac_bandlim = 4 * np.pi / (N + 1) ** 2 * \
                             spa.sph.bandlimited_dirac(N, azi - dirac_azi)
 
-        spa.plots.polar(azi, dirac_bandlim)
+        spa.plot.polar(azi, dirac_bandlim)
 
     """
     d = utils.asarray_1d(d)
@@ -514,7 +514,7 @@ def max_rE_weights(N):
         w_n = spa.sph.unity_gain(w_n)
         dirac_tapered = spa.sph.bandlimited_dirac(N, azi - dirac_azi, w_n=w_n)
 
-        spa.plots.polar(azi, dirac_tapered)
+        spa.plot.polar(azi, dirac_tapered)
 
     """
     theta = np.deg2rad(137.9) / (N + 1.51)
@@ -725,7 +725,7 @@ def binaural_coloration_compensation(N, f, r_0=0.0875, w_taper=None):
         compensation_tapered_lim = spa.process.gain_clipping(
                                     compensation_tapered,
                                     spa.utils.from_db(12))
-        spa.plots.freq_resp(f, [compensation_tapered,
+        spa.plot.freq_resp(f, [compensation_tapered,
                                 compensation_tapered_lim],
                             ylim=(-5, 25),
                             labels=[r'$N=5, max_{rE}$', 'with soft lim'])
@@ -795,7 +795,7 @@ def hypercardioid_modal_weights(N_sph):
         w_n = spa.sph.hypercardioid_modal_weights(N)
         w_nm = spa.sph.repeat_per_order(w_n) * \
             spa.sph.sh_matrix(N, np.pi/4, np.pi/4, 'real')
-        spa.plots.sh_coeffs(w_nm)
+        spa.plot.sh_coeffs(w_nm)
 
     """
     c_n = np.repeat((4*np.pi)/(N_sph+1)**2, N_sph+1)
@@ -824,7 +824,7 @@ def cardioid_modal_weights(N_sph):
         w_n = spa.sph.cardioid_modal_weights(N)
         w_nm = spa.sph.repeat_per_order(w_n) * \
             spa.sph.sh_matrix(N, np.pi/4, np.pi/4, 'real')
-        spa.plots.sh_coeffs(w_nm)
+        spa.plot.sh_coeffs(w_nm)
 
     """
     c_n = np.array([(np.math.factorial(N_sph)*np.math.factorial(N_sph)) /
@@ -861,7 +861,7 @@ def maxre_modal_weights(N_sph, UNITAMP=True):
         w_n = spa.sph.maxre_modal_weights(N)
         w_nm = spa.sph.repeat_per_order(w_n) * \
             spa.sph.sh_matrix(N, np.pi/4, np.pi/4, 'real')
-        spa.plots.sh_coeffs(w_nm)
+        spa.plot.sh_coeffs(w_nm)
 
     """
     c_n = max_rE_weights(N_sph)
@@ -905,7 +905,7 @@ def butterworth_modal_weights(N_sph, k, n_c, UNITAMP=True):
         w_n = spa.sph.butterworth_modal_weights(N, 5, 3)
         w_nm = spa.sph.repeat_per_order(w_n) * \
             spa.sph.sh_matrix(N, np.pi/4, np.pi/4, 'real')
-        spa.plots.sh_coeffs(w_nm)
+        spa.plot.sh_coeffs(w_nm)
 
     """
     c_n = 1/np.sqrt(1+(np.arange(N_sph+1) / n_c)**(2*k))
@@ -1061,7 +1061,7 @@ def sh_mult(a_nm, b_nm, sh_type):
     .. plot::
         :context: close-figs
 
-        spa.plots.sh_coeffs(4*spa.sph.sh_mult([1, 0, 1, 0], [0, 1, 0, 0],
+        spa.plot.sh_coeffs(4*spa.sph.sh_mult([1, 0, 1, 0], [0, 1, 0, 0],
                                               'real'))
 
     """
@@ -1113,7 +1113,7 @@ def eb_music(cov_x, numSrc, dirs_azi, dirs_zen):
         vecs, _ = spa.grids.load_maxDet(50)
         dirs = spa.utils.vecs2dirs(vecs)
         P_music = spa.sph.eb_music(X, numSrc, dirs[:,0], dirs[:,1])
-        spa.plots.spherical_function_map(P_music, dirs[:,0], dirs[:,1],
+        spa.plot.spherical_function_map(P_music, dirs[:,0], dirs[:,1],
                                          TODB=True, title="MUSIC spectrum")
 
     """

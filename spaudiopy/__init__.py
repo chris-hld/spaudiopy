@@ -13,7 +13,7 @@
    utils
    grids
    sdm
-   plots
+   plot
 
 """
 from pathlib import Path
@@ -35,7 +35,7 @@ except Exception:
 from . import decoder
 from . import grids
 from . import io
-from . import plots
+from . import plot
 from . import process
 from . import sdm
 from . import sph
