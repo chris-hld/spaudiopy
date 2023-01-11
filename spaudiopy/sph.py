@@ -1114,7 +1114,7 @@ def eb_music(cov_x, numSrc, dirs_azi, dirs_zen):
         dirs = spa.utils.vecs2dirs(vecs)
         P_music = spa.sph.eb_music(X, numSrc, dirs[:,0], dirs[:,1])
         spa.plots.spherical_function_map(P_music, dirs[:,0], dirs[:,1],
-                                        TODB=True, title="MUSIC spectrum")
+                                         TODB=True, title="MUSIC spectrum")
 
     """
     assert(cov_x.shape[0] == cov_x.shape[1])
@@ -1125,5 +1125,5 @@ def eb_music(cov_x, numSrc, dirs_azi, dirs_zen):
     _, v = np.linalg.eigh(cov_x)
     Qn = v[:, :-numSrc]
     a = (Qn.T @ Y.T)
-    P_music = 1/np.sum(a * a + 10e-12, 0)
+    P_music = 1 / (np.sum(a * a, 0) + 10e-12)
     return P_music
