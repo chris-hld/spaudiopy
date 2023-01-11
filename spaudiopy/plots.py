@@ -61,7 +61,7 @@ def spectrum(x, fs, ylim=None, scale_mag=False, **kwargs):
     freq_resp(freq, specs, ylim=ylim, **kwargs)
 
 
-def freq_resp(freq, amp, INDB=True, smoothing_n=None, xlim=(20, 24000),
+def freq_resp(freq, amp, TODB=True, smoothing_n=None, xlim=(20, 24000),
               ylim=(-30, None), title=None, labels=None, ax=None):
     """ Plot magnitude of frequency response over time frequency f.
 
@@ -69,7 +69,7 @@ def freq_resp(freq, amp, INDB=True, smoothing_n=None, xlim=(20, 24000),
     ----------
     f : frequency array
     amp : array_like, list of array_like
-    INDB : bool
+    TODB : bool
         Plot in dB.
     smoothing_n : int
         Forwarded to process.frac_octave_smoothing()
@@ -88,7 +88,7 @@ def freq_resp(freq, amp, INDB=True, smoothing_n=None, xlim=(20, 24000),
 
     assert(all(len(a) == len(freq) for a in amp))
 
-    if INDB:
+    if TODB:
         # Avoid zeros in spec for dB
         amp = [utils.db(np.clip(np.abs(a), 10e-15, None)) for a in amp]
 
@@ -471,7 +471,7 @@ def sh_coeffs_subplot(F_nm_list, SH_type=None, azi_steps=5, el_steps=3,
     cbar.set_ticklabels([r'$-\pi$', r'$0$', r'$\pi$'])
 
 
-def sh_rms_map(F_nm, INDB=False, w_n=None, SH_type=None, n_plot=50,
+def sh_rms_map(F_nm, TODB=False, w_n=None, SH_type=None, n_plot=50,
                title=None, fig=None):
     """Plot spherical harmonic signal RMS as function on the sphere.
     Evaluates the maxDI beamformer, if w_n is None.
@@ -480,7 +480,7 @@ def sh_rms_map(F_nm, INDB=False, w_n=None, SH_type=None, n_plot=50,
     ----------
     F_nm : ((N+1)**2, S) numpy.ndarray
         Matrix of spherical harmonics coefficients, Ambisonic signal.
-    INDB : bool
+    TODB : bool
         Plot in dB.
     w_n : array_like
         Modal weighting of beamformers that are evaluated on the grid.
@@ -512,7 +512,7 @@ def sh_rms_map(F_nm, INDB=False, w_n=None, SH_type=None, n_plot=50,
     f_d = Y_smp @ np.diag(sph.repeat_per_order(w_n)) @ F_nm
     rms_d = np.abs(utils.rms(f_d, axis=1))
 
-    if INDB:
+    if TODB:
         rms_d = utils.db(rms_d)
 
     if fig is None:
@@ -522,7 +522,7 @@ def sh_rms_map(F_nm, INDB=False, w_n=None, SH_type=None, n_plot=50,
     ax.set_aspect('equal')
 
     p = ax.tricontourf(azi_plot, zen_plot, rms_d, levels=100,
-                       vmin=0 if not INDB else None)
+                       vmin=0 if not TODB else None)
     ax.grid(True)
 
     ax.invert_xaxis()
@@ -544,7 +544,7 @@ def sh_rms_map(F_nm, INDB=False, w_n=None, SH_type=None, n_plot=50,
                labels=[r"$0$", r"$\pi/2$", r"$\pi$", ])
 
     cb = plt.colorbar(p, ax=ax, shrink=0.5)
-    cb.set_label("RMS in dB" if INDB else "RMS")
+    cb.set_label("RMS in dB" if TODB else "RMS")
     if title is not None:
         ax.set_title(title)
 
@@ -758,7 +758,7 @@ def hull_normals(hull, plot_face_normals=True, plot_vertex_normals=True):
     plt.legend(loc='best')
 
 
-def polar(theta, r, INDB=True, rlim=None, title=None, ax=None):
+def polar(theta, r, TODB=True, rlim=None, title=None, ax=None):
     """Polar plot (in dB) that allows negative values for `r`.
 
     Examples
@@ -774,7 +774,7 @@ def polar(theta, r, INDB=True, rlim=None, title=None, ax=None):
     rpos[r < 0] = np.nan
     rneg = np.copy(r)
     rneg[r >= 0] = np.nan
-    if INDB:
+    if TODB:
         if not rlim:
             rlim = (-40, 0)
         ax.plot(theta, utils.db(rpos), label='$+$')
@@ -788,7 +788,7 @@ def polar(theta, r, INDB=True, rlim=None, title=None, ax=None):
 
     ax.set_theta_offset(np.pi/2)
     ax.set_rmin(rlim[0])
-    ax.set_rmax(rlim[1] + (0.5 if INDB else 0.03))
+    ax.set_rmax(rlim[1] + (0.5 if TODB else 0.03))
     ax.set_rticks(np.linspace(rlim[0], rlim[1], 5))
     ax.set_rlabel_position(6.5/8 * 360)
     ax.legend(loc='lower right', bbox_to_anchor=(1.175, 0.15))
@@ -1017,7 +1017,7 @@ def hrirs_ild_itd(hrirs, plevels=50, pclims=(None, None), title=None, fig=None):
     spaudiopy.process.ilds_from_hrirs : Calculating ILDs with defaults (in dB).
     spaudiopy.process.itds_from_hrirs : Calculating ITDs with defaults.
     """
-    ilds = process.ilds_from_hrirs(hrirs, INDB=True)
+    ilds = process.ilds_from_hrirs(hrirs, TODB=True)
     itds = process.itds_from_hrirs(hrirs)
 
     pazi = np.fmod(hrirs.grid['azi'] + np.pi, 2*np.pi) - np.pi
