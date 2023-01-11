@@ -3,7 +3,7 @@
 
 import numpy as np
 
-from spaudiopy import plot, sig, sdm, utils, decoder
+from spaudiopy import parsa, plot, sig, utils, decoder
 
 LISTEN = True
 
@@ -25,7 +25,7 @@ fs = ambi_ir.fs
 
 # - SDM Encoding:
 sdm_p = ambi_ir.W
-sdm_azi, sdm_colat, _ = sdm.pseudo_intensity(ambi_ir, f_bp=(100, 5000))
+sdm_azi, sdm_colat, _ = parsa.pseudo_intensity(ambi_ir, f_bp=(100, 5000))
 
 # Show first 10000 samples DOA
 plot.doa(sdm_azi[:10000], sdm_colat[:10000], fs, p=sdm_p[:10000])
@@ -33,13 +33,13 @@ plot.doa(sdm_azi[:10000], sdm_colat[:10000], fs, p=sdm_p[:10000])
 
 # - SDM Decoding:
 # very quick stereo SDM decoding. This is only for testing!
-ir_st_l, ir_st_r = sdm.render_stereo_sdm(sdm_p, sdm_azi, sdm_colat)
+ir_st_l, ir_st_r = parsa.render_stereo_sdm(sdm_p, sdm_azi, sdm_colat)
 
 # Loudspeaker decoding
 s_pos = np.array(utils.sph2cart(sdm_azi, sdm_colat)).T
 ls_gains = decoder.nearest_loudspeaker(s_pos, ls_setup)
 assert len(ls_gains) == len(sdm_p)
-ir_ls_l, ir_ls_r = sdm.render_binaural_loudspeaker_sdm(sdm_p, ls_gains,
+ir_ls_l, ir_ls_r = parsa.render_binaural_loudspeaker_sdm(sdm_p, ls_gains,
                                                        ls_setup, fs)
 
 # Render some examples

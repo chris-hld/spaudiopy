@@ -25,7 +25,7 @@ import h5py
 
 import soundfile as sf
 
-from . import utils, sig, decoder, sdm, grids, sph, process, __version__
+from . import utils, sig, decoder, grids, sph, process, parsa, __version__
 
 
 def load_audio(filenames, fs=None):
@@ -485,7 +485,7 @@ def write_ssr_brirs_sdm(filename, sdm_p, sdm_phi, sdm_theta, fs,
     ssr_brirs = np.zeros((720, len(sdm_p) + len(hrirs) - 1))
     for angle in range(0, 360):
         sdm_phi_rot = sdm_phi - np.deg2rad(angle)
-        ir_l, ir_r = sdm.render_bsdm(sdm_p, sdm_phi_rot, sdm_theta,
+        ir_l, ir_r = parsa.render_bsdm(sdm_p, sdm_phi_rot, sdm_theta,
                                      hrirs=hrirs)
         # left
         ssr_brirs[2 * angle, :] = ir_l
