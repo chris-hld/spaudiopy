@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(
                 current_file_dir, '..')))
 
 # SH Order
-N = 8
+N_sph = 8
 # dict with results from reference implementations
 ref_struct = loadmat(os.path.join(current_file_dir, 'reference.mat'))
 
@@ -45,30 +45,30 @@ cart_sph_data = [
 # Makes N globally accessible in test_ functions
 @pytest.fixture(autouse=True)
 def myglobal(request):
-    request.function.__globals__['N'] = N
+    request.function.__globals__['N'] = N_sph
 
 
 # SH Tests
 @pytest.mark.parametrize('expected_dirs', [ref_struct['dirs'], ])
 def test_tDesign(expected_dirs):
-    vecs = spa.grids.load_t_design(2*N)
+    vecs = spa.grids.load_t_design(2*N_sph)
     dirs = spa.utils.vecs2dirs(vecs)
     assert(np.allclose(dirs, expected_dirs))
 
 
 @pytest.mark.parametrize('expected_Ynm', [ref_struct['Y_N_r'], ])
 def test_realSH(expected_Ynm):
-    vecs = spa.grids.load_t_design(2*N)
+    vecs = spa.grids.load_t_design(2*N_sph)
     dirs = spa.utils.vecs2dirs(vecs)
-    Y_nm = spa.sph.sh_matrix(N, dirs[:, 0], dirs[:, 1], sh_type='real')
+    Y_nm = spa.sph.sh_matrix(N_sph, dirs[:, 0], dirs[:, 1], sh_type='real')
     assert(np.allclose(Y_nm, expected_Ynm))
 
 
 @pytest.mark.parametrize('expected_Ynm', [ref_struct['Y_N_c'], ])
 def test_cpxSH(expected_Ynm):
-    vecs = spa.grids.load_t_design(2*N)
+    vecs = spa.grids.load_t_design(2*N_sph)
     dirs = spa.utils.vecs2dirs(vecs)
-    Y_nm = spa.sph.sh_matrix(N, dirs[:, 0], dirs[:, 1], sh_type='complex')
+    Y_nm = spa.sph.sh_matrix(N_sph, dirs[:, 0], dirs[:, 1], sh_type='complex')
     assert(np.allclose(Y_nm, expected_Ynm))
 
 
