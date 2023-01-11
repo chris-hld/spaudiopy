@@ -28,7 +28,7 @@ import numpy as np
 import scipy.spatial as scyspat
 from scipy import signal
 
-from spaudiopy import utils, sph, sig, IO, plots, grids
+from . import io, utils, sph, sig, plots, grids
 
 shared_array = None
 
@@ -258,7 +258,7 @@ class LoudspeakerSetup:
 
         """
         if hrirs is None:
-            hrirs = IO.load_hrirs(fs)
+            hrirs = io.load_hrirs(fs)
         assert(hrirs.fs == fs)
         ls_signals = np.atleast_2d(ls_signals)
         assert ls_signals.shape[0] == self.npoints, \

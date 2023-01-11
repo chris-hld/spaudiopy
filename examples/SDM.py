@@ -3,7 +3,7 @@
 
 import numpy as np
 
-from spaudiopy import IO, sig, sdm, plots, utils, decoder
+from spaudiopy import io, sig, sdm, plots, utils, decoder
 
 LISTEN = True
 

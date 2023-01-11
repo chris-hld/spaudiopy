@@ -5,7 +5,7 @@
 .. autosummary::
    :toctree:
 
-   IO
+   io
    sig
    sph
    decoder
@@ -34,7 +34,7 @@ except Exception:
 
 from . import decoder
 from . import grids
-from . import IO
+from . import io
 from . import plots
 from . import process
 from . import sdm

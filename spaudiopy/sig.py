@@ -27,7 +27,7 @@ except (ImportError, OSError) as e:
     print(str(e))
     warn("Sounddevice not available.")
 
-from . import utils, IO, sph
+from . import io, utils, sph
 from . import process as pcs
 
 
@@ -74,7 +74,7 @@ class MonoSignal:
 
     def save(self, filename):
         """Save to file."""
-        IO.save_audio(self, os.path.expanduser(filename))
+        io.save_audio(self, os.path.expanduser(filename))
 
     def trim(self, start, stop):
         """Trim audio to start and stop in seconds."""

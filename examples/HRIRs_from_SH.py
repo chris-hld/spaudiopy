@@ -32,7 +32,7 @@ from scipy import signal as scysignal
 
 import soundfile as sf
 
-from spaudiopy import plots, sph, process, utils, grids, IO
+from spaudiopy import io, plots, sph, process, utils, grids
 
 
 # %% Setup
@@ -103,7 +103,7 @@ plt.ylabel('A in dB')
 plt.title('HRIR ETC')
 
 # %% Headphone compensation / applying inverse common transfer function
-sofa_data = IO.load_sofa_data('../data/0 HRIRs neutral head orientation/SOFA/FABIAN_CTF_measured_inverted_smoothed.sofa')
+sofa_data = io.load_sofa_data('../data/0 HRIRs neutral head orientation/SOFA/FABIAN_CTF_measured_inverted_smoothed.sofa')
 h_headphone = sofa_data['Data.IR']
 h_samplerate = sofa_data['Data.SamplingRate']
 
@@ -139,7 +139,7 @@ plots.freq_resp(freq, [np.fft.rfft(hrir_l_hp48k[plt_idx, :]),
                 title='Resampled HRTF')
 
 # %% Save to .mat
-# IO.get_default_hrirs() does the job now, have a look!
+# io.get_default_hrirs() does the job now, have a look!
 SAVENEW = False
 if SAVENEW:
     savemat('../data/HRTF_default', {'hrir_l': hrir_l_hp,
