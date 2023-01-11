@@ -74,7 +74,7 @@ class LoudspeakerSetup:
 
         # amplitude decay exponent
         self.a = 1
-        
+
         # Loudspeaker static gains
         self.ls_gains = np.ones(len(self.d))  # Available, but not used, yet
 

@@ -90,7 +90,7 @@ class MonoSignal:
         h = utils.asarray_1d(h)
         self.signal = scysig.convolve(self.signal, h, **kwargs)
         return self
-    
+
     def resample(self, fs_new):
         """Resample signal to new sampling rate fs_new."""
         if fs_new == self.fs:
