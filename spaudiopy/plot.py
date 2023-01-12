@@ -472,8 +472,8 @@ def sh_coeffs_subplot(F_nm_list, sh_type=None, azi_steps=5, el_steps=3,
     cbar.set_ticklabels([r'$-\pi$', r'$0$', r'$\pi$'])
 
 
-def sh_rms_map(F_nm, TODB=False, w_n=None, sh_type=None, n_plot=50,
-               title=None, fig=None):
+def sh_rms_map(F_nm, TODB=False, w_n=None, sh_type=None, n_plot=50, title=None,
+               fig=None):
     """Plot spherical harmonic signal RMS as function on the sphere.
     Evaluates the maxDI beamformer, if w_n is None.
 
