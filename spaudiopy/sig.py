@@ -19,7 +19,6 @@ from warnings import warn
 
 import numpy as np
 from scipy import signal as scysig
-import pandas as pd
 import soundfile as sf
 try:
     import sounddevice as sd
@@ -215,16 +214,16 @@ class AmbiBSignal(MultiSignal):
 class HRIRs:
     """Signal class for head-related impulse responses."""
 
-    def __init__(self, left, right, grid, fs):
+    def __init__(self, left, right, azi, zen, fs):
         """Constructor.
 
         Parameters
         ----------
         left : (numDirs, numTaps) ndarray
             Left ear HRIRs.
-        right : numDirs, numTaps ndarray
+        right : (numDirs, numTaps) ndarray
             Right ear HRIRs.
-        grid : pd.DataFrame, containing 'azi' and 'colat'
+        azi : (numDirs,) array_like, in rad
         fs : int
 
         """
@@ -233,14 +232,18 @@ class HRIRs:
         assert len(left) == len(right), "Signals must be of same length."
         assert left.ndim == 2
         assert right.ndim == 2
-        assert isinstance(grid, pd.DataFrame)
+        azi = utils.asarray_1d(azi)
+        zen = utils.asarray_1d(zen)
+        assert len(azi) == len(zen)
+        assert len(azi) == left.shape[0]
 
         self.left = left
         self.right = right
-        self.grid = grid
+        self.azi = azi
+        self.zen = zen
         self.fs = fs
-        assert len(grid) == len(left)
-        self.grid_points = len(grid)
+        self.num_grid_points = len(azi)
+        self.num_samples = left.shape[1]
 
     def __len__(self):
         """Override len() to count of samples per hrir."""
@@ -270,9 +273,9 @@ class HRIRs:
 
         """
         # reinitialize
-        self.__init__(left, right, self.grid, self.fs)
+        self.__init__(left, right, self.azi, self.zen, self.fs)
 
-    def nearest_hrirs(self, azi, colat):
+    def nearest_hrirs(self, azi, zen):
         """For a point on the sphere, select closest hrir defined on grid.
 
         Based on the haversine distance.
@@ -291,22 +294,12 @@ class HRIRs:
         h_r : (n,) array_like
             h(t) closest to [phi, theta].
         """
-        grid_azi = self.grid['azi'].values
-        grid_colat = self.grid['colat'].values
         # search closest gridpoint
-        d_idx = np.argmin(utils.haversine(grid_azi, grid_colat, azi, colat))
-        VERBOSE = False
-        if VERBOSE:
-            with open("selected_hrtf.txt", "a") as f:
-                f.write("idx {}, phi: {}, g_phi: {}, th: {}, g_th: {}".format(
-                    d_idx,
-                    utils.rad2deg(azi), utils.rad2deg(grid_azi[d_idx]),
-                    utils.rad2deg(colat), utils.rad2deg(grid_colat[d_idx])))
-                f.write('\n')
+        d_idx = self.nearest(azi, zen)
         # get hrirs to that angle
         return self[d_idx]
 
-    def nearest(self, azi, colat):
+    def nearest(self, azi, zen):
         """
         Index of nearest hrir grid point based on haversine distance.
 
@@ -322,9 +315,7 @@ class HRIRs:
         idx : int
             Index.
         """
-        grid_azi = self.grid['azi'].values
-        grid_colat = self.grid['colat'].values
-        return np.argmin(utils.haversine(grid_azi, grid_colat, azi, colat))
+        return np.argmin(utils.haversine(self.azi, self.zen, azi, zen))
 
 
 def trim_audio(A, start, stop):

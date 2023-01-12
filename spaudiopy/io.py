@@ -19,7 +19,6 @@ import json
 from datetime import datetime
 
 import numpy as np
-import pandas as pd
 from scipy.io import loadmat, savemat
 import h5py
 
@@ -126,17 +125,18 @@ def load_hrirs(fs, filename=None, jobs_count=None):
             h(t) for grid position g.
         right : (g, h) numpy.ndarray
             h(t) for grid position g.
-        grid : (g, 2) pandas.dataframe
-            [azi: azimuth, colat: colatitude] for hrirs.
+        azi : (g,) array_like
+            grid azimuth.
+        zen : (g,) array_like
+            grid zenith / colatitude.
         fs : int
             fs(t).
 
     """
     if filename == 'dummy':
         azi, colat, _ = grids.gauss(15)
-        grid = pd.DataFrame({'azi': azi, 'colat': colat})
         # Create diracs as dummy
-        hrir_l = np.zeros([grid.shape[0], 256])
+        hrir_l = np.zeros([len(azi), 256])
         hrir_l[:, 0] = np.ones(hrir_l.shape[0])
         hrir_r = np.zeros_like(hrir_l)
         hrir_r[:, 0] = np.ones(hrir_r.shape[0])
@@ -170,9 +170,8 @@ def load_hrirs(fs, filename=None, jobs_count=None):
 
         azi = np.array(np.squeeze(mat['azi']), dtype=float)
         colat = np.array(np.squeeze(mat['colat']), dtype=float)
-        grid = pd.DataFrame({'azi': azi, 'colat': colat})
 
-    HRIRs = sig.HRIRs(hrir_l, hrir_r, grid, hrir_fs)
+    HRIRs = sig.HRIRs(hrir_l, hrir_r, azi, colat, hrir_fs)
     assert HRIRs.fs == fs
     return HRIRs
 
@@ -292,8 +291,10 @@ def load_sofa_hrirs(filename):
             h(t) for grid position g.
         right : (g, h) numpy.ndarray
             h(t) for grid position g.
-        grid : (g, 2) pandas.dataframe
-            [azi: azimuth, colat: colatitude] for hrirs.
+        azi : (g,) array_like
+            grid azimuth.
+        zen : (g,) array_like
+            grid zenith / colatitude.
         fs : int
             fs(t).
 
@@ -308,8 +309,7 @@ def load_sofa_hrirs(filename):
     assert(all(grid_zen > -10e-6))  # Otherwise not zen
     irs_left = np.squeeze(irs[:, 0, :])
     irs_right = np.squeeze(irs[:, 1, :])
-    irs_grid = pd.DataFrame({'azi': grid_azi, 'colat': grid_zen})
-    HRIRs = sig.HRIRs(irs_left, irs_right, irs_grid, fs)
+    HRIRs = sig.HRIRs(irs_left, irs_right, grid_azi, grid_zen, fs)
     return HRIRs
 
 
@@ -333,7 +333,7 @@ def sofa_to_sh(filename, N_sph, sh_type='real'):
     """
     hrirs = load_sofa_hrirs(filename)
     fs = hrirs.fs
-    grid_azi, grid_zen = hrirs.grid['azi'], hrirs.grid['colat']
+    grid_azi, grid_zen = hrirs.azi, hrirs.zen
     # Pinv / lstsq since we can't be sure about the grid
     Y_pinv = np.linalg.pinv(sph.sh_matrix(N_sph, grid_azi, grid_zen, sh_type))
     irs = np.stack((hrirs.left, hrirs.right), axis=0)

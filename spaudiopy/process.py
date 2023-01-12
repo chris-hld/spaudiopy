@@ -198,7 +198,7 @@ def itds_from_hrirs(hrirs, f_cut=(100, 1.5e3), upsample=4):
     hrirs_l_us = signal.sosfiltfilt(sos, hrirs_l_us, axis=-1)
     hrirs_r_us = signal.sosfiltfilt(sos, hrirs_r_us, axis=-1)
 
-    maxidx = np.zeros(hrirs.grid_points)
+    maxidx = np.zeros(hrirs.num_grid_points)
     for idx, hrirs_dir in enumerate(zip(hrirs_l_us, hrirs_r_us)):
         maxidx[idx] = np.argmax(np.correlate(hrirs_dir[0]**2, hrirs_dir[1]**2,
                                              mode='same'))

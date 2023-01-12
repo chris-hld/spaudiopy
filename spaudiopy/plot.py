@@ -1022,8 +1022,8 @@ def hrirs_ild_itd(hrirs, plevels=50, pclims=(None, None), title=None,
     ilds = process.ilds_from_hrirs(hrirs, TODB=True)
     itds = process.itds_from_hrirs(hrirs)
 
-    pazi = np.fmod(hrirs.grid['azi'] + np.pi, 2*np.pi) - np.pi
-    pzen = hrirs.grid['colat']
+    pazi = np.fmod(hrirs.azi + np.pi, 2*np.pi) - np.pi
+    pzen = hrirs.zen
     if fig is None:
         fig = plt.figure(constrained_layout=True)
     ax1 = fig.add_subplot(2, 1, 1)

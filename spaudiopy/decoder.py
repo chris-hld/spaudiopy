@@ -1377,9 +1377,8 @@ def magls_bin(hrirs, N_sph, f_trans=None, hf_cont='angle', hf_delay=(0, 0)):
     fs = hrirs.fs
     hrirs_l = hrirs.left
     hrirs_r = hrirs.right
-    azi = hrirs.grid['azi']
-    zen = hrirs.grid['colat']
-
+    azi = hrirs.azi
+    zen = hrirs.zen
     numSmpls = hrirs.left.shape[1]
     nfftmin = 1024
     nfft = np.max([nfftmin, numSmpls])
@@ -1394,8 +1393,8 @@ def magls_bin(hrirs, N_sph, f_trans=None, hf_cont='angle', hf_delay=(0, 0)):
     Y_pinv = np.linalg.pinv(Y)
 
     hrtfs_mls_nm = np.zeros((2, (N_sph+1)**2, len(freqs)), dtype=hrtfs_l.dtype)
-    phi_l_mod = np.zeros((hrirs.grid_points, len(freqs)))
-    phi_r_mod = np.zeros((hrirs.grid_points, len(freqs)))
+    phi_l_mod = np.zeros((hrirs.num_grid_points, len(freqs)))
+    phi_r_mod = np.zeros((hrirs.num_grid_points, len(freqs)))
     # TODO: weights, transition, order dependent
 
     # linear part
