@@ -47,7 +47,7 @@ def estimate_num_sources(cov_x, a=None):
     cov_x : (L, L) numpy.2darray
         Signal covariance.
     a : float
-        Threshold condition, defaults to `1 + 2/len(cov_x)`
+        Threshold condition (ratio), defaults to `1 + 2/len(cov_x)`
 
     Returns
     -------
