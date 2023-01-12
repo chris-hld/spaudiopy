@@ -37,6 +37,37 @@ shared_array = None
 lock = multiprocessing.RLock()
 
 
+def estimate_num_sources(cov_x, a=None):
+    """Active source count estimate from signal covariance.
+
+    Based on the relation of consecutive eigenvalues.
+
+    Parameters
+    ----------
+    cov_x : (L, L) numpy.2darray
+        Signal covariance.
+    a : float
+        Threshold condition, defaults to `1 + 2/len(cov_x)`
+
+    Returns
+    -------
+    num_src_est : int
+        Number of active sources estimate.
+
+    Examples
+    --------
+    See :py:func:`spaudiopy.sph.eb_music`.
+
+    """
+    if a is None:
+        a = 1 + 2/len(cov_x)
+    w = np.linalg.eigvalsh(cov_x)
+    c = w[1:] / (w[:-1] + 10e-8)
+    cn = np.argmax(c > a)
+    num_src_est = len(w)-1 - cn
+    return num_src_est
+
+
 # part of parallel pseudo_intensity:
 def _intensity_sample(i, W, X, Y, Z, win):
     buf = len(win)

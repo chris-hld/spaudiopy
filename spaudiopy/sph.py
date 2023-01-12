@@ -1105,15 +1105,15 @@ def eb_music(cov_x, numSrc, dirs_azi, dirs_zen):
         :context: close-figs
 
         N_sph = 3
-        numSrc = 3
-        x = spa.sph.src_to_sh(np.random.randn(numSrc, 1000),
+        x = spa.sph.src_to_sh(np.random.randn(3, 1000),
                               [np.pi/2, -np.pi/4, np.pi/3],
                               [np.pi/3, np.pi/2, 2/3 * np.pi], N_sph)
 
         X = x @ x.T
+        num_src_est = spa.parsa.estimate_num_sources(X)
         vecs, _ = spa.grids.load_maxDet(50)
         dirs = spa.utils.vecs2dirs(vecs)
-        P_music = spa.sph.eb_music(X, numSrc, dirs[:,0], dirs[:,1])
+        P_music = spa.sph.eb_music(X, num_src_est, dirs[:,0], dirs[:,1])
         spa.plot.spherical_function_map(P_music, dirs[:,0], dirs[:,1],
                                          TODB=True, title="MUSIC spectrum")
 
