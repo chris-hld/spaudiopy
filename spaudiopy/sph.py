@@ -784,7 +784,7 @@ def hypercardioid_modal_weights(N_sph):
 
     Notes
     -----
-    Also called max-DI or normalized PWD.
+    Also called `max-DI` or `normalized PWD`.
 
     Examples
     --------
@@ -814,6 +814,11 @@ def cardioid_modal_weights(N_sph):
     -------
     w_n : (N+1,) array_like
         Modal weighting factors.
+
+    Notes
+    -----
+    Also called `in-phase weights`, where
+    :math:`w_{n, cardioid} = 4\pi*w_{n, inphase} / (N+1)` .
 
     Examples
     --------
