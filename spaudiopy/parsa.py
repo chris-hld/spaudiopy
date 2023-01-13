@@ -37,7 +37,7 @@ shared_array = None
 lock = multiprocessing.RLock()
 
 
-def estimate_num_sources(cov_x, a=None):
+def estimate_num_sources(cov_x, a=None, w=None):
     """Active source count estimate from signal covariance.
 
     Based on the relation of consecutive eigenvalues.
@@ -46,8 +46,10 @@ def estimate_num_sources(cov_x, a=None):
     ----------
     cov_x : (L, L) numpy.2darray
         Signal covariance.
-    a : float
+    a : float, optional
         Threshold condition (ratio), defaults to `1 + 2/len(cov_x)`
+    w : (L,) array_like, optional
+        Eigenvalues in ascending order, not using `cov_x` if available.
 
     Returns
     -------
@@ -59,12 +61,18 @@ def estimate_num_sources(cov_x, a=None):
     See :py:func:`spaudiopy.parsa.eb_music`.
 
     """
+    if w is None:
+        w = np.linalg.eigvalsh(cov_x)
+    else:
+        w = utils.asarray_1d(w)
     if a is None:
-        a = 1 + 2/len(cov_x)
-    w = np.linalg.eigvalsh(cov_x)
-    c = w[1:] / (w[:-1] + 10e-8)
-    cn = np.argmax(c > a)
-    num_src_est = len(w)-1 - cn
+        a = 1 + 2/len(w)
+    if np.var(w) < a:
+        num_src_est = 0
+    else:
+        c = w[1:] / (w[:-1] + 10e-8)
+        cn = np.argmax(c > a)
+        num_src_est = len(w)-1 - cn
     return num_src_est
 
 
