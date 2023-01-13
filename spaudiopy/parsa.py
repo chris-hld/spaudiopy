@@ -180,6 +180,68 @@ def sh_music(cov_x, num_src, dirs_azi, dirs_zen):
     return P_music
 
 
+def sh_mvdr(cov_x, num_src, dirs_azi, dirs_zen):
+    """Spherical Harmonics domain MVDR beamformer.
+    SH / Eigenbeam domain minimum variance distortionless response (EB-MVDR).
+    Often employed with `num_src = 0`, then called minimum power distortionless
+    response (MPDR) beamformer.
+
+    Parameters
+    ----------
+    cov_x : (L, L) numpy.2darray
+        SH signal covariance.
+    num_src : int
+        Number of sources.
+    dirs_azi : (g,) array_like
+    dirs_zen : (g,) array_like
+
+    Returns
+    -------
+    W_nm : (g, L) numpy.2darray
+        MVDR beampattern weights.
+
+    References
+    ----------
+    Rafaely, B. (2015). Fundamentals of Spherical Array Processing. Springer.
+    ch. 7.2.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        N_sph = 3
+        x = spa.sph.src_to_sh(np.random.randn(3, 1000),
+                              [np.pi/2, -np.pi/4, np.pi/3],
+                              [np.pi/3, np.pi/2, 2/3 * np.pi], N_sph)
+        x += np.random.randn(16, 1000)
+        cov_x = x @ x.T
+
+        num_src_est = spa.parsa.estimate_num_sources(cov_x)
+        vecs, _ = spa.grids.load_maxDet(50)
+        dirs = spa.utils.vecs2dirs(vecs)
+        W_nm = spa.parsa.sh_mvdr(cov_x, num_src_est, dirs[:,0], dirs[:,1])
+        y = W_nm @ x
+        spa.plot.spherical_function_map(spa.utils.rms(y), dirs[:,0], dirs[:,1],
+                                        TODB=True, title="MVDR output RMS")
+
+    """
+    assert(cov_x.shape[0] == cov_x.shape[1])
+    N_sph = int(np.sqrt(cov_x.shape[0]) - 1)
+    dirs_azi = utils.asarray_1d(dirs_azi)
+    dirs_zen = utils.asarray_1d(dirs_zen)
+    Y_steer = sph.sh_matrix(N_sph, dirs_azi, dirs_zen, sh_type='real')
+    if num_src > 0:
+        _, X_nn = separate_cov(cov_x, num_cut=num_src)
+        S_inv = np.linalg.inv(X_nn)
+    else:
+        S_inv = np.linalg.inv(cov_x)
+    c = Y_steer @ S_inv
+    a = Y_steer @ S_inv @ Y_steer.conj().T
+    W_nm = c.T / np.diag(a)
+    return W_nm.T
+
+
 # part of parallel pseudo_intensity:
 def _intensity_sample(i, W, X, Y, Z, win):
     buf = len(win)
