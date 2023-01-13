@@ -26,7 +26,7 @@ from joblib import Memory
 import multiprocessing
 
 from scipy import signal
-from . import utils
+from . import utils, sph
 from . import process as pcs
 
 
@@ -56,7 +56,7 @@ def estimate_num_sources(cov_x, a=None):
 
     Examples
     --------
-    See :py:func:`spaudiopy.sph.eb_music`.
+    See :py:func:`spaudiopy.parsa.eb_music`.
 
     """
     if a is None:
@@ -66,6 +66,55 @@ def estimate_num_sources(cov_x, a=None):
     cn = np.argmax(c > a)
     num_src_est = len(w)-1 - cn
     return num_src_est
+
+
+def eb_music(cov_x, num_src, dirs_azi, dirs_zen):
+    """Eigenbeam Multiple Signal Classification (EB-MUSIC).
+
+    Parameters
+    ----------
+    cov_x : (L, L) numpy.2darray
+        SH signal covariance.
+    num_src : int
+        Number of sources.
+    dirs_azi : (g,) array_like
+    dirs_zen : (g,) array_like
+
+    Returns
+    -------
+    P_music : (g,) array_like
+        MUSIC (psuedo-) spectrum.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        N_sph = 3
+        x = spa.sph.src_to_sh(np.random.randn(3, 1000),
+                              [np.pi/2, -np.pi/4, np.pi/3],
+                              [np.pi/3, np.pi/2, 2/3 * np.pi], N_sph)
+        x += np.random.randn(16, 1000)
+        cov_x = x @ x.T
+
+        num_src_est = spa.parsa.estimate_num_sources(cov_x)
+        vecs, _ = spa.grids.load_maxDet(50)
+        dirs = spa.utils.vecs2dirs(vecs)
+        P_music = spa.parsa.eb_music(cov_x, num_src_est, dirs[:,0], dirs[:,1])
+        spa.plot.spherical_function_map(P_music, dirs[:,0], dirs[:,1],
+                                        TODB=True, title="MUSIC spectrum")
+
+    """
+    assert(cov_x.shape[0] == cov_x.shape[1])
+    N_sph = int(np.sqrt(cov_x.shape[0]) - 1)
+    dirs_azi = utils.asarray_1d(dirs_azi)
+    dirs_zen = utils.asarray_1d(dirs_zen)
+    Y = sph.sh_matrix(N_sph, dirs_azi, dirs_zen, sh_type='real')
+    _, v = np.linalg.eigh(cov_x)
+    Qn = v[:, :-num_src]
+    a = (Qn.T @ Y.T)
+    P_music = 1 / (np.sum(a * a, 0) + 10e-12)
+    return P_music
 
 
 # part of parallel pseudo_intensity:
