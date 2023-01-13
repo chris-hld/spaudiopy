@@ -17,19 +17,18 @@
 
 """
 from pathlib import Path
-from subprocess import check_output
+from subprocess import run
 
 file_dir = Path(__file__).parent.absolute()
 
 
 try:
-    release = check_output(['git', 'describe', '--tags', '--always', '--long',
-                            '--dirty'],
-                           cwd=str(file_dir))
-    __version__ = release.decode().strip()
+    r = run(['git', 'describe', '--tags', '--always', '--long', '--dirty'],
+            check=True, capture_output=True, cwd=str(file_dir))
+    __version__ = r.stdout.decode().strip()
 
 except Exception:
-    __version__ = "unknown"
+    __version__ = "unknown (v0.2.0)"
 
 
 from . import decoder
