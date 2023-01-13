@@ -77,14 +77,14 @@ def estimate_num_sources(cov_x, a=None, w=None):
 
 
 def separate_cov(cov_x, num_cut=None):
-    """Seperate Covariance matrix in signal and noise components.
+    """Separate Covariance matrix in signal and noise components.
 
     Parameters
     ----------
     S_xx : (L, L) numpy.2darray
         Covariance.
     num_cut : int, optional
-        Split point of Eigenvalues, default: estimate_num_sources().
+        Split point of Eigenvalues, default: `parsa.estimate_num_sources()`.
 
     Returns
     -------
@@ -95,7 +95,7 @@ def separate_cov(cov_x, num_cut=None):
 
     Notes
     -----
-    Signal model is :math: `cov_x = S_p + S_n` .
+    Signal model is :math:`S_x = S_p + S_n` .
 
     Examples
     --------
