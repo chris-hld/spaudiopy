@@ -76,6 +76,63 @@ def estimate_num_sources(cov_x, a=None, w=None):
     return num_src_est
 
 
+def separate_cov(cov_x, num_cut=None):
+    """Seperate Covariance matrix in signal and noise components.
+
+    Parameters
+    ----------
+    S_xx : (L, L) numpy.2darray
+        Covariance.
+    num_cut : int, optional
+        Split point of Eigenvalues, default: estimate_num_sources().
+
+    Returns
+    -------
+    S_pp : (L, L) numpy.2darray
+        Signal covariance.
+    S_ss : (L, L) numpy.2darray
+        Noise (residual) covariance.
+
+    Notes
+    -----
+    Signal model is :math: `cov_x = S_p + S_n` .
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        N_sph = 3
+        x = spa.sph.src_to_sh(np.random.randn(3, 1000),
+                              [np.pi/2, -np.pi/4, np.pi/3],
+                              [np.pi/3, np.pi/2, 2/3 * np.pi], N_sph)
+        x += np.random.randn(16, 1000)
+        S_xx = x @ x.T
+        S_pp, S_nn = spa.parsa.separate_cov(S_xx, num_cut=3)
+        fig, axs = plt.subplots(1, 3)
+        axs[0].matshow(S_xx)
+        axs[0].set_title("X")
+        axs[1].matshow(S_nn)
+        axs[1].set_title("N")
+        axs[2].matshow(S_pp)
+        axs[2].set_title("S")
+
+    """
+    assert(cov_x.shape[0] == cov_x.shape[1])
+    w, v = np.linalg.eigh(cov_x)
+    if num_cut is None:
+        num_cut = estimate_num_sources([], w=w)
+
+    w_nn = 1. * w
+    w_nn[-num_cut:] = np.mean(w[:-num_cut])
+    S_nn = v @ np.diag(w_nn) @ v.T
+    S_pp = v[:, -num_cut:] @ (np.diag(w[-num_cut:] - np.mean(w[:-num_cut]))) \
+        @ v[:, -num_cut:].T
+    return S_pp, S_nn
+
+
+def sh_music(cov_x, num_src, dirs_azi, dirs_zen):
+    """SH domain / Eigenbeam Multiple Signal Classification (EB-MUSIC).
 
     Parameters
     ----------
