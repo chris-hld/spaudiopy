@@ -555,7 +555,7 @@ def spherical_function_map(f, azi, zen, TODB=False, title=None, fig=None):
 
     Examples
     --------
-    See :py:mod:`spaudiopy.parsa.eb_music`
+    See :py:mod:`spaudiopy.parsa.sh_music`
 
     """
     f = utils.asarray_1d(np.real_if_close(f))

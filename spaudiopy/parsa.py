@@ -58,7 +58,7 @@ def estimate_num_sources(cov_x, a=None, w=None):
 
     Examples
     --------
-    See :py:func:`spaudiopy.parsa.eb_music`.
+    See :py:func:`spaudiopy.parsa.sh_music`.
 
     """
     if w is None:
@@ -76,8 +76,6 @@ def estimate_num_sources(cov_x, a=None, w=None):
     return num_src_est
 
 
-def eb_music(cov_x, num_src, dirs_azi, dirs_zen):
-    """Eigenbeam Multiple Signal Classification (EB-MUSIC).
 
     Parameters
     ----------
@@ -108,7 +106,7 @@ def eb_music(cov_x, num_src, dirs_azi, dirs_zen):
         num_src_est = spa.parsa.estimate_num_sources(cov_x)
         vecs, _ = spa.grids.load_maxDet(50)
         dirs = spa.utils.vecs2dirs(vecs)
-        P_music = spa.parsa.eb_music(cov_x, num_src_est, dirs[:,0], dirs[:,1])
+        P_music = spa.parsa.sh_music(cov_x, num_src_est, dirs[:,0], dirs[:,1])
         spa.plot.spherical_function_map(P_music, dirs[:,0], dirs[:,1],
                                         TODB=True, title="MUSIC spectrum")
 
