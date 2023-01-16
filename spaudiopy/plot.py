@@ -572,6 +572,7 @@ def spherical_function_map(f, azi, zen, TODB=False, title=None, fig=None):
     ax = fig.add_subplot()
     ax.set_aspect('equal')
 
+    p = ax.tricontourf(azi, zen, f, levels=100, alpha=0.25)
     p = ax.scatter(azi, zen, c=f, alpha=0.8, edgecolor='none')
     ax.grid(True)
 
