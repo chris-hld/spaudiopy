@@ -180,18 +180,16 @@ def sh_music(cov_x, num_src, dirs_azi, dirs_zen):
     return P_music
 
 
-def sh_mvdr(cov_x, num_src, dirs_azi, dirs_zen):
+def sh_mvdr(cov_x, dirs_azi, dirs_zen):
     """Spherical Harmonics domain MVDR beamformer.
     SH / Eigenbeam domain minimum variance distortionless response (EB-MVDR).
-    Often employed with `num_src = 0`, then called minimum power distortionless
-    response (MPDR) beamformer.
+    Often employed on signal `cov_x = S_xx`, instead of noise `cov_x = S_nn`,
+    then called minimum power distortionless response (MPDR) beamformer.
 
     Parameters
     ----------
     cov_x : (L, L) numpy.2darray
-        SH signal covariance.
-    num_src : int
-        Number of sources.
+        SH signal (noise) covariance.
     dirs_azi : (g,) array_like
     dirs_zen : (g,) array_like
 
@@ -231,11 +229,7 @@ def sh_mvdr(cov_x, num_src, dirs_azi, dirs_zen):
     dirs_azi = utils.asarray_1d(dirs_azi)
     dirs_zen = utils.asarray_1d(dirs_zen)
     Y_steer = sph.sh_matrix(N_sph, dirs_azi, dirs_zen, sh_type='real')
-    if num_src > 0:
-        _, X_nn = separate_cov(cov_x, num_cut=num_src)
-        S_inv = np.linalg.inv(X_nn)
-    else:
-        S_inv = np.linalg.inv(cov_x)
+    S_inv = np.linalg.inv(cov_x)
     c = Y_steer @ S_inv
     a = Y_steer @ S_inv @ Y_steer.conj().T
     W_nm = c.T / np.diag(a)
