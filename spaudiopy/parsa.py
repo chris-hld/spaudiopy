@@ -124,10 +124,10 @@ def separate_cov(cov_x, num_cut=None):
         num_cut = estimate_num_sources([], w=w)
 
     w_nn = 1. * w
-    w_nn[-num_cut:] = np.mean(w[:-num_cut])
+    w_r = w[-(num_cut+1)]
+    w_nn[-num_cut:] = w_r
     S_nn = v @ np.diag(w_nn) @ v.T
-    S_pp = v[:, -num_cut:] @ (np.diag(w[-num_cut:] - np.mean(w[:-num_cut]))) \
-        @ v[:, -num_cut:].T
+    S_pp = v[:, -num_cut:] @ (np.diag(w[-num_cut:] - w_r)) @ v[:, -num_cut:].T
     return S_pp, S_nn
 
 
