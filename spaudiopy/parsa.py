@@ -309,6 +309,62 @@ def sh_mvdr(cov_x, dirs_azi, dirs_zen):
     return W_nm.T
 
 
+def sh_lcmv(cov_x, dirs_azi_c, dirs_zen_c, c):
+    """Spherical Harmonics domain LCMV beamformer.
+    SH / Eigenbeam domain Linearly Constrained Minimum Variance (LCMV)
+    beamformer.
+    Often employed on signal `cov_x = S_xx`, instead of noise `cov_x = S_nn`,
+    then called linearly constrained minimum power (LCMP) beamformer.
+
+    Parameters
+    ----------
+    cov_x : (L, L) numpy.2darray
+        SH signal (noise) covariance.
+    dirs_azi : (g,) array_like
+    dirs_zen : (g,) array_like
+    c : (g,) array_like
+        Constraints on points `[dirs_azi, dirs_zen]`.
+
+    Returns
+    -------
+    w_nm : (L,) array_like
+        LCMV beampattern weights.
+
+    References
+    ----------
+    Rafaely, B. (2015). Fundamentals of Spherical Array Processing. Springer.
+    ch. 7.5.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        S_xx = x_nm @ x_nm.T
+        num_src_est = spa.parsa.estimate_num_sources(S_xx)
+        _, S_nn = spa.parsa.separate_cov(S_xx, num_cut=num_src_est)
+
+        dirs_azi_c = [np.pi/2, np.pi, 0]
+        dirs_zen_c = [np.pi/2, np.pi/2, np.pi/3]
+        c = [1, 0, 0]
+        w_nm = spa.parsa.sh_lcmv(S_nn, dirs_azi_c, dirs_zen_c, c)
+        spa.plot.sh_coeffs(w_nm)
+
+    """
+    assert(cov_x.shape[0] == cov_x.shape[1])
+    dirs_azi_c = utils.asarray_1d(dirs_azi_c)
+    dirs_zen_c = utils.asarray_1d(dirs_zen_c)
+    c = utils.asarray_1d(c)
+
+    assert(len(dirs_azi_c) == len(dirs_zen_c))
+    assert(len(dirs_azi_c) == len(c))
+    N_sph = int(np.sqrt(cov_x.shape[0]) - 1)
+    V = sph.sh_matrix(N_sph, dirs_azi_c, dirs_zen_c, sh_type='real').T
+    S_inv = np.linalg.inv(cov_x)
+    w_nm = c.T @ np.linalg.inv(V.T @ S_inv @ V) @ V.T @ S_inv
+    return w_nm
+
+
 # part of parallel pseudo_intensity:
 def _intensity_sample(i, W, X, Y, Z, win):
     buf = len(win)
