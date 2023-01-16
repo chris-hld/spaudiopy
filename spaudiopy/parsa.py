@@ -88,6 +88,42 @@ def sh_beamformer_from_pattern(pattern, N_sph, azi_steer, zen_steer):
     return w_nm * Y_steer
 
 
+def sh_beamform(w_nm, sig_nm):
+    """Apply spherical harmonics domain (SHD) beamformer.
+
+    Parameters
+    ----------
+    w_nm : ((N+1)**2,) array_like, or (J, (N+1)**2) np.ndarray
+        SHD beamformer weights (for `J` beamformers)
+    sig_nm : ((N+1)**2, l) np.ndarray
+        SHD signal of length l.
+
+    Returns
+    -------
+    y : (J, l) np.ndarray
+        Beamformer output signals.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        vecs, _ = spa.grids.load_maxDet(50)
+        dirs = spa.utils.vecs2dirs(vecs)
+        w_nm = spa.parsa.sh_beamformer_from_pattern('cardioid', N_sph,
+                                                    dirs[:,0], dirs[:,1])
+        y = spa.parsa.sh_beamform(w_nm, x_nm)
+        spa.plot.spherical_function_map(spa.utils.rms(y), dirs[:,0], dirs[:,1],
+                                        TODB=True, title="Output RMS")
+
+    """
+    W = np.atleast_2d(w_nm)
+    sig_nm = np.asarray(sig_nm)
+    if sig_nm.ndim == 1:
+        sig_nm = sig_nm[:, np.newaxis]  # upgrade to handle 1D arrays
+    return W @ sig_nm
+
+
 def estimate_num_sources(cov_x, a=None, w=None):
     """Active source count estimate from signal covariance.
 
@@ -256,7 +292,7 @@ def sh_mvdr(cov_x, dirs_azi, dirs_zen):
         vecs, _ = spa.grids.load_maxDet(50)
         dirs = spa.utils.vecs2dirs(vecs)
         W_nm = spa.parsa.sh_mvdr(S_nn, dirs[:,0], dirs[:,1])
-        y = W_nm @ x_nm
+        y = spa.parsa.sh_beamform(W_nm, x_nm)
         spa.plot.spherical_function_map(spa.utils.rms(y), dirs[:,0], dirs[:,1],
                                         TODB=True, title="MVDR output RMS")
 
