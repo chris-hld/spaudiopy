@@ -46,6 +46,48 @@ shared_array = None
 lock = multiprocessing.RLock()
 
 
+def sh_beamformer_from_pattern(pattern, N_sph, azi_steer, zen_steer):
+    """Get spherical harmonics domain (SHD) beamformer coefficients.
+
+    Parameters
+    ----------
+    pattern : string , or (N+1, ) array_like
+        Pattern description, e.g. `'cardioid'` or modal weights.
+    N_sph : int
+        SH order.
+    azi_steer : (J,) array_like
+        Azimuth steering directions.
+    zen_steer : (J,) array_like
+        Zenith/colatitude steering directions.
+
+    Returns
+    -------
+    w_nm : (J, (N+1)**2) numpy.ndarray
+        SHD Beamformer weights.
+
+    Examples
+    --------
+    See :py:func:`spaudiopy.parsa.sh_beamform`.
+
+    """
+    if isinstance(pattern, str):
+        if pattern.lower() in ['hypercardioid', 'max_di']:
+            c_n = sph.hypercardioid_modal_weights(N_sph)
+        elif pattern.lower() in ['cardioid', 'inphase']:
+            c_n = sph.cardioid_modal_weights(N_sph)
+        elif pattern.lower() in ['max_re', 'maxre']:
+            c_n = sph.maxre_modal_weights(N_sph)
+        else:
+            raise ValueError("Pattern not available: " + pattern)
+    else:
+        c_n = utils.asarray1d(pattern)
+    assert len(c_n) == (N_sph+1), "Input not matching:" + c_n
+
+    w_nm = sph.repeat_per_order(c_n)
+    Y_steer = sph.sh_matrix(N_sph, azi_steer, zen_steer, sh_type='real')
+    return w_nm * Y_steer
+
+
 def estimate_num_sources(cov_x, a=None, w=None):
     """Active source count estimate from signal covariance.
 
