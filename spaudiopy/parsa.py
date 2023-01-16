@@ -10,6 +10,15 @@
 
     import spaudiopy as spa
 
+    N_sph = 3
+    # Three sources
+    x_nm = spa.sph.src_to_sh(np.random.randn(3, 10000),
+                            [np.pi/2, -np.pi/4, np.pi/3],
+                            [np.pi/3, np.pi/2, 2/3 * np.pi], N_sph)
+    # Diffuse noise
+    x_nm += np.sqrt(16)/np.sqrt(4*np.pi) * np.random.randn(16, 10000)
+    spa.plot.sh_rms_map(x_nm, title="Input SHD Signal")
+
 **Memory cached functions**
 
 .. autofunction:: spaudiopy.parsa.pseudo_intensity(ambi_b, win_len=33, f_bp=None, smoothing_order=5, jobs_count=1)
@@ -90,7 +99,7 @@ def separate_cov(cov_x, num_cut=None):
     -------
     S_pp : (L, L) numpy.2darray
         Signal covariance.
-    S_ss : (L, L) numpy.2darray
+    S_nn : (L, L) numpy.2darray
         Noise (residual) covariance.
 
     Notes
@@ -102,14 +111,9 @@ def separate_cov(cov_x, num_cut=None):
     .. plot::
         :context: close-figs
 
-        N_sph = 3
-        x = spa.sph.src_to_sh(np.random.randn(3, 1000),
-                              [np.pi/2, -np.pi/4, np.pi/3],
-                              [np.pi/3, np.pi/2, 2/3 * np.pi], N_sph)
-        x += np.random.randn(16, 1000)
-        S_xx = x @ x.T
+        S_xx = x_nm @ x_nm.T
         S_pp, S_nn = spa.parsa.separate_cov(S_xx, num_cut=3)
-        fig, axs = plt.subplots(1, 3)
+        fig, axs = plt.subplots(1, 3, constrained_layout=True)
         axs[0].matshow(S_xx)
         axs[0].set_title("X")
         axs[1].matshow(S_nn)
@@ -153,17 +157,12 @@ def sh_music(cov_x, num_src, dirs_azi, dirs_zen):
     .. plot::
         :context: close-figs
 
-        N_sph = 3
-        x = spa.sph.src_to_sh(np.random.randn(3, 1000),
-                              [np.pi/2, -np.pi/4, np.pi/3],
-                              [np.pi/3, np.pi/2, 2/3 * np.pi], N_sph)
-        x += np.random.randn(16, 1000)
-        cov_x = x @ x.T
+        S_xx = x_nm @ x_nm.T
+        num_src_est = spa.parsa.estimate_num_sources(S_xx)
 
-        num_src_est = spa.parsa.estimate_num_sources(cov_x)
         vecs, _ = spa.grids.load_maxDet(50)
         dirs = spa.utils.vecs2dirs(vecs)
-        P_music = spa.parsa.sh_music(cov_x, num_src_est, dirs[:,0], dirs[:,1])
+        P_music = spa.parsa.sh_music(S_xx, num_src_est, dirs[:,0], dirs[:,1])
         spa.plot.spherical_function_map(P_music, dirs[:,0], dirs[:,1],
                                         TODB=True, title="MUSIC spectrum")
 
@@ -208,18 +207,14 @@ def sh_mvdr(cov_x, dirs_azi, dirs_zen):
     .. plot::
         :context: close-figs
 
-        N_sph = 3
-        x = spa.sph.src_to_sh(np.random.randn(3, 1000),
-                              [np.pi/2, -np.pi/4, np.pi/3],
-                              [np.pi/3, np.pi/2, 2/3 * np.pi], N_sph)
-        x += np.random.randn(16, 1000)
-        cov_x = x @ x.T
+        S_xx = x_nm @ x_nm.T
+        num_src_est = spa.parsa.estimate_num_sources(S_xx)
+        _, S_nn = spa.parsa.separate_cov(S_xx, num_cut=num_src_est)
 
-        num_src_est = spa.parsa.estimate_num_sources(cov_x)
         vecs, _ = spa.grids.load_maxDet(50)
         dirs = spa.utils.vecs2dirs(vecs)
-        W_nm = spa.parsa.sh_mvdr(cov_x, num_src_est, dirs[:,0], dirs[:,1])
-        y = W_nm @ x
+        W_nm = spa.parsa.sh_mvdr(S_nn, dirs[:,0], dirs[:,1])
+        y = W_nm @ x_nm
         spa.plot.spherical_function_map(spa.utils.rms(y), dirs[:,0], dirs[:,1],
                                         TODB=True, title="MVDR output RMS")
 
