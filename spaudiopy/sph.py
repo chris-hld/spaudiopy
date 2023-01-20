@@ -919,16 +919,15 @@ def butterworth_modal_weights(N_sph, k, n_c, UNITAMP=True):
     return c_n/a
 
 
-def spat_filterbank_reconstruction_factor(w_nm, num_secs, mode=None):
+def sph_filterbank_reconstruction_factor(w_nm, num_secs, mode=None):
     """Reconstruction factor for restoring amplitude/energy preservation.
-
 
     Parameters
     ----------
     w_nm : ((N+1)**2,), array_like
         SH beam coefficients.
     num_secs : int
-        Number of spatial filters.
+        Number of SH beamformers.
     mode : 'amplitude' or 'energy'
 
     Raises
@@ -958,8 +957,8 @@ def spat_filterbank_reconstruction_factor(w_nm, num_secs, mode=None):
     return beta
 
 
-def design_spat_filterbank(N_sph, sec_azi, sec_zen, c_n, sh_type, mode):
-    """Design spatial filter bank analysis and reconstruction matrix.
+def design_sph_filterbank(N_sph, sec_azi, sec_zen, c_n, sh_type, mode):
+    """Design spherical filter bank analysis and reconstruction matrix.
 
     Parameters
     ----------
@@ -984,7 +983,7 @@ def design_spat_filterbank(N_sph, sec_azi, sec_zen, c_n, sh_type, mode):
     -------
     A : (J, (N+1)**2) numpy.ndarray
         Analysis matrix.
-    B : (J, (N+1)**2) numpy.ndarray
+    B : ((N+1)**2, J) numpy.ndarray
         Resynthesis matrix.
 
     References
@@ -1001,7 +1000,7 @@ def design_spat_filterbank(N_sph, sec_azi, sec_zen, c_n, sh_type, mode):
         N_sph = 3
         sec_dirs = spa.utils.cart2sph(*spa.grids.load_t_design(2*N_sph).T)
         c_n = spa.sph.maxre_modal_weights(N_sph)
-        [A, B] = spa.sph.design_spat_filterbank(N_sph, sec_dirs[0],
+        [A, B] = spa.sph.design_sph_filterbank(N_sph, sec_dirs[0],
                                                 sec_dirs[1], c_n, 'real',
                                                 'perfect')
         # diffuse input SH signal
@@ -1009,7 +1008,7 @@ def design_spat_filterbank(N_sph, sec_azi, sec_zen, c_n, sh_type, mode):
         # Sector signals (Analysis)
         s_sec = A @ in_nm
         # Reconstruction to SH domain
-        out_nm = B.conj().T @ s_sec
+        out_nm = B @ s_sec
 
         # Test perfect reconstruction
         print(spa.utils.test_diff(in_nm, out_nm))
@@ -1031,7 +1030,7 @@ def design_spat_filterbank(N_sph, sec_azi, sec_zen, c_n, sh_type, mode):
     else:
         raise ValueError("Mode not implemented: " + mode)
 
-    beta = spat_filterbank_reconstruction_factor(A[0, :], num_secs, mode=pres)
+    beta = sph_filterbank_reconstruction_factor(A[0, :], num_secs, mode=pres)
 
     # Reconstruction matrix
     if mode.lower() == 'perfect':
@@ -1043,7 +1042,7 @@ def design_spat_filterbank(N_sph, sec_azi, sec_zen, c_n, sh_type, mode):
     else:
         raise ValueError("Mode not implemented: " + mode)
 
-    return A, B
+    return A, B.conj().T
 
 
 def sh_mult(a_nm, b_nm, sh_type):
