@@ -16,7 +16,7 @@
                             [np.pi/2, -np.pi/4, np.pi/3],
                             [np.pi/3, np.pi/2, 2/3 * np.pi], N_sph)
     # Diffuse noise
-    x_nm += np.sqrt(16)/np.sqrt(4*np.pi) * np.random.randn(16, 10000)
+    x_nm += np.sqrt(16/(4*np.pi)) * np.random.randn(16, 10000)
     spa.plot.sh_rms_map(x_nm, title="Input SHD Signal")
 
 **Memory cached functions**
@@ -309,7 +309,7 @@ def sh_mvdr(cov_x, dirs_azi, dirs_zen):
     return W_nm.T
 
 
-def sh_lcmv(cov_x, dirs_azi_c, dirs_zen_c, c):
+def sh_lcmv(cov_x, dirs_azi_c, dirs_zen_c, c_gain):
     """Spherical Harmonics domain LCMV beamformer.
     SH / Eigenbeam domain Linearly Constrained Minimum Variance (LCMV)
     beamformer.
@@ -322,8 +322,8 @@ def sh_lcmv(cov_x, dirs_azi_c, dirs_zen_c, c):
         SH signal (noise) covariance.
     dirs_azi : (g,) array_like
     dirs_zen : (g,) array_like
-    c : (g,) array_like
-        Constraints on points `[dirs_azi, dirs_zen]`.
+    c_gain : (g,) array_like
+        Constraints (gain) on points `[dirs_azi, dirs_zen]`.
 
     Returns
     -------
@@ -354,14 +354,14 @@ def sh_lcmv(cov_x, dirs_azi_c, dirs_zen_c, c):
     assert(cov_x.shape[0] == cov_x.shape[1])
     dirs_azi_c = utils.asarray_1d(dirs_azi_c)
     dirs_zen_c = utils.asarray_1d(dirs_zen_c)
-    c = utils.asarray_1d(c)
+    c_gain = utils.asarray_1d(c_gain)
 
     assert(len(dirs_azi_c) == len(dirs_zen_c))
-    assert(len(dirs_azi_c) == len(c))
+    assert(len(dirs_azi_c) == len(c_gain))
     N_sph = int(np.sqrt(cov_x.shape[0]) - 1)
     V = sph.sh_matrix(N_sph, dirs_azi_c, dirs_zen_c, sh_type='real').T
     S_inv = np.linalg.inv(cov_x)
-    w_nm = c.T @ np.linalg.inv(V.T @ S_inv @ V) @ V.T @ S_inv
+    w_nm = c_gain.T @ np.linalg.inv(V.T @ S_inv @ V) @ V.T @ S_inv
     return w_nm
 
 
