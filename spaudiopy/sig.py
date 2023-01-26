@@ -295,11 +295,11 @@ class HRIRs:
             h(t) closest to [phi, theta].
         """
         # search closest gridpoint
-        d_idx = self.nearest(azi, zen)
+        d_idx = self.nearest_idx(azi, zen)
         # get hrirs to that angle
         return self[d_idx]
 
-    def nearest(self, azi, zen):
+    def nearest_idx(self, azi, zen):
         """
         Index of nearest hrir grid point based on haversine distance.
 

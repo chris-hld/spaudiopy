@@ -499,7 +499,7 @@ def render_stereo_sdm(sdm_p, sdm_phi, sdm_theta):
 
 # part of parallel render_bsdm:
 def _render_bsdm_sample(i, p, phi, theta, hrirs):
-    h_l, h_r = hrirs[hrirs.nearest(phi, theta)]
+    h_l, h_r = hrirs.nearest_hrirs(phi, theta)
     # global shared_array
     with lock:  # synchronize access, operator += needs lock!
         shared_array[i:i + len(h_l), 0] += p * h_l
@@ -538,7 +538,7 @@ def render_bsdm(sdm_p, sdm_phi, sdm_theta, hrirs, jobs_count=1):
 
     if jobs_count == 1:
         for i, (p, phi, theta) in enumerate(zip(sdm_p, sdm_phi, sdm_theta)):
-            h_l, h_r = hrirs[hrirs.nearest(phi, theta)]
+            h_l, h_r = hrirs.nearest_hrirs(phi, theta)
             # convolve
             bsdm_l[i:i + len(h_l)] += p * h_l
             bsdm_r[i:i + len(h_r)] += p * h_r
