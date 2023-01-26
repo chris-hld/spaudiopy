@@ -137,10 +137,17 @@ def load_hrirs(fs, filename=None, jobs_count=None):
         azi, colat, _ = grids.gauss(15)
         # Create diracs as dummy
         hrir_l = np.zeros([len(azi), 256])
-        hrir_l[:, 0] = np.ones(hrir_l.shape[0])
         hrir_r = np.zeros_like(hrir_l)
-        hrir_r[:, 0] = np.ones(hrir_r.shape[0])
         hrir_fs = fs
+        # apply ILD / ITD
+        a_l = 0.5*(1 + np.cos(azi - np.pi/2)) * np.sin(colat)
+        a_r = 0.5*(1 + np.cos(azi + np.pi/2)) * np.sin(colat)
+        hrir_l[np.arange(len(azi)), (a_r * 0.75e-3 * fs + 10).astype(int)] = 1.
+        hrir_r[np.arange(len(azi)), (a_l * 0.75e-3 * fs + 10).astype(int)] = 1.
+        hrir_l *= a_l[:, np.newaxis] + 0.1
+        hrir_r *= a_r[:, np.newaxis] + 0.1
+        hrir_l[np.arange(len(azi)), (a_l * 5).astype(int)] = hrir_l[:, 0]
+        hrir_r[np.arange(len(azi)), (a_r * 5).astype(int)] = hrir_r[:, 0]
 
     elif filename is None:
         # default

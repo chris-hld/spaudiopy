@@ -1019,6 +1019,15 @@ def hrirs_ild_itd(hrirs, plevels=50, pclims=(None, None), title=None,
     --------
     spaudiopy.process.ilds_from_hrirs : Calculating ILDs with defaults (in dB).
     spaudiopy.process.itds_from_hrirs : Calculating ITDs with defaults.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        dummy_hrirs = spa.io.load_hrirs(48000, 'dummy')
+        spa.plot.hrirs_ild_itd(dummy_hrirs)
+
     """
     ilds = process.ilds_from_hrirs(hrirs, TODB=True)
     itds = process.itds_from_hrirs(hrirs)
