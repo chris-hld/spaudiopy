@@ -1070,8 +1070,8 @@ def sh_mult(a_nm, b_nm, sh_type):
                                              'real'))
 
     """
-    a_nm = np.asfarray(a_nm)
-    b_nm = np.asfarray(b_nm)
+    a_nm = utils.asarray_1d(np.asfarray(a_nm))
+    b_nm = utils.asarray_1d(np.asfarray(b_nm))
     N1 = int(np.sqrt(len(a_nm)) - 1)
     N2 = int(np.sqrt(len(a_nm)) - 1)
     N_out = N1 + N2
@@ -1083,4 +1083,4 @@ def sh_mult(a_nm, b_nm, sh_type):
     c_nm = sht(inverse_sht(a_nm, v_dirs[:, 0], v_dirs[:, 1], sh_type=sh_type) *
                inverse_sht(b_nm, v_dirs[:, 0], v_dirs[:, 1], sh_type=sh_type),
                N_out, azi=v_dirs[:, 0], colat=v_dirs[:, 1], sh_type=sh_type)
-    return c_nm
+    return utils.asarray_1d(c_nm)
