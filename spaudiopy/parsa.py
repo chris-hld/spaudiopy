@@ -344,9 +344,9 @@ def sh_lcmv(cov_x, dirs_azi_c, dirs_zen_c, c_gain):
         num_src_est = spa.parsa.estimate_num_sources(S_xx)
         _, S_nn = spa.parsa.separate_cov(S_xx, num_cut=num_src_est)
 
-        dirs_azi_c = [np.pi/2, np.pi, 0]
-        dirs_zen_c = [np.pi/2, np.pi/2, np.pi/3]
-        c = [1, 0, 0]
+        dirs_azi_c = [np.pi/2, 0., np.pi]
+        dirs_zen_c = [np.pi/2, np.pi/2, np.pi/4]
+        c = [1, 0.5, 0]
         w_nm = spa.parsa.sh_lcmv(S_nn, dirs_azi_c, dirs_zen_c, c)
         spa.plot.sh_coeffs(w_nm)
 
