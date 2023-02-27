@@ -14,7 +14,7 @@
     ls_dirs = np.array([[-80, -45, 0, 45, 80, -60, -30, 30, 60],
                         [0, 0, 0, 0, 0, 60, 60, 60, 60]])
     ls_x, ls_y, ls_z = spa.utils.sph2cart(spa.utils.deg2rad(ls_dirs[0, :]),
-                                          spa.utils.deg2rad(90 - ls_dirs[1, :]))
+                                          spa.utils.deg2rad(90-ls_dirs[1, :]))
 
 """
 
@@ -28,7 +28,7 @@ import numpy as np
 import scipy.spatial as scyspat
 from scipy import signal
 
-from spaudiopy import utils, sph, sig, IO, plots, grids
+from . import io, plot, utils, sph, sig, grids
 
 shared_array = None
 
@@ -74,7 +74,7 @@ class LoudspeakerSetup:
 
         # amplitude decay exponent
         self.a = 1
-        
+
         # Loudspeaker static gains
         self.ls_gains = np.ones(len(self.d))  # Available, but not used, yet
 
@@ -171,8 +171,8 @@ class LoudspeakerSetup:
                          imaginary_ls=None):
         """Prepare loudspeaker hull for ambisonic rendering.
         Sets the `kernel_hull` as an n-design of twice `N_kernel`,
-        and updates the ambisonic hull with an additional imaginary loudspeaker,
-        if desired.
+        and updates the ambisonic hull with an additional imaginary
+        loudspeaker, if desired.
 
         Parameters
         ----------
@@ -258,7 +258,7 @@ class LoudspeakerSetup:
 
         """
         if hrirs is None:
-            hrirs = IO.load_hrirs(fs)
+            hrirs = io.load_hrirs(fs)
         assert(hrirs.fs == fs)
         ls_signals = np.atleast_2d(ls_signals)
         assert ls_signals.shape[0] == self.npoints, \
@@ -304,8 +304,8 @@ class LoudspeakerSetup:
         return (sig_in[:, np.newaxis] * ls_gains).T
 
     def show(self, title='Loudspeaker Setup', **kwargs):
-        """Plot hull object, calls plots.hull()."""
-        plots.hull(self, title=title, **kwargs)
+        """Plot hull object, calls plot.hull()."""
+        plot.hull(self, title=title, **kwargs)
 
 
 def get_hull(x, y, z):
@@ -576,10 +576,10 @@ def vbap(src, hull, norm=2, valid_simplices=None, retain_outside=False,
         ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
                                opening_limit=150)
 
-        spa.plots.decoder_performance(ls_setup, 'VBAP')
+        spa.plot.decoder_performance(ls_setup, 'VBAP')
 
         ls_setup.ambisonics_setup(update_hull=True)
-        spa.plots.decoder_performance(ls_setup, 'VBAP', retain_outside=True)
+        spa.plot.decoder_performance(ls_setup, 'VBAP', retain_outside=True)
         plt.suptitle('VBAP with imaginary loudspeaker')
 
     """
@@ -682,10 +682,10 @@ def vbip(src, hull, norm=2, valid_simplices=None, retain_outside=False,
         ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
                                opening_limit=150)
 
-        spa.plots.decoder_performance(ls_setup, 'VBIP')
+        spa.plot.decoder_performance(ls_setup, 'VBIP')
 
         ls_setup.ambisonics_setup(update_hull=True)
-        spa.plots.decoder_performance(ls_setup, 'VBIP', retain_outside=True)
+        spa.plot.decoder_performance(ls_setup, 'VBIP', retain_outside=True)
         plt.suptitle('VBIP with imaginary loudspeaker')
 
     """
@@ -767,7 +767,7 @@ def allrap(src, hull, N_sph=None, jobs_count=1):
                                opening_limit=150)
         ls_setup.ambisonics_setup(update_hull=True)
 
-        spa.plots.decoder_performance(ls_setup, 'ALLRAP')
+        spa.plot.decoder_performance(ls_setup, 'ALLRAP')
 
     """
     if hull.ambisonics_hull:
@@ -801,12 +801,12 @@ def allrap(src, hull, N_sph=None, jobs_count=1):
     _s_azi, _s_colat, _s_r = utils.cart2sph(src[:, 0],
                                             src[:, 1],
                                             src[:, 2])
-    Y_s = sph.sh_matrix(N_sph, _s_azi, _s_colat, SH_type='real')
+    Y_s = sph.sh_matrix(N_sph, _s_azi, _s_colat, sh_type='real')
     # kernel
     _k_azi, _k_colat, _k_r = utils.cart2sph(kernel_hull.points[:, 0],
                                             kernel_hull.points[:, 1],
                                             kernel_hull.points[:, 2])
-    Y_k = sph.sh_matrix(N_sph, _k_azi, _k_colat, SH_type='real')
+    Y_k = sph.sh_matrix(N_sph, _k_azi, _k_colat, sh_type='real')
 
     # discretized (band-limited) ambisonic panning function
     G_bld = Y_s @ np.diag(a_nm) @ Y_k.T
@@ -852,7 +852,7 @@ def allrap2(src, hull, N_sph=None, jobs_count=1):
                                opening_limit=150)
         ls_setup.ambisonics_setup(update_hull=True)
 
-        spa.plots.decoder_performance(ls_setup, 'ALLRAP2')
+        spa.plot.decoder_performance(ls_setup, 'ALLRAP2')
 
     """
     if hull.ambisonics_hull:
@@ -890,12 +890,12 @@ def allrap2(src, hull, N_sph=None, jobs_count=1):
     _s_azi, _s_colat, _s_r = utils.cart2sph(src[:, 0],
                                             src[:, 1],
                                             src[:, 2])
-    Y_s = sph.sh_matrix(N_sph, _s_azi, _s_colat, SH_type='real')
+    Y_s = sph.sh_matrix(N_sph, _s_azi, _s_colat, sh_type='real')
     # kernel
     _k_azi, _k_colat, _k_r = utils.cart2sph(kernel_hull.points[:, 0],
                                             kernel_hull.points[:, 1],
                                             kernel_hull.points[:, 2])
-    Y_k = sph.sh_matrix(N_sph, _k_azi, _k_colat, SH_type='real')
+    Y_k = sph.sh_matrix(N_sph, _k_azi, _k_colat, sh_type='real')
 
     # discretized (band-limited) ambisonic panning function
     G_bld = Y_s @ np.diag(a_nm) @ Y_k.T
@@ -941,7 +941,7 @@ def allrad(F_nm, hull, N_sph=None, jobs_count=1):
                                opening_limit=150)
         ls_setup.ambisonics_setup(update_hull=True)
 
-        spa.plots.decoder_performance(ls_setup, 'ALLRAD')
+        spa.plot.decoder_performance(ls_setup, 'ALLRAD')
 
     """
     if hull.ambisonics_hull:
@@ -976,7 +976,7 @@ def allrad(F_nm, hull, N_sph=None, jobs_count=1):
                                             kernel_hull.points[:, 1],
                                             kernel_hull.points[:, 2])
     # band-limited Dirac
-    Y_bld = sph.sh_matrix(N_sph, _k_azi, _k_colat, SH_type='real')
+    Y_bld = sph.sh_matrix(N_sph, _k_azi, _k_colat, sh_type='real')
 
     # ALLRAD Decoder
     D = 4 * np.pi / J * G_k.T @ Y_bld
@@ -1026,7 +1026,7 @@ def allrad2(F_nm, hull, N_sph=None, jobs_count=1):
                                opening_limit=150)
         ls_setup.ambisonics_setup(update_hull=True)
 
-        spa.plots.decoder_performance(ls_setup, 'ALLRAD2')
+        spa.plot.decoder_performance(ls_setup, 'ALLRAD2')
 
     """
     if not hull.ambisonics_hull:
@@ -1055,7 +1055,7 @@ def allrad2(F_nm, hull, N_sph=None, jobs_count=1):
                                             kernel_hull.points[:, 1],
                                             kernel_hull.points[:, 2])
     # band-limited Dirac
-    Y_bld = sph.sh_matrix(N_sph, _k_azi, _k_colat, SH_type='real')
+    Y_bld = sph.sh_matrix(N_sph, _k_azi, _k_colat, sh_type='real')
 
     # ALLRAD2 Decoder
     D = 4 * np.pi / J * G_k.T @ Y_bld
@@ -1095,7 +1095,7 @@ def sad(F_nm, hull, N_sph=None):
         ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
                                opening_limit=150)
 
-        spa.plots.decoder_performance(ls_setup, 'SAD')
+        spa.plot.decoder_performance(ls_setup, 'SAD')
 
     """
     if N_sph is None:
@@ -1109,7 +1109,7 @@ def sad(F_nm, hull, N_sph=None):
     assert(N_sph_in >= N_sph)  # for now
 
     ls_azi, ls_colat, ls_r = utils.cart2sph(*hull.points.T)
-    Y_ls = sph.sh_matrix(N_sph, ls_azi, ls_colat, SH_type='real')
+    Y_ls = sph.sh_matrix(N_sph, ls_azi, ls_colat, sh_type='real')
 
     D = Y_ls
     D *= np.sqrt(4*np.pi / (N_sph+1)**2)
@@ -1149,7 +1149,7 @@ def mad(F_nm, hull, N_sph=None):
         ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
                                opening_limit=150)
 
-        spa.plots.decoder_performance(ls_setup, 'MAD')
+        spa.plot.decoder_performance(ls_setup, 'MAD')
 
     """
     if N_sph is None:
@@ -1163,7 +1163,7 @@ def mad(F_nm, hull, N_sph=None):
     assert(N_sph_in >= N_sph)  # for now
 
     ls_azi, ls_colat, ls_r = utils.cart2sph(*hull.points.T)
-    Y_ls = sph.sh_matrix(N_sph, ls_azi, ls_colat, SH_type='real')
+    Y_ls = sph.sh_matrix(N_sph, ls_azi, ls_colat, sh_type='real')
 
     D = (np.linalg.pinv(Y_ls)).T
     D *= np.sqrt(L / (N_sph+1)**2)  # Energy to unity (on t-design)
@@ -1209,9 +1209,9 @@ def epad(F_nm, hull, N_sph=None):
         ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
                                opening_limit=150)
 
-        spa.plots.decoder_performance(ls_setup, 'EPAD')
+        spa.plot.decoder_performance(ls_setup, 'EPAD')
 
-        spa.plots.decoder_performance(ls_setup, 'EPAD', N_sph=2,
+        spa.plot.decoder_performance(ls_setup, 'EPAD', N_sph=2,
                                       title='$N_{sph}=2$')
 
     """
@@ -1231,7 +1231,7 @@ def epad(F_nm, hull, N_sph=None):
 
     # SVD of LS base
     ls_azi, ls_colat, ls_r = utils.cart2sph(*hull.points.T)
-    Y_ls = sph.sh_matrix(N_sph, ls_azi, ls_colat, SH_type='real')
+    Y_ls = sph.sh_matrix(N_sph, ls_azi, ls_colat, sh_type='real')
     U, S, VH = np.linalg.svd(Y_ls)
     # Set singular values to identity and truncate
     S_new = np.eye(L, (N_sph+1)**2)
@@ -1269,7 +1269,7 @@ def nearest_loudspeaker(src, hull):
         ls_setup.pop_triangles(normal_limit=85, aperture_limit=90,
                                opening_limit=150)
 
-        spa.plots.decoder_performance(ls_setup, 'NLS')
+        spa.plot.decoder_performance(ls_setup, 'NLS')
 
     """
     src = np.atleast_2d(src)
@@ -1335,7 +1335,8 @@ def magls_bin(hrirs, N_sph, f_trans=None, hf_cont='angle', hf_delay=(0, 0)):
     hf_cont : ['delay', 'avg', 'angle'], optional
         High Frequency phase continuation method . The default is 'angle'.
     hf_delay : (2,), optional
-        High frequency (additional) group delay in smpls. The default is (0, 0).
+        High frequency (additional) group delay in smpls.
+        The default is (0, 0).
 
     Raises
     ------
@@ -1376,9 +1377,8 @@ def magls_bin(hrirs, N_sph, f_trans=None, hf_cont='angle', hf_delay=(0, 0)):
     fs = hrirs.fs
     hrirs_l = hrirs.left
     hrirs_r = hrirs.right
-    azi = hrirs.grid['azi']
-    zen = hrirs.grid['colat']
-
+    azi = hrirs.azi
+    zen = hrirs.zen
     numSmpls = hrirs.left.shape[1]
     nfftmin = 1024
     nfft = np.max([nfftmin, numSmpls])
@@ -1393,8 +1393,8 @@ def magls_bin(hrirs, N_sph, f_trans=None, hf_cont='angle', hf_delay=(0, 0)):
     Y_pinv = np.linalg.pinv(Y)
 
     hrtfs_mls_nm = np.zeros((2, (N_sph+1)**2, len(freqs)), dtype=hrtfs_l.dtype)
-    phi_l_mod = np.zeros((hrirs.grid_points, len(freqs)))
-    phi_r_mod = np.zeros((hrirs.grid_points, len(freqs)))
+    phi_l_mod = np.zeros((hrirs.num_grid_points, len(freqs)))
+    phi_r_mod = np.zeros((hrirs.num_grid_points, len(freqs)))
     # TODO: weights, transition, order dependent
 
     # linear part

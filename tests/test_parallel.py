@@ -24,9 +24,9 @@ def test_pseudo_intensity(test_jobs):
                                   np.random.randn(n_samples),
                                   np.random.randn(n_samples),
                                   np.random.randn(n_samples)], fs=fs)
-    azi_r, colat_r, r_r = spa.sdm.pseudo_intensity(ambi_b, jobs_count=1)
-    azi_t, colat_t, r_t = spa.sdm.pseudo_intensity(ambi_b,
-                                                   jobs_count=test_jobs)
+    azi_r, colat_r, r_r = spa.parsa.pseudo_intensity(ambi_b, jobs_count=1)
+    azi_t, colat_t, r_t = spa.parsa.pseudo_intensity(ambi_b,
+                                                     jobs_count=test_jobs)
     assert_allclose([azi_t, colat_t, r_t], [azi_r, colat_r, r_r])
 
 
@@ -64,18 +64,18 @@ def test_allrap2(test_jobs):
 
 #@pytest.mark.parametrize('test_jobs', JOB_COUNTS)
 #def test_render_bsdm(test_jobs):
-#    sdm_p, sdm_phi, sdm_theta = [*np.random.randn(3, 1000)]
-#    hrirs = spa.IO.load_hrirs(fs=44100, filename='dummy')
-#    bsdm_l_r, bsdm_r_r = spa.sdm.render_bsdm(sdm_p, sdm_phi, sdm_theta, hrirs,
-#                                             jobs_count=1)
-#    bsdm_l_t, bsdm_r_t = spa.sdm.render_bsdm(sdm_p, sdm_phi, sdm_theta, hrirs,
-#                                             jobs_count=test_jobs)
+#    sdm_p, sdm_azi, sdm_zen = [*np.random.randn(3, 1000)]
+#    hrirs = spa.io.load_hrirs(fs=44100, filename='dummy')
+#    bsdm_l_r, bsdm_r_r = spa.parsa.render_bsdm(sdm_p, sdm_azi, sdm_zen, hrirs,
+#                                               jobs_count=1)
+#    bsdm_l_t, bsdm_r_t = spa.parsa.render_bsdm(sdm_p, sdm_azi, sdm_zen, hrirs,
+#                                               jobs_count=test_jobs)
 #    assert_allclose([bsdm_l_t, bsdm_r_t], [bsdm_l_r, bsdm_r_r])
 
 
 @pytest.mark.parametrize('test_jobs', JOB_COUNTS)
 def test_resample_hrirs(test_jobs):
-    hrirs = spa.IO.load_hrirs(fs=44100, filename='dummy')
+    hrirs = spa.io.load_hrirs(fs=44100, filename='dummy')
     hrir_l_rsmp_r, hrir_r_rsmp_r, _ = spa.process.resample_hrirs(hrirs.left,
                                                                  hrirs.right,
                                                                  44100, 48000,

@@ -16,8 +16,6 @@
 
 """
 
-from itertools import repeat
-
 import numpy as np
 import resampy
 import pickle
@@ -26,9 +24,8 @@ from joblib import Memory
 import multiprocessing
 import logging
 
-from . import utils
-from . import sph
-from . import sig
+from . import utils, sph, sig
+
 
 # Prepare Caching
 cachedir = './.spa_cache_dir'
@@ -135,7 +132,7 @@ def resample_spectrum(single_spec, fs_current, fs_target, axis=-1):
     return np.squeeze(single_spec_resamp)
 
 
-def ilds_from_hrirs(hrirs, f_cut=(1e3, 20e3), INDB=True):
+def ilds_from_hrirs(hrirs, f_cut=(1e3, 20e3), TODB=True):
     """Calculate ILDs from HRIRs by high/band-passed broad-band RMS.
 
     Parameters
@@ -143,13 +140,14 @@ def ilds_from_hrirs(hrirs, f_cut=(1e3, 20e3), INDB=True):
     hrirs : sig.HRIRs
     f_cut : float (2,), optional
         Band-pass cutoff frequencies. The default is (1000, 20000).
+    TODB : bool, optional
+        ILD in dB RMS ratio, otherwise as RMS difference. The default is TRUE.
 
     Returns
     -------
     ild : array_like
         ILD per grid point, positive value indicates left ear louder.
-    INDB : bool, optional
-        ILD in dB RMS ratio, otherwise as RMS difference. The default is TRUE.
+
     """
     assert(isinstance(hrirs, sig.HRIRs))
     fs = hrirs.fs
@@ -158,7 +156,7 @@ def ilds_from_hrirs(hrirs, f_cut=(1e3, 20e3), INDB=True):
     hrirs_l_f = signal.sosfiltfilt(sos, hrirs.left, axis=-1)
     hrirs_r_f = signal.sosfiltfilt(sos, hrirs.right, axis=-1)
 
-    if INDB:
+    if TODB:
         rms_diff = utils.db(utils.rms(hrirs_l_f, axis=-1) /
                             utils.rms(hrirs_r_f, axis=-1))
     else:
@@ -185,10 +183,10 @@ def itds_from_hrirs(hrirs, f_cut=(100, 1.5e3), upsample=4):
     -------
     itd : array_like
         ITD in seconds per grid point, positive value indicates left ear first.
-    
+
     References
     ----------
-    Andreopoulou, A., & Katz, B. F. G. (2017). Identification of perceptually 
+    Andreopoulou, A., & Katz, B. F. G. (2017). Identification of perceptually
     relevant methods of inter-aural time difference estimation. JASA.
 
     """
@@ -200,7 +198,7 @@ def itds_from_hrirs(hrirs, f_cut=(100, 1.5e3), upsample=4):
     hrirs_l_us = signal.sosfiltfilt(sos, hrirs_l_us, axis=-1)
     hrirs_r_us = signal.sosfiltfilt(sos, hrirs_r_us, axis=-1)
 
-    maxidx = np.zeros(hrirs.grid_points)
+    maxidx = np.zeros(hrirs.num_grid_points)
     for idx, hrirs_dir in enumerate(zip(hrirs_l_us, hrirs_r_us)):
         maxidx[idx] = np.argmax(np.correlate(hrirs_dir[0]**2, hrirs_dir[1]**2,
                                              mode='same'))

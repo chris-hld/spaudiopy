@@ -10,25 +10,25 @@
 
     import spaudiopy as spa
 
-    spa.plots.sh_coeffs_subplot([np.sqrt(4*np.pi) * np.array([1, 0, 0, 0]),
+    spa.plot.sh_coeffs_subplot([np.sqrt(4*np.pi) * np.array([1, 0, 0, 0]),
                                  np.sqrt(4/3*np.pi) * np.array([0, 1, 0, 0]),
                                  np.sqrt(4/3*np.pi) * np.array([0, 0, 1, 0]),
                                  np.sqrt(4/3*np.pi) * np.array([0, 0, 0, 1])],
                                 titles=["$Y_{0, 0}$", "$Y_{1, -1}$",
-                                       "$Y_{1, 0}$", "$Y_{1, 1}$"])
+                                        "$Y_{1, 0}$", "$Y_{1, 1}$"])
 """
 
 import numpy as np
 from scipy import special as scyspecial
 
-from . import utils
+from . import utils, grids
 
 
-def sh_matrix(N, azi, colat, SH_type='complex', weights=None):
-    r"""Matrix of spherical harmonics up to order N for given angles.
+def sh_matrix(N_sph, azi, colat, sh_type='complex'):
+    r"""Evaluates the spherical harmonics up to order `N_sph` for given angles.
 
-    Computes a matrix of spherical harmonics up to order :math:`N`
-    for the given angles/grid.
+    Matrix returns spherical harmonics up to order :math:`N`
+    evaluated at the given angles/grid.
 
     .. math::
 
@@ -53,21 +53,19 @@ def sh_matrix(N, azi, colat, SH_type='complex', weights=None):
                                     \frac{(n-m)!}{(n+m)!}} P_n^m(\cos \theta)
                               e^{i m \phi}
 
-    When using `SH_type='real'`, the real spherical harmonics
+    When using `sh_type='real'`, the real spherical harmonics
     :math:`Y_{n,m}(\theta, \phi)` are implemented as a relation to
     :math:`Y_n^m(\theta, \phi)`.
 
     Parameters
     ----------
-    N : int
+    N_sph : int
         Maximum SH order.
     azi : (Q,) array_like
         Azimuth.
     colat : (Q,) array_like
         Colatitude.
-    SH_type :  'complex' or 'real' spherical harmonics.
-    weights : (Q,) array_like, optional
-        Quadrature weights.
+    sh_type :  'complex' or 'real' spherical harmonics.
 
     Returns
     -------
@@ -76,7 +74,7 @@ def sh_matrix(N, azi, colat, SH_type='complex', weights=None):
 
     Notes
     -----
-    The convention used here is also known as N3D-ACN (for SH_type='real').
+    The convention used here is also known as N3D-ACN (for sh_type='real').
 
     """
     azi = utils.asarray_1d(azi)
@@ -85,30 +83,28 @@ def sh_matrix(N, azi, colat, SH_type='complex', weights=None):
         Q = 1
     else:
         Q = len(azi)
-    if weights is None:
-        weights = np.ones(Q)
-    if SH_type == 'complex':
-        Ymn = np.zeros([Q, (N+1)**2], dtype=np.complex_)
-    elif SH_type == 'real':
-        Ymn = np.zeros([Q, (N+1)**2], dtype=np.float_)
+    if sh_type == 'complex':
+        Ymn = np.zeros([Q, (N_sph+1)**2], dtype=np.complex_)
+    elif sh_type == 'real':
+        Ymn = np.zeros([Q, (N_sph+1)**2], dtype=np.float_)
     else:
-        raise ValueError('SH_type unknown.')
+        raise ValueError('sh_type unknown.')
 
     idx = 0
-    for n in range(N+1):
+    for n in range(N_sph+1):
         for m in range(-n, n+1):
-            if SH_type == 'complex':
-                Ymn[:, idx] = weights * scyspecial.sph_harm(m, n, azi, colat)
-            elif SH_type == 'real':
+            if sh_type == 'complex':
+                Ymn[:, idx] = scyspecial.sph_harm(m, n, azi, colat)
+            elif sh_type == 'real':
                 if m == 0:
-                    Ymn[:, idx] = weights * np.real(
+                    Ymn[:, idx] = np.real(
                                   scyspecial.sph_harm(0, n, azi, colat))
                 if m < 0:
-                    Ymn[:, idx] = weights * np.sqrt(2) * (-1) ** abs(m) * \
+                    Ymn[:, idx] = np.sqrt(2) * (-1) ** abs(m) * \
                                   np.imag(
                                   scyspecial.sph_harm(abs(m), n, azi, colat))
                 if m > 0:
-                    Ymn[:, idx] = weights * np.sqrt(2) * (-1) ** abs(m) * \
+                    Ymn[:, idx] = np.sqrt(2) * (-1) ** abs(m) * \
                                   np.real(
                                   scyspecial.sph_harm(abs(m), n, azi, colat))
 
@@ -116,7 +112,7 @@ def sh_matrix(N, azi, colat, SH_type='complex', weights=None):
     return Ymn
 
 
-def sht(f, N, azi, colat, SH_type, weights=None, Y_nm=None):
+def sht(f, N_sph, azi, colat, sh_type, weights=None, Y_nm=None):
     """Spherical harmonics transform of f for appropriate point sets.
 
     If f is a QxS matrix then the transform is applied to each column
@@ -127,13 +123,13 @@ def sht(f, N, azi, colat, SH_type, weights=None, Y_nm=None):
     ----------
     f : (Q, S)
         The spherical function(S) evaluated at Q directions 'azi/colat'.
-    N : int
+    N_sph : int
         Maximum SH order.
     azi : (Q,) array_like
         Azimuth.
     colat : (Q,) array_like
         Colatitude.
-    SH_type :  'complex' or 'real' spherical harmonics.
+    sh_type :  'complex' or 'real' spherical harmonics.
     weights : (Q,) array_like, optional
         Quadrature weights.
     Y_nm : (Q, (N+1)**2) numpy.ndarray, optional
@@ -147,7 +143,7 @@ def sht(f, N, azi, colat, SH_type, weights=None, Y_nm=None):
     if f.ndim == 1:
         f = f[:, np.newaxis]  # upgrade to handle 1D arrays
     if Y_nm is None:
-        Y_nm = sh_matrix(N, azi, colat, SH_type)
+        Y_nm = sh_matrix(N_sph, azi, colat, sh_type)
     if weights is None:
         Npoints = Y_nm.shape[0]
         Y_nm_transform = (4*np.pi / Npoints) * Y_nm.conj()
@@ -158,7 +154,7 @@ def sht(f, N, azi, colat, SH_type, weights=None, Y_nm=None):
     return np.matmul(Y_nm_transform.T, f)
 
 
-def sht_lstsq(f, N, azi, colat, SH_type, Y_nm=None):
+def sht_lstsq(f, N_sph, azi, colat, sh_type, Y_nm=None):
     """Spherical harmonics transform  of f as least-squares solution.
 
     If f is a QxS matrix then the transform is applied to each column
@@ -169,13 +165,13 @@ def sht_lstsq(f, N, azi, colat, SH_type, Y_nm=None):
     ----------
     f : (Q, S)
         The spherical function(S) evaluated at Q directions 'azi/colat'.
-    N : int
+    N_sph : int
         Maximum SH order.
     azi : (Q,) array_like
         Azimuth.
     colat : (Q,) array_like
         Colatitude.
-    SH_type :  'complex' or 'real' spherical harmonics.
+    sh_type :  'complex' or 'real' spherical harmonics.
     Y_nm : (Q, (N+1)**2) numpy.ndarray, optional
         Matrix of spherical harmonics.
 
@@ -187,11 +183,11 @@ def sht_lstsq(f, N, azi, colat, SH_type, Y_nm=None):
     if f.ndim == 1:
         f = f[:, np.newaxis]  # upgrade to handle 1D arrays
     if Y_nm is None:
-        Y_nm = sh_matrix(N, azi, colat, SH_type)
-    return np.linalg.lstsq(Y_nm, f)[0]
+        Y_nm = sh_matrix(N_sph, azi, colat, sh_type)
+    return np.linalg.lstsq(Y_nm, f, rcond=None)[0]
 
 
-def inverse_sht(F_nm, azi, colat, SH_type, N=None, Y_nm=None):
+def inverse_sht(F_nm, azi, colat, sh_type, N_sph=None, Y_nm=None):
     """Perform the inverse spherical harmonics transform.
 
     Parameters
@@ -202,8 +198,8 @@ def inverse_sht(F_nm, azi, colat, SH_type, N=None, Y_nm=None):
         Azimuth.
     colat : (Q,) array_like
         Colatitude.
-    SH_type :  'complex' or 'real' spherical harmonics.
-    N : int, optional
+    sh_type :  'complex' or 'real' spherical harmonics.
+    N_sph : int, optional
         Maximum SH order.
     Y_nm : (Q, (N+1)**2) numpy.ndarray, optional
         Matrix of spherical harmonics.
@@ -213,21 +209,22 @@ def inverse_sht(F_nm, azi, colat, SH_type, N=None, Y_nm=None):
     f : (Q, S)
         The spherical function(S) evaluated at Q directions 'azi/colat'.
     """
-    assert(F_nm.ndim == 2)
-    if N is None:
-        N = int(np.sqrt(F_nm.shape[0]) - 1)
+    if F_nm.ndim == 1:
+        F_nm = F_nm[:, np.newaxis]  # upgrade to handle 1D arrays
+    if N_sph is None:
+        N_sph = int(np.sqrt(F_nm.shape[0]) - 1)
     if Y_nm is None:
-        Y_nm = sh_matrix(N, azi, colat, SH_type)
+        Y_nm = sh_matrix(N_sph, azi, colat, sh_type)
     # perform the inverse transform up to degree N
-    return np.matmul(Y_nm, F_nm[:(N + 1) ** 2, :])
+    return np.matmul(Y_nm, F_nm[:(N_sph + 1) ** 2, :])
 
 
-def check_cond_sht(N, azi, colat, SH_type, lim=None):
-    """Check if condition number for a least-squares SHT(N) is greater 'lim'."""
+def check_cond_sht(N_sph, azi, colat, sh_type, lim=None):
+    """Check if condition number for a least-squares SHT(N_sph) is high."""
     if lim is None:
-        lim = N + N / 2
-    Y = sh_matrix(N, azi, colat, SH_type)
-    c = np.zeros(N + 1)
+        lim = N_sph + N_sph / 2
+    Y = sh_matrix(N_sph, azi, colat, sh_type)
+    c = np.zeros(N_sph + 1)
     YYn = np.matmul(Y.conj().T, Y)
     c = np.linalg.cond(YYn)
     if np.any(c > lim):
@@ -369,11 +366,11 @@ def soundfield_to_b(sig, W_weight=None):
         B-format signal(S).
     """
     # get tetraeder position
-    N = 1
+    N_sph = 1
     t = platonic_solid('tetrahedron')
     t_az, t_colat, t_r = utils.cart2sph(t[:, 0], t[:, 1], t[:, 2])
     # SHT of input signal
-    F_nm = sht(sig, N, azi=t_az, colat=t_colat, SH_type='real')
+    F_nm = sht(sig, N_sph, azi=t_az, colat=t_colat, sh_type='real')
     return sh_to_b(F_nm, W_weight)
 
 
@@ -388,9 +385,9 @@ def src_to_b(sig, src_azi, src_colat):
     return np.outer(g, sig)
 
 
-def src_to_sh(sig, src_azi, src_zen, N_sph, SH_type='real'):
+def src_to_sh(sig, src_azi, src_zen, N_sph, sh_type='real'):
     """Source signal(s) plane wave encoded in spherical harmonics.
-    
+
 
     Parameters
     ----------
@@ -399,13 +396,13 @@ def src_to_sh(sig, src_azi, src_zen, N_sph, SH_type='real'):
     src_azi : array_like
     src_zen : array_like
     N_sph : int
-    SH_type : 'real' (default) or 'complex', optional
+    sh_type : 'real' (default) or 'complex', optional
 
     Returns
     -------
     ((N_sph+1)**2, S) numpy.ndarray
         Source signal(s) in SHD.
-    
+
     Examples
     --------
     .. plot::
@@ -418,27 +415,27 @@ def src_to_sh(sig, src_azi, src_zen, N_sph, SH_type='real'):
 
         sig_nm = spa.sph.src_to_sh(src_sig, src_azi, src_zen, N_sph)
 
-        spa.plots.sh_rms_map(sig_nm)
+        spa.plot.sh_rms_map(sig_nm)
 
     """
     sig = np.atleast_2d(sig)
     src_azi = utils.asarray_1d(src_azi)
     src_zen = utils.asarray_1d(src_zen)
 
-    Y_nm = sh_matrix(N_sph, src_azi, src_zen, SH_type=SH_type)
+    Y_nm = sh_matrix(N_sph, src_azi, src_zen, sh_type=sh_type)
     return Y_nm.conj().T @ sig
 
 
-def bandlimited_dirac(N, d, w_n=None):
+def bandlimited_dirac(N_sph, d, w_n=None):
     r"""Order N spatially bandlimited Dirac pulse at central angle d.
 
     Parameters
     ----------
-    N : int
+    N_sph : int
         SH order.
     d : (Q,) array_like
         Central angle in rad.
-    w_n : (N,) array_like, optional. Default is None.
+    w_n : (N_sph,) array_like, optional. Default is None.
         Tapering window w_n.
 
     Returns
@@ -464,31 +461,31 @@ def bandlimited_dirac(N, d, w_n=None):
 
         dirac_azi = np.deg2rad(0)
         dirac_colat = np.deg2rad(90)
-        N = 5
+        N_sph = 5
 
         # cross section
         azi = np.linspace(0, 2 * np.pi, 720, endpoint=True)
 
         # Bandlimited Dirac pulse
-        dirac_bandlim = 4 * np.pi / (N + 1) ** 2 * \
-                            spa.sph.bandlimited_dirac(N, azi - dirac_azi)
+        dirac_bandlim = 4 * np.pi / (N_sph + 1) ** 2 * \
+                            spa.sph.bandlimited_dirac(N_sph, azi - dirac_azi)
 
-        spa.plots.polar(azi, dirac_bandlim)
+        spa.plot.polar(azi, dirac_bandlim)
 
     """
     d = utils.asarray_1d(d)
     if w_n is None:
-        w_n = np.ones(N + 1)
-    assert(len(w_n) == N + 1), "Provide weight per order."
-    g_n = np.zeros([(N + 1)**2, len(d)])
-    for n, i in enumerate(range(N + 1)):
+        w_n = np.ones(N_sph + 1)
+    assert(len(w_n) == N_sph + 1), "Provide weight per order."
+    g_n = np.zeros([(N_sph + 1)**2, len(d)])
+    for n, i in enumerate(range(N_sph + 1)):
         g_n[i, :] = w_n[i] * (2 * n + 1) / (4 * np.pi) * \
                     scyspecial.eval_legendre(n, np.cos(d))
     dirac = np.sum(g_n, axis=0)
     return dirac
 
 
-def max_rE_weights(N):
+def max_rE_weights(N_sph):
     """Return max-rE modal weight coefficients for spherical harmonics order N.
 
     See Also
@@ -517,11 +514,11 @@ def max_rE_weights(N):
         w_n = spa.sph.unity_gain(w_n)
         dirac_tapered = spa.sph.bandlimited_dirac(N, azi - dirac_azi, w_n=w_n)
 
-        spa.plots.polar(azi, dirac_tapered)
+        spa.plot.polar(azi, dirac_tapered)
 
     """
-    theta = np.deg2rad(137.9) / (N + 1.51)
-    a_n = scyspecial.eval_legendre(np.arange(N + 1), np.cos(theta))
+    theta = np.deg2rad(137.9) / (N_sph + 1.51)
+    a_n = scyspecial.eval_legendre(np.arange(N_sph + 1), np.cos(theta))
     return a_n
 
 
@@ -644,17 +641,17 @@ def mode_strength(n, kr, sphere_type='rigid'):
     return b_n
 
 
-def pressure_on_sphere(N, kr, weights=None):
+def pressure_on_sphere(N_sph, kr, weights=None):
     """Calculate the diffuse field pressure frequency response of a spherical
     scatterer, up to SH order N.
 
     Parameters
     ----------
-    N : int
+    N_sph : int
         SH order.
     kr : array_like
         kr vector, product of wavenumber k and radius r_0.
-    weights : (N+1,) array_like
+    weights : (N_sph+1,) array_like
         SH order weights.
 
     Returns
@@ -671,21 +668,21 @@ def pressure_on_sphere(N, kr, weights=None):
     """
     p_N = np.zeros_like(kr)
     if weights is None:
-        weights = np.ones(N + 1)
-    for n in range(N + 1):
+        weights = np.ones(N_sph + 1)
+    for n in range(N_sph + 1):
         p_N += weights[n] * (2 * n + 1) * np.abs(mode_strength(n, kr))**2
     return 1 / (4 * np.pi) * np.sqrt(p_N)
 
 
-def binaural_coloration_compensation(N, f, r_0=0.0875, w_taper=None):
-    """Spectral equalization gain G(kr)|N for diffuse field of order N.
+def binaural_coloration_compensation(N_sph, f, r_0=0.0875, w_taper=None):
+    """Spectral equalization gain G(kr)|N for diffuse field of order N_sph.
     This filter compensates the high frequency roll of that occurs for order
     truncated SH signals. It models the human head as a rigid sphere of radius
     r_0 (e.g. 0.0875m) and compensates the binaural signals.
 
     Parameters
     ----------
-    N : int
+    N_sph : int
         SH order.
     f : array_like
         Time-frequency in Hz.
@@ -719,16 +716,16 @@ def binaural_coloration_compensation(N, f, r_0=0.0875, w_taper=None):
         fs = 48000
         f = np.linspace(0, fs / 2, 1000)
         # target spherical harmonics order N (>= 3)
-        N = 5
+        N_sph = 5
         # tapering window
         w_rE = spa.sph.max_rE_weights(N)
 
         compensation_tapered = spa.sph.binaural_coloration_compensation(
-                                N, f, w_taper=w_rE)
+                                    N_sph, f, w_taper=w_rE)
         compensation_tapered_lim = spa.process.gain_clipping(
                                     compensation_tapered,
                                     spa.utils.from_db(12))
-        spa.plots.freq_resp(f, [compensation_tapered,
+        spa.plot.freq_resp(f, [compensation_tapered,
                                 compensation_tapered_lim],
                             ylim=(-5, 25),
                             labels=[r'$N=5, max_{rE}$', 'with soft lim'])
@@ -741,7 +738,7 @@ def binaural_coloration_compensation(N, f, r_0=0.0875, w_taper=None):
     N_full = int(np.ceil(kr[-1]))
 
     gain = pressure_on_sphere(N_full, kr) / \
-           pressure_on_sphere(N, kr, weights=w_taper)  # noqa: E127
+           pressure_on_sphere(N_sph, kr, weights=w_taper)  # noqa: E127
     # catch NaNs
     gain[np.isnan(gain)] = 1.
     return gain
@@ -787,18 +784,18 @@ def hypercardioid_modal_weights(N_sph):
 
     Notes
     -----
-    Also called max-DI or normalized PWD.
+    Also called `max-DI` or `normalized PWD`.
 
     Examples
     --------
     .. plot::
         :context: close-figs
 
-        N = 5
-        w_n = spa.sph.hypercardioid_modal_weights(N)
+        N_sph = 5
+        w_n = spa.sph.hypercardioid_modal_weights(N_sph)
         w_nm = spa.sph.repeat_per_order(w_n) * \
-            spa.sph.sh_matrix(N, np.pi/4, np.pi/4, 'real')
-        spa.plots.sh_coeffs(w_nm)
+            spa.sph.sh_matrix(N_sph, np.pi/4, np.pi/4, 'real')
+        spa.plot.sh_coeffs(w_nm)
 
     """
     c_n = np.repeat((4*np.pi)/(N_sph+1)**2, N_sph+1)
@@ -818,16 +815,21 @@ def cardioid_modal_weights(N_sph):
     w_n : (N+1,) array_like
         Modal weighting factors.
 
+    Notes
+    -----
+    Also called `in-phase weights`, where
+    :math:`w_{n, cardioid} = 4\pi*w_{n, inphase} / (N+1)` .
+
     Examples
     --------
     .. plot::
         :context: close-figs
 
-        N = 5
-        w_n = spa.sph.cardioid_modal_weights(N)
+        N_sph = 5
+        w_n = spa.sph.cardioid_modal_weights(N_sph)
         w_nm = spa.sph.repeat_per_order(w_n) * \
-            spa.sph.sh_matrix(N, np.pi/4, np.pi/4, 'real')
-        spa.plots.sh_coeffs(w_nm)
+            spa.sph.sh_matrix(N_sph, np.pi/4, np.pi/4, 'real')
+        spa.plot.sh_coeffs(w_nm)
 
     """
     c_n = np.array([(np.math.factorial(N_sph)*np.math.factorial(N_sph)) /
@@ -860,11 +862,11 @@ def maxre_modal_weights(N_sph, UNITAMP=True):
     .. plot::
         :context: close-figs
 
-        N = 5
-        w_n = spa.sph.maxre_modal_weights(N)
+        N_sph = 5
+        w_n = spa.sph.maxre_modal_weights(N_sph)
         w_nm = spa.sph.repeat_per_order(w_n) * \
-            spa.sph.sh_matrix(N, np.pi/4, np.pi/4, 'real')
-        spa.plots.sh_coeffs(w_nm)
+            spa.sph.sh_matrix(N_sph, np.pi/4, np.pi/4, 'real')
+        spa.plot.sh_coeffs(w_nm)
 
     """
     c_n = max_rE_weights(N_sph)
@@ -904,11 +906,11 @@ def butterworth_modal_weights(N_sph, k, n_c, UNITAMP=True):
     .. plot::
         :context: close-figs
 
-        N = 5
-        w_n = spa.sph.butterworth_modal_weights(N, 5, 3)
+        N_sph = 5
+        w_n = spa.sph.butterworth_modal_weights(N_sph, 5, 3)
         w_nm = spa.sph.repeat_per_order(w_n) * \
-            spa.sph.sh_matrix(N, np.pi/4, np.pi/4, 'real')
-        spa.plots.sh_coeffs(w_nm)
+            spa.sph.sh_matrix(N_sph, np.pi/4, np.pi/4, 'real')
+        spa.plot.sh_coeffs(w_nm)
 
     """
     c_n = 1/np.sqrt(1+(np.arange(N_sph+1) / n_c)**(2*k))
@@ -917,16 +919,15 @@ def butterworth_modal_weights(N_sph, k, n_c, UNITAMP=True):
     return c_n/a
 
 
-def spat_filterbank_reconstruction_factor(w_nm, num_secs, mode=None):
+def sph_filterbank_reconstruction_factor(w_nm, num_secs, mode=None):
     """Reconstruction factor for restoring amplitude/energy preservation.
-
 
     Parameters
     ----------
     w_nm : ((N+1)**2,), array_like
         SH beam coefficients.
     num_secs : int
-        Number of spatial filters.
+        Number of SH beamformers.
     mode : 'amplitude' or 'energy'
 
     Raises
@@ -956,8 +957,8 @@ def spat_filterbank_reconstruction_factor(w_nm, num_secs, mode=None):
     return beta
 
 
-def design_spat_filterbank(N_sph, sec_azi, sec_zen, c_n, SH_type, mode):
-    """Design spatial filter bank analysis and reconstruction matrix.
+def design_sph_filterbank(N_sph, sec_azi, sec_zen, c_n, sh_type, mode):
+    """Design spherical filter bank analysis and reconstruction matrix.
 
     Parameters
     ----------
@@ -969,7 +970,7 @@ def design_spat_filterbank(N_sph, sec_azi, sec_zen, c_n, SH_type, mode):
         Sector zenith/colatitude steering directions.
     c_n : (N,) array_like
         SH Modal weights, describing (axisymmetric) pattern.
-    SH_type : 'real' or 'complex'
+    sh_type : 'real' or 'complex'
     mode : 'perfect' or 'energy'
         Design achieves perfect reconstruction or energy reconstruction.
 
@@ -982,13 +983,13 @@ def design_spat_filterbank(N_sph, sec_azi, sec_zen, c_n, SH_type, mode):
     -------
     A : (J, (N+1)**2) numpy.ndarray
         Analysis matrix.
-    B : (J, (N+1)**2) numpy.ndarray
+    B : ((N+1)**2, J) numpy.ndarray
         Resynthesis matrix.
 
     References
     ----------
-    Hold, C., Schlecht, S. J., Politis, A., & Pulkki, V. (2021). 
-    Spatial Filter Bank in the Spherical Harmonic Domain : 
+    Hold, C., Schlecht, S. J., Politis, A., & Pulkki, V. (2021).
+    Spatial Filter Bank in the Spherical Harmonic Domain :
     Reconstruction and Application. WASPAA 2021.
 
     Examples
@@ -999,14 +1000,15 @@ def design_spat_filterbank(N_sph, sec_azi, sec_zen, c_n, SH_type, mode):
         N_sph = 3
         sec_dirs = spa.utils.cart2sph(*spa.grids.load_t_design(2*N_sph).T)
         c_n = spa.sph.maxre_modal_weights(N_sph)
-        [A, B] = spa.sph.design_spat_filterbank(N_sph, sec_dirs[0], sec_dirs[1],
-                                                c_n, 'real', 'perfect')
+        [A, B] = spa.sph.design_sph_filterbank(N_sph, sec_dirs[0],
+                                                sec_dirs[1], c_n, 'real',
+                                                'perfect')
         # diffuse input SH signal
         in_nm = np.random.randn((N_sph+1)**2, 1000)
         # Sector signals (Analysis)
         s_sec = A @ in_nm
         # Reconstruction to SH domain
-        out_nm = B.conj().T @ s_sec
+        out_nm = B @ s_sec
 
         # Test perfect reconstruction
         print(spa.utils.test_diff(in_nm, out_nm))
@@ -1018,7 +1020,7 @@ def design_spat_filterbank(N_sph, sec_azi, sec_zen, c_n, SH_type, mode):
     num_secs = len(sec_azi)
 
     # Analysis matrix
-    A = repeat_per_order(c_n) * sh_matrix(N_sph, sec_azi, sec_zen, SH_type)
+    A = repeat_per_order(c_n) * sh_matrix(N_sph, sec_azi, sec_zen, sh_type)
 
     # Preservation property
     if mode.lower() == 'perfect':
@@ -1028,16 +1030,57 @@ def design_spat_filterbank(N_sph, sec_azi, sec_zen, c_n, SH_type, mode):
     else:
         raise ValueError("Mode not implemented: " + mode)
 
-    beta = spat_filterbank_reconstruction_factor(A[0, :], num_secs, mode=pres)
+    beta = sph_filterbank_reconstruction_factor(A[0, :], num_secs, mode=pres)
 
     # Reconstruction matrix
     if mode.lower() == 'perfect':
         B = beta * repeat_per_order(1/(c_n/c_n[0])) * \
-                       sh_matrix(N_sph, sec_azi, sec_zen, SH_type)
+                       sh_matrix(N_sph, sec_azi, sec_zen, sh_type)
     elif mode.lower() == 'energy':
         B = np.sqrt(beta) * repeat_per_order(1/(c_n/c_n[0])) * \
-                                sh_matrix(N_sph, sec_azi, sec_zen, SH_type)
+                                sh_matrix(N_sph, sec_azi, sec_zen, sh_type)
     else:
         raise ValueError("Mode not implemented: " + mode)
 
-    return A, B
+    return A, B.conj().T
+
+
+def sh_mult(a_nm, b_nm, sh_type):
+    """Multiply SH vector a_nm and b_nm in (discrete) space.
+
+    Parameters
+    ----------
+    a_nm : ((N1+1)**2,), array_like
+        SH coefficients.
+    b_nm : ((N2+1)**2,), array_like
+        SH coefficients.
+    sh_type : 'real' or 'complex'
+
+    Returns
+    -------
+    c_nm : ((N1+N2+1)**2,), array_like
+        SH coefficients.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        spa.plot.sh_coeffs(4*spa.sph.sh_mult([1, 0, 1, 0], [0, 1, 0, 0],
+                                             'real'))
+
+    """
+    a_nm = utils.asarray_1d(np.asfarray(a_nm))
+    b_nm = utils.asarray_1d(np.asfarray(b_nm))
+    N1 = int(np.sqrt(len(a_nm)) - 1)
+    N2 = int(np.sqrt(len(a_nm)) - 1)
+    N_out = N1 + N2
+
+    # get discretization points
+    v = grids.load_t_design(2*N_out)
+    v_dirs = utils.vecs2dirs(v)
+
+    c_nm = sht(inverse_sht(a_nm, v_dirs[:, 0], v_dirs[:, 1], sh_type=sh_type) *
+               inverse_sht(b_nm, v_dirs[:, 0], v_dirs[:, 1], sh_type=sh_type),
+               N_out, azi=v_dirs[:, 0], colat=v_dirs[:, 1], sh_type=sh_type)
+    return utils.asarray_1d(c_nm)

@@ -19,15 +19,12 @@ from matplotlib import cm, colors, tri
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 from scipy.spatial import ConvexHull
 
-from . import utils
-from . import sph
-from . import decoder
-from . import process
+from . import utils, sph, decoder, process, grids
 
 
 def spectrum(x, fs, ylim=None, scale_mag=False, **kwargs):
     """Positive (single sided) amplitude spectrum of time signal x.
-    kwargs are forwarded to plots.freq_resp().
+    kwargs are forwarded to plot.freq_resp().
 
     Parameters
     ----------
@@ -64,7 +61,7 @@ def spectrum(x, fs, ylim=None, scale_mag=False, **kwargs):
     freq_resp(freq, specs, ylim=ylim, **kwargs)
 
 
-def freq_resp(freq, amp, INDB=True, smoothing_n=None, xlim=(20, 24000), 
+def freq_resp(freq, amp, TODB=True, smoothing_n=None, xlim=(20, 24000),
               ylim=(-30, None), title=None, labels=None, ax=None):
     """ Plot magnitude of frequency response over time frequency f.
 
@@ -72,11 +69,11 @@ def freq_resp(freq, amp, INDB=True, smoothing_n=None, xlim=(20, 24000),
     ----------
     f : frequency array
     amp : array_like, list of array_like
-    INDB : bool
+    TODB : bool
         Plot in dB.
     smoothing_n : int
         Forwarded to process.frac_octave_smoothing()
-    
+
 
     Examples
     --------
@@ -91,14 +88,15 @@ def freq_resp(freq, amp, INDB=True, smoothing_n=None, xlim=(20, 24000),
 
     assert(all(len(a) == len(freq) for a in amp))
 
-    if INDB:
+    if TODB:
         # Avoid zeros in spec for dB
-        amp = [utils.db(np.clip(a, 10e-15, None)) for a in amp]
+        amp = [utils.db(np.clip(np.abs(a), 10e-15, None)) for a in amp]
 
     if smoothing_n is not None:
         smoothed = []
         for a in amp:
-            smoothed.append(process.frac_octave_smoothing(a, smoothing_n, True))
+            smoothed.append(process.frac_octave_smoothing(a, smoothing_n,
+                                                          WEIGHTED=True))
         amp = smoothed
 
     if ax is None:
@@ -210,7 +208,7 @@ def spherical_function(f, azi, colat, title=None, fig=None):
 
     if fig is None:
         fig = plt.figure(constrained_layout=True)
-    ax = fig.gca(projection='3d')
+    ax = fig.add_subplot(projection='3d')
     ax.view_init(25, 230)
 
     p_tri = ax.plot_trisurf(x, y, z,
@@ -250,7 +248,7 @@ def spherical_function(f, azi, colat, title=None, fig=None):
         plt.title(title)
 
 
-def sh_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None,
+def sh_coeffs(F_nm, sh_type=None, azi_steps=5, el_steps=3, title=None,
               fig=None):
     """Plot spherical harmonics coefficients as function on the sphere.
     Evaluates the inverse SHT.
@@ -262,18 +260,16 @@ def sh_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None,
     """
     F_nm = utils.asarray_1d(F_nm)
     F_nm = F_nm[:, np.newaxis]
-    if SH_type is None:
-        SH_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
+    if sh_type is None:
+        sh_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
 
-    azi_steps = np.deg2rad(azi_steps)
-    el_steps = np.deg2rad(el_steps)
-    phi_plot, theta_plot = np.meshgrid(np.arange(0., 2 * np.pi + azi_steps,
-                                                 azi_steps),
-                                       np.arange(10e-3, np.pi + el_steps,
-                                                 el_steps))
+    phi_plot, theta_plot = np.meshgrid(np.linspace(0., 2 * np.pi,
+                                                   int(360 / azi_steps)),
+                                       np.linspace(10e-8, np.pi - 10e-8,
+                                                   int(180 / el_steps)))
 
     f_plot = sph.inverse_sht(F_nm, phi_plot.ravel(), theta_plot.ravel(),
-                             SH_type)
+                             sh_type)
     f_r = np.abs(f_plot)
     f_ang = np.angle(f_plot)
 
@@ -283,7 +279,7 @@ def sh_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None,
 
     if fig is None:
         fig = plt.figure(constrained_layout=True)
-    ax = fig.gca(projection='3d')
+    ax = fig.add_subplot(projection='3d')
     ax.view_init(25, 230)
 
     m = cm.ScalarMappable(cmap=cm.hsv,
@@ -323,25 +319,23 @@ def sh_coeffs(F_nm, SH_type=None, azi_steps=5, el_steps=3, title=None,
         plt.title(title)
 
 
-def sh_coeffs_overlay(F_nm_list, SH_type=None, azi_steps=5, el_steps=3,
+def sh_coeffs_overlay(F_nm_list, sh_type=None, azi_steps=5, el_steps=3,
                       title=None, fig=None):
-    """Overlay spherical harmonics coefficients plots.
+    """Overlay spherical harmonics coefficients plot.
 
     Examples
     --------
-    See :py:mod:`spaudiopy.plots.sh_coeffs`
+    See :py:mod:`spaudiopy.plot.sh_coeffs`
 
     """
-    azi_steps = np.deg2rad(azi_steps)
-    el_steps = np.deg2rad(el_steps)
-    phi_plot, theta_plot = np.meshgrid(np.arange(0., 2 * np.pi + azi_steps,
-                                                 azi_steps),
-                                       np.arange(10e-3, np.pi + el_steps,
-                                                 el_steps))
+    phi_plot, theta_plot = np.meshgrid(np.linspace(0., 2 * np.pi,
+                                                   int(360 / azi_steps)),
+                                       np.linspace(10e-8, np.pi - 10e-8,
+                                                   int(180 / el_steps)))
 
     if fig is None:
         fig = plt.figure(constrained_layout=True)
-    ax = fig.gca(projection='3d')
+    ax = fig.add_subplot(projection='3d')
     ax.view_init(25, 230)
 
     # m = cm.ScalarMappable(cmap=cm.hsv,
@@ -355,10 +349,10 @@ def sh_coeffs_overlay(F_nm_list, SH_type=None, azi_steps=5, el_steps=3,
     for idx, F_nm in enumerate(F_nm_list):
         F_nm = utils.asarray_1d(F_nm)
         F_nm = F_nm[:, np.newaxis]
-        if SH_type is None:
-            SH_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
+        if sh_type is None:
+            sh_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
         f_plot = sph.inverse_sht(F_nm, phi_plot.ravel(), theta_plot.ravel(),
-                                 SH_type)
+                                 sh_type)
         f_r = np.abs(f_plot)
         f_ang = np.angle(f_plot)
 
@@ -400,8 +394,8 @@ def sh_coeffs_overlay(F_nm_list, SH_type=None, azi_steps=5, el_steps=3,
         plt.title(title)
 
 
-def sh_coeffs_subplot(F_nm_list, SH_type=None, azi_steps=5, el_steps=3, titles=None,
-                      fig=None):
+def sh_coeffs_subplot(F_nm_list, sh_type=None, azi_steps=5, el_steps=3,
+                      titles=None, fig=None):
     """Plot spherical harmonics coefficients list as function on the sphere.
 
     Examples
@@ -410,12 +404,11 @@ def sh_coeffs_subplot(F_nm_list, SH_type=None, azi_steps=5, el_steps=3, titles=N
 
     """
     num_plots = len(F_nm_list)
-    azi_steps = np.deg2rad(azi_steps)
-    el_steps = np.deg2rad(el_steps)
-    phi_plot, theta_plot = np.meshgrid(np.arange(0., 2 * np.pi + azi_steps,
-                                                 azi_steps),
-                                       np.arange(10e-3, np.pi + el_steps,
-                                                 el_steps))
+
+    phi_plot, theta_plot = np.meshgrid(np.linspace(0., 2 * np.pi,
+                                                   int(360 / azi_steps)),
+                                       np.linspace(10e-8, np.pi - 10e-8,
+                                                   int(180 / el_steps)))
 
     if fig is None:
         fig = plt.figure(figsize=plt.figaspect(1 / num_plots),
@@ -425,11 +418,11 @@ def sh_coeffs_subplot(F_nm_list, SH_type=None, azi_steps=5, el_steps=3, titles=N
     for idx_p, ax in enumerate(axs):
         F_nm = utils.asarray_1d(F_nm_list[idx_p])
         F_nm = F_nm[:, np.newaxis]
-        if SH_type is None:
-            SH_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
+        if sh_type is None:
+            sh_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
 
         f_plot = sph.inverse_sht(F_nm, phi_plot.ravel(), theta_plot.ravel(),
-                                 SH_type)
+                                 sh_type)
         f_r = np.abs(f_plot)
         f_ang = np.angle(f_plot)
 
@@ -479,20 +472,22 @@ def sh_coeffs_subplot(F_nm_list, SH_type=None, azi_steps=5, el_steps=3, titles=N
     cbar.set_ticklabels([r'$-\pi$', r'$0$', r'$\pi$'])
 
 
-def sh_rms_map(F_nm, INDB=False, w_n=None, SH_type=None, azi_steps=5,
-               zen_steps=3, title=None, fig=None):
+def sh_rms_map(F_nm, TODB=False, w_n=None, sh_type=None, n_plot=50, title=None,
+               fig=None):
     """Plot spherical harmonic signal RMS as function on the sphere.
     Evaluates the maxDI beamformer, if w_n is None.
-    
+
     Parameters
     ----------
     F_nm : ((N+1)**2, S) numpy.ndarray
         Matrix of spherical harmonics coefficients, Ambisonic signal.
-    INDB : bool
+    TODB : bool
         Plot in dB.
     w_n : array_like
         Modal weighting of beamformers that are evaluated on the grid.
-    SH_type :  'complex' or 'real' spherical harmonics.
+    sh_type :  'complex' or 'real' spherical harmonics.
+    n_plot : int
+        Plotting precision (grid degree).
 
     Examples
     --------
@@ -501,32 +496,34 @@ def sh_rms_map(F_nm, INDB=False, w_n=None, SH_type=None, azi_steps=5,
     """
     F_nm = np.atleast_2d(F_nm)
     assert(F_nm.ndim == 2)
-    if SH_type is None:
-        SH_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
+    if sh_type is None:
+        sh_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
     N_sph = int(np.sqrt(F_nm.shape[0]) - 1)
-    
-    azi_steps = np.deg2rad(azi_steps)
-    zen_steps = np.deg2rad(zen_steps)
-    azi_plot, zen_plot = np.meshgrid(np.arange(np.pi, -(np.pi + azi_steps),
-                                                 -azi_steps),
-                                       np.arange(10e-3, np.pi + zen_steps,
-                                                 zen_steps))
-    
-    Y_smp = sph.sh_matrix(N_sph, azi_plot.ravel(), zen_plot.ravel(), SH_type)
+
+    vp = grids.load_n_design(n_plot)
+    azi_plot, zen_plot, _ = utils.cart2sph(*vp.T)
+    azi_plot = np.concatenate((azi_plot,
+                               [np.pi, 0, -np.pi, np.pi, 0, -np.pi]))
+    zen_plot = np.concatenate((zen_plot,
+                               [0, 0, 0, np.pi, np.pi, np.pi]))
+
+    Y_smp = sph.sh_matrix(N_sph, azi_plot.ravel(), zen_plot.ravel(), sh_type)
     if w_n is None:
         w_n = sph.hypercardioid_modal_weights(N_sph)
     f_d = Y_smp @ np.diag(sph.repeat_per_order(w_n)) @ F_nm
     rms_d = np.abs(utils.rms(f_d, axis=1))
-    
-    if INDB:
+
+    if TODB:
         rms_d = utils.db(rms_d)
-    
+
     if fig is None:
         fig = plt.figure(constrained_layout=True)
-    ax = fig.gca()
+
+    ax = fig.add_subplot()
     ax.set_aspect('equal')
 
-    p = ax.pcolormesh(azi_plot, zen_plot, np.reshape(rms_d, azi_plot.shape))
+    p = ax.tricontourf(azi_plot, zen_plot, rms_d, levels=100,
+                       vmin=0 if not TODB else None)
     ax.grid(True)
 
     ax.invert_xaxis()
@@ -541,19 +538,69 @@ def sh_rms_map(F_nm, INDB=False, w_n=None, SH_type=None, azi_steps=5,
 
     plt.axhline(y=np.pi/2, color='grey', linestyle=':')
     plt.axvline(color='grey', linestyle=':')
-    
-    plt.xticks([np.pi, np.pi/2, 0, -np.pi/2, -np.pi], 
+
+    plt.xticks([np.pi, np.pi/2, 0, -np.pi/2, -np.pi],
                labels=[r"$\pi$", r"$\pi/2$", r"$0$", r"$-\pi/2$", r"$-\pi$"])
     plt.yticks([0, np.pi/2, np.pi],
                labels=[r"$0$", r"$\pi/2$", r"$\pi$", ])
-    
+
     cb = plt.colorbar(p, ax=ax, shrink=0.5)
-    cb.set_label("RMS in dB" if INDB else "RMS")
+    cb.set_label("RMS in dB" if TODB else "RMS")
     if title is not None:
         ax.set_title(title)
 
 
-def hull(hull, simplices=None, mark_invalid=True, title=None, draw_ls=True, 
+def spherical_function_map(f, azi, zen, TODB=False, title=None, fig=None):
+    """Plot function 1D vector f over azi and zen, can also convert to dB.
+
+    Examples
+    --------
+    See :py:mod:`spaudiopy.parsa.sh_music`
+
+    """
+    f = utils.asarray_1d(np.real_if_close(f))
+    azi = utils.asarray_1d(azi)
+    zen = utils.asarray_1d(zen)
+    azi[azi > np.pi] = azi[azi > np.pi] - 2*np.pi
+
+    if TODB:
+        f = utils.db(f)
+
+    if fig is None:
+        fig = plt.figure(constrained_layout=True)
+
+    ax = fig.add_subplot()
+    ax.set_aspect('equal')
+
+    p = ax.tricontourf(azi, zen, f, levels=100, alpha=0.25)
+    p = ax.scatter(azi, zen, c=f, alpha=0.8, edgecolor='none')
+    ax.grid(True)
+
+    ax.invert_xaxis()
+    ax.invert_yaxis()
+    ax.set_xticks(np.linspace(-np.pi, np.pi, 5))
+    ax.set_xticklabels([r'$-\pi$', r'$-\pi/2$', r'$0$',
+                        r'$\pi/2$', r'$\pi$'])
+    ax.set_yticks(np.linspace(0, np.pi, 3))
+    ax.set_yticklabels([r'$0$', r'$\pi/2$', r'$\pi$'])
+    ax.set_xlabel('Azimuth')
+    ax.set_ylabel('Zenith')
+
+    plt.axhline(y=np.pi/2, color='grey', linestyle=':')
+    plt.axvline(color='grey', linestyle=':')
+
+    plt.xticks([np.pi, np.pi/2, 0, -np.pi/2, -np.pi],
+               labels=[r"$\pi$", r"$\pi/2$", r"$0$", r"$-\pi/2$", r"$-\pi$"])
+    plt.yticks([0, np.pi/2, np.pi],
+               labels=[r"$0$", r"$\pi/2$", r"$\pi$", ])
+
+    cb = plt.colorbar(p, ax=ax, shrink=0.5)
+    cb.set_label("in dB" if TODB else None)
+    if title is not None:
+        ax.set_title(title)
+
+
+def hull(hull, simplices=None, mark_invalid=True, title=None, draw_ls=True,
          ax_lim=None, color=None, clim=None, fig=None):
     """Plot loudspeaker setup and valid simplices from its hull object.
 
@@ -616,7 +663,7 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, draw_ls=True,
 
     if fig is None:
         fig = plt.figure(constrained_layout=True)
-    ax = fig.gca(projection='3d')
+    ax = fig.add_subplot(projection='3d')
     ax.view_init(25, 230)
 
     # valid
@@ -639,7 +686,7 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, draw_ls=True,
             ax.scatter(co[0], co[1], co[2], c='black', s=20, alpha=0.5,
                        zorder=2)
             ax.text(co[0], co[1], co[2], s, zorder=2)
-    
+
     # origin
     ax.scatter(0, 0, 0, s=30, c='darkgray', marker='+')
 
@@ -666,7 +713,7 @@ def hull_normals(hull, plot_face_normals=True, plot_vertex_normals=True):
     z = hull.points[:, 2]
 
     fig = plt.figure(constrained_layout=True)
-    ax = fig.gca(projection='3d')
+    ax = fig.add_subplot(projection='3d')
     ax.view_init(25, 230)
     ax.plot_trisurf(x, y, z,
                     triangles=hull.simplices,
@@ -713,7 +760,7 @@ def hull_normals(hull, plot_face_normals=True, plot_vertex_normals=True):
     plt.legend(loc='best')
 
 
-def polar(theta, r, INDB=True, rlim=None, title=None, ax=None):
+def polar(theta, r, TODB=True, rlim=None, title=None, ax=None):
     """Polar plot (in dB) that allows negative values for `r`.
 
     Examples
@@ -722,13 +769,14 @@ def polar(theta, r, INDB=True, rlim=None, title=None, ax=None):
     """
     if ax is None:
         fig = plt.figure()
-        ax = fig.gca(projection='polar')
+        ax = fig.add_subplot(projection='polar')
+
     # Split in pos and neg part and set rest NaN for plots
     rpos = np.copy(r)
     rpos[r < 0] = np.nan
     rneg = np.copy(r)
     rneg[r >= 0] = np.nan
-    if INDB:
+    if TODB:
         if not rlim:
             rlim = (-40, 0)
         ax.plot(theta, utils.db(rpos), label='$+$')
@@ -742,10 +790,10 @@ def polar(theta, r, INDB=True, rlim=None, title=None, ax=None):
 
     ax.set_theta_offset(np.pi/2)
     ax.set_rmin(rlim[0])
-    ax.set_rmax(rlim[1] + (0.5 if INDB else 0.03))
+    ax.set_rmax(rlim[1] + (0.5 if TODB else 0.03))
     ax.set_rticks(np.linspace(rlim[0], rlim[1], 5))
     ax.set_rlabel_position(6.5/8 * 360)
-    ax.legend(loc='lower right', bbox_to_anchor=(1.175,0.15))
+    ax.legend(loc='lower right', bbox_to_anchor=(1.175, 0.15))
     if title is not None:
         ax.set_title(title)
 
@@ -781,7 +829,7 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
         else:
             N_sph = hull.get_characteristic_order()
         Y_in = sph.sh_matrix(N_sph, phi_plot.flatten(), theta_plot.flatten(),
-                             SH_type='real').T
+                             sh_type='real').T
 
     # Switch renderer
     if renderer_type.lower() == 'vbap':
@@ -903,7 +951,7 @@ def doa(azi, colat, fs, p=None, size=250):
         azi, colat, r = spa.utils.cart2sph(x, y, z)
 
         ps = 1 / np.exp(np.linspace(0, 3, n))
-        spa.plots.doa(azi, colat, fs, ps)
+        spa.plot.doa(azi, colat, fs, ps)
 
     """
     # t in ms
@@ -949,7 +997,8 @@ def doa(azi, colat, fs, p=None, size=250):
         pass
 
 
-def hrirs_ild_itd(hrirs, plevels=50, pclims=(None,None), title=None, fig=None):
+def hrirs_ild_itd(hrirs, plevels=50, pclims=(None, None), title=None,
+                  fig=None):
     """Plot ILDs and ITDs of HRIRs.
 
     Parameters
@@ -970,12 +1019,21 @@ def hrirs_ild_itd(hrirs, plevels=50, pclims=(None,None), title=None, fig=None):
     --------
     spaudiopy.process.ilds_from_hrirs : Calculating ILDs with defaults (in dB).
     spaudiopy.process.itds_from_hrirs : Calculating ITDs with defaults.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        dummy_hrirs = spa.io.load_hrirs(48000, 'dummy')
+        spa.plot.hrirs_ild_itd(dummy_hrirs)
+
     """
-    ilds = process.ilds_from_hrirs(hrirs, INDB=True)
+    ilds = process.ilds_from_hrirs(hrirs, TODB=True)
     itds = process.itds_from_hrirs(hrirs)
 
-    pazi = np.fmod(hrirs.grid['azi'] + np.pi, 2*np.pi) - np.pi
-    pzen = hrirs.grid['colat']
+    pazi = np.fmod(hrirs.azi + np.pi, 2*np.pi) - np.pi
+    pzen = hrirs.zen
     if fig is None:
         fig = plt.figure(constrained_layout=True)
     ax1 = fig.add_subplot(2, 1, 1)
@@ -990,12 +1048,11 @@ def hrirs_ild_itd(hrirs, plevels=50, pclims=(None,None), title=None, fig=None):
     p1 = ax1.tricontourf(pazi, pzen, ilds, levels=plevels,
                          cmap='RdYlBu', vmin=-pclim_ild, vmax=pclim_ild)
     ax1.set_title("ILD")
-    
+
     if pclims[1] is None:
         pclim_itd = max(abs(1000 * itds))
     else:
         pclim_itd = pclims[1]
-    pclim = max(abs(1000 * itds))
     p2 = ax2.tricontourf(pazi, pzen, 1000 * itds, levels=plevels,
                          cmap='RdYlBu', vmin=-pclim_itd, vmax=pclim_itd)
     ax2.set_title("ITD")

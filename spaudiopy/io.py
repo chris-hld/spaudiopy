@@ -19,13 +19,12 @@ import json
 from datetime import datetime
 
 import numpy as np
-import pandas as pd
 from scipy.io import loadmat, savemat
 import h5py
 
 import soundfile as sf
 
-from . import utils, sig, decoder, sdm, grids, sph, process, __version__
+from . import utils, sig, decoder, grids, sph, process, parsa, __version__
 
 
 def load_audio(filenames, fs=None):
@@ -77,7 +76,7 @@ def save_audio(signal, filename, fs=None, subtype='FLOAT'):
     Parameters
     ----------
     signal : sig. MonoSignal, sig.MultiSignal or np.ndarray
-        Audio Signal, forwarded to sf.write(); (frames x channels). 
+        Audio Signal, forwarded to sf.write(); (frames x channels).
     filename : string
         Audio file name.
     fs : int
@@ -105,7 +104,7 @@ def save_audio(signal, filename, fs=None, subtype='FLOAT'):
     sf.write(os.path.expanduser(filename), data, data_fs, subtype=subtype)
 
 
-def load_hrirs(fs, filename=None):
+def load_hrirs(fs, filename=None, jobs_count=None):
     """Convenience function to load 'HRIRs.mat'.
     The file contains ['hrir_l', 'hrir_r', 'fs', 'azi', 'colat'].
 
@@ -115,6 +114,9 @@ def load_hrirs(fs, filename=None):
         fs(t).
     filename : string, optional
         HRTF.mat file or default set, or 'dummy' for debugging.
+    jobs_count : int or None, optional
+        Number of parallel jobs for resample_hrirs() in get_default_hrirs(),
+        'None' employs 'cpu_count'.
 
     Returns
     -------
@@ -123,21 +125,29 @@ def load_hrirs(fs, filename=None):
             h(t) for grid position g.
         right : (g, h) numpy.ndarray
             h(t) for grid position g.
-        grid : (g, 2) pandas.dataframe
-            [azi: azimuth, colat: colatitude] for hrirs.
+        azi : (g,) array_like
+            grid azimuth.
+        zen : (g,) array_like
+            grid zenith / colatitude.
         fs : int
             fs(t).
 
     """
     if filename == 'dummy':
         azi, colat, _ = grids.gauss(15)
-        grid = pd.DataFrame({'azi': azi, 'colat': colat})
         # Create diracs as dummy
-        hrir_l = np.zeros([grid.shape[0], 256])
-        hrir_l[:, 0] = np.ones(hrir_l.shape[0])
+        hrir_l = np.zeros([len(azi), 256])
         hrir_r = np.zeros_like(hrir_l)
-        hrir_r[:, 0] = np.ones(hrir_r.shape[0])
         hrir_fs = fs
+        # apply ILD / ITD
+        a_l = 0.5*(1 + np.cos(azi - np.pi/2)) * np.sin(colat)
+        a_r = 0.5*(1 + np.cos(azi + np.pi/2)) * np.sin(colat)
+        hrir_l[np.arange(len(azi)), (a_r * 0.75e-3 * fs + 10).astype(int)] = 1.
+        hrir_r[np.arange(len(azi)), (a_l * 0.75e-3 * fs + 10).astype(int)] = 1.
+        hrir_l *= a_l[:, np.newaxis] + 0.1
+        hrir_r *= a_r[:, np.newaxis] + 0.1
+        hrir_l[np.arange(len(azi)), (a_l * 5).astype(int)] = hrir_l[:, 0]
+        hrir_r[np.arange(len(azi)), (a_r * 5).astype(int)] = hrir_r[:, 0]
 
     elif filename is None:
         # default
@@ -152,7 +162,7 @@ def load_hrirs(fs, filename=None):
             mat = loadmat(filename)
         except FileNotFoundError:
             warn("No default hrirs. Generating them...")
-            get_default_hrirs()
+            get_default_hrirs(jobs_count=jobs_count)
             mat = loadmat(filename)
     else:
         mat = loadmat(os.path.expanduser(filename))
@@ -167,14 +177,13 @@ def load_hrirs(fs, filename=None):
 
         azi = np.array(np.squeeze(mat['azi']), dtype=float)
         colat = np.array(np.squeeze(mat['colat']), dtype=float)
-        grid = pd.DataFrame({'azi': azi, 'colat': colat})
 
-    HRIRs = sig.HRIRs(hrir_l, hrir_r, grid, hrir_fs)
+    HRIRs = sig.HRIRs(hrir_l, hrir_r, azi, colat, hrir_fs)
     assert HRIRs.fs == fs
     return HRIRs
 
 
-def get_default_hrirs(grid_azi=None, grid_colat=None):
+def get_default_hrirs(grid_azi=None, grid_colat=None, jobs_count=None):
     """Creates the default HRIRs loaded by load_hrirs() by inverse SHT.
     By default it renders onto a gauss grid of order N=35, and additionally
     resamples fs to 48kHz.
@@ -183,6 +192,9 @@ def get_default_hrirs(grid_azi=None, grid_colat=None):
     ----------
     grid_azi : array_like, optional
     grid_colat : array_like, optional
+    jobs_count : int or None, optional
+        Number of parallel jobs for resample_hrirs(),
+        'None' employs 'cpu_count'.
 
     Notes
     -----
@@ -194,7 +206,7 @@ def get_default_hrirs(grid_azi=None, grid_colat=None):
                    'SphericalHarmonics/FABIAN_DIR_measured_HATO_0.mat'
     current_file_dir = os.path.dirname(__file__)
     filename = os.path.join(current_file_dir, default_file)
-    # %% Load HRTF
+    # Load HRTF
     try:
         file = loadmat(filename)
 
@@ -219,24 +231,26 @@ def get_default_hrirs(grid_azi=None, grid_colat=None):
     if (grid_azi is None) and (grid_colat is None):
         grid_azi, grid_colat, _ = grids.gauss(35)  # grid positions
 
-    # %% Inverse SHT
+    # Inverse SHT
     HRTF_l = sph.inverse_sht(SH_l, grid_azi, grid_colat, 'complex')
     HRTF_r = sph.inverse_sht(SH_r, grid_azi, grid_colat, 'complex')
     assert HRTF_l.shape == HRTF_r.shape
-    # %%
+    # ifft
     hrir_l = np.fft.irfft(HRTF_l)  # creates 256 samples(t)
     hrir_r = np.fft.irfft(HRTF_r)  # creates 256 samples(t)
     assert hrir_l.shape == hrir_r.shape
 
-    # %% Resample
+    # Resample
     fs_target = 48000
     hrir_l_48k, hrir_r_48k, _ = process.resample_hrirs(hrir_l, hrir_r,
                                                        SamplingRate,
-                                                       fs_target)
+                                                       fs_target,
+                                                       jobs_count=jobs_count)
     fs_target = 96000
     hrir_l_96k, hrir_r_96k, _ = process.resample_hrirs(hrir_l, hrir_r,
                                                        SamplingRate,
-                                                       fs_target)
+                                                       fs_target,
+                                                       jobs_count=jobs_count)
 
     savemat(os.path.join(current_file_dir, '../data/HRIRs/'
                          'HRIRs_default_44100.mat'),
@@ -270,7 +284,7 @@ def load_sofa_data(filename):
 
 
 def load_sofa_hrirs(filename):
-    """ Load SOFA file containing HRIRs.    
+    """ Load SOFA file containing HRIRs.
 
     Parameters
     ----------
@@ -284,8 +298,10 @@ def load_sofa_hrirs(filename):
             h(t) for grid position g.
         right : (g, h) numpy.ndarray
             h(t) for grid position g.
-        grid : (g, 2) pandas.dataframe
-            [azi: azimuth, colat: colatitude] for hrirs.
+        azi : (g,) array_like
+            grid azimuth.
+        zen : (g,) array_like
+            grid zenith / colatitude.
         fs : int
             fs(t).
 
@@ -294,17 +310,17 @@ def load_sofa_hrirs(filename):
     fs = int(sdata['Data.SamplingRate'])
     irs = np.asarray(sdata['Data.IR'])
     grid = np.asarray(sdata['SourcePosition'])
-    assert(abs((grid[:,2]-grid[:,2].mean())).mean() < 0.1) # Otherwise not r
-    grid_azi, grid_zen = np.deg2rad(grid[:,0]), np.pi/2 - np.deg2rad(grid[:,1])
+    assert(abs((grid[:, 2]-grid[:, 2].mean())).mean() < 0.1)  # Otherwise not r
+    grid_azi, grid_zen = np.deg2rad(grid[:, 0]), np.pi/2 - np.deg2rad(
+                                                            grid[:, 1])
     assert(all(grid_zen > -10e-6))  # Otherwise not zen
-    irs_left = np.squeeze(irs[:,0,:])
-    irs_right = np.squeeze(irs[:,1,:])
-    irs_grid = pd.DataFrame({'azi': grid_azi, 'colat': grid_zen})
-    HRIRs = sig.HRIRs(irs_left, irs_right, irs_grid, fs)
+    irs_left = np.squeeze(irs[:, 0, :])
+    irs_right = np.squeeze(irs[:, 1, :])
+    HRIRs = sig.HRIRs(irs_left, irs_right, grid_azi, grid_zen, fs)
     return HRIRs
 
 
-def sofa_to_sh(filename, N_sph, SH_type='real'):
+def sofa_to_sh(filename, N_sph, sh_type='real'):
     """Load and transform SOFA IRs to the Spherical Harmonic Domain.
 
     Parameters
@@ -313,7 +329,7 @@ def sofa_to_sh(filename, N_sph, SH_type='real'):
         SOFA file name.
     N_sph : int
         Spherical Harmonic Transform order.
-    SH_type : 'real' (default) or 'complex' spherical harmonics.
+    sh_type : 'real' (default) or 'complex' spherical harmonics.
 
     Returns
     -------
@@ -324,9 +340,9 @@ def sofa_to_sh(filename, N_sph, SH_type='real'):
     """
     hrirs = load_sofa_hrirs(filename)
     fs = hrirs.fs
-    grid_azi, grid_zen = hrirs.grid['azi'], hrirs.grid['colat']
+    grid_azi, grid_zen = hrirs.azi, hrirs.zen
     # Pinv / lstsq since we can't be sure about the grid
-    Y_pinv = np.linalg.pinv(sph.sh_matrix(N_sph, grid_azi, grid_zen, SH_type))
+    Y_pinv = np.linalg.pinv(sph.sh_matrix(N_sph, grid_azi, grid_zen, sh_type))
     irs = np.stack((hrirs.left, hrirs.right), axis=0)
     IRs_nm = Y_pinv @ irs
     return IRs_nm, fs
@@ -476,8 +492,8 @@ def write_ssr_brirs_sdm(filename, sdm_p, sdm_phi, sdm_theta, fs,
     ssr_brirs = np.zeros((720, len(sdm_p) + len(hrirs) - 1))
     for angle in range(0, 360):
         sdm_phi_rot = sdm_phi - np.deg2rad(angle)
-        ir_l, ir_r = sdm.render_bsdm(sdm_p, sdm_phi_rot, sdm_theta,
-                                     hrirs=hrirs)
+        ir_l, ir_r = parsa.render_bsdm(sdm_p, sdm_phi_rot, sdm_theta,
+                                       hrirs=hrirs)
         # left
         ssr_brirs[2 * angle, :] = ir_l
         # right
@@ -562,8 +578,8 @@ def save_layout(filename, ls_layout, name='unknown', description='unknown'):
                                     ls_layout.ambisonics_hull.imaginary_ls_idx)
         ls_dict['Channel'] = ls_idx + 1
         ls_dict['Gain'] = 0. if ls_idx in np.asarray(
-                            ls_layout.ambisonics_hull.imaginary_ls_idx) else \
-                            ls_layout.ls_gains[ls_idx]
+                           ls_layout.ambisonics_hull.imaginary_ls_idx) else \
+                           ls_layout.ls_gains[ls_idx]
         out_data['LoudspeakerLayout']['Loudspeakers'].append(ls_dict)
 
     with open(os.path.expanduser(filename), 'w') as outfile:

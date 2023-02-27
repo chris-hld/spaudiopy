@@ -5,39 +5,38 @@
 .. autosummary::
    :toctree:
 
-   IO
+   io
    sig
    sph
    decoder
    process
    utils
    grids
-   sdm
-   plots
+   parsa
+   plot
 
 """
 from pathlib import Path
-from subprocess import check_output
+from subprocess import run
 
 file_dir = Path(__file__).parent.absolute()
 
 
 try:
-    release = check_output(['git', 'describe', '--tags', '--always', '--long',
-                            '--dirty'],
-                           cwd=str(file_dir))
-    __version__ = release.decode().strip()
+    r = run(['git', 'describe', '--tags', '--always', '--long', '--dirty'],
+            check=True, capture_output=True, cwd=str(file_dir))
+    __version__ = r.stdout.decode().strip()
 
 except Exception:
-    __version__ = "unknown"
+    __version__ = "unknown (v0.2.0)"
 
 
 from . import decoder
 from . import grids
-from . import IO
-from . import plots
+from . import io
+from . import plot
 from . import process
-from . import sdm
+from . import parsa
 from . import sph
 from . import sig
 from . import utils
