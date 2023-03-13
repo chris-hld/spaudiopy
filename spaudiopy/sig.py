@@ -276,7 +276,7 @@ class HRIRs:
         self.__init__(left, right, self.azi, self.zen, self.fs)
 
     def nearest_hrirs(self, azi, zen):
-        """For a point on the sphere, select closest hrir defined on grid.
+        """For a point on the sphere, select closest HRIR defined on grid.
 
         Based on the haversine distance.
 
@@ -301,21 +301,23 @@ class HRIRs:
 
     def nearest_idx(self, azi, zen):
         """
-        Index of nearest hrir grid point based on haversine distance.
+        Index of nearest HRIR grid point based on dot product.
 
         Parameters
         ----------
-        azi : float
+        azi : float, array_like
             Azimuth.
-        colat : float
+        colat : float, array_like
             Zenith / Colatitude.
 
         Returns
         -------
-        idx : int
+        idx : int, np.ndarray
             Index.
         """
-        return np.argmin(utils.haversine(self.azi, self.zen, azi, zen))
+        vec = np.stack(utils.sph2cart(azi, zen), axis=1)
+        vec_g = np.stack(utils.sph2cart(self.azi, self.zen), axis=1)
+        return np.argmax(vec@vec_g.T, axis=1).squeeze()
 
 
 def trim_audio(A, start, stop):

@@ -139,10 +139,10 @@ def haversine(azi1, colat1, azi2, colat2, r=1):
 
     Parameters
     ----------
-    azi1 : (n,) array_like
-    colat1 : (n,) array_like.
-    azi2 : (n,) array_like
-    colat2: (n,) array_like
+    azi1 : (n,) float, array_like
+    colat1 : (n,) float, array_like
+    azi2 : (n,) float, array_like
+    colat2: (n,) float, array_like
     r : float, optional.
 
     Returns
@@ -155,6 +155,11 @@ def haversine(azi1, colat1, azi2, colat2, r=1):
     https://en.wikipedia.org/wiki/Haversine_formula
 
     """
+    azi1 = np.asarray(azi1)
+    colat1 = np.asarray(colat1)
+    azi2 = np.asarray(azi2)
+    colat2 = np.asarray(colat2)
+
     lat1 = np.pi / 2 - colat1
     lat2 = np.pi / 2 - colat2
 
