@@ -473,7 +473,7 @@ def sh_coeffs_subplot(F_nm_list, sh_type=None, azi_steps=5, el_steps=3,
 
 
 def sh_rms_map(F_nm, TODB=False, w_n=None, sh_type=None, n_plot=50, title=None,
-               fig=None):
+               clim=[None, None], fig=None):
     """Plot spherical harmonic signal RMS as function on the sphere.
     Evaluates the maxDI beamformer, if w_n is None.
 
@@ -522,8 +522,10 @@ def sh_rms_map(F_nm, TODB=False, w_n=None, sh_type=None, n_plot=50, title=None,
     ax = fig.add_subplot()
     ax.set_aspect('equal')
 
+    if clim[0] is None:
+        clim[0]=0 if not TODB else None
     p = ax.tricontourf(azi_plot, zen_plot, rms_d, levels=100,
-                       vmin=0 if not TODB else None)
+                       vmin=clim[0], vmax=clim[1])
     ax.grid(True)
 
     ax.invert_xaxis()
@@ -536,26 +538,27 @@ def sh_rms_map(F_nm, TODB=False, w_n=None, sh_type=None, n_plot=50, title=None,
     ax.set_xlabel('Azimuth')
     ax.set_ylabel('Zenith')
 
-    plt.axhline(y=np.pi/2, color='grey', linestyle=':')
-    plt.axvline(color='grey', linestyle=':')
+    ax.axhline(y=np.pi/2, color='grey', linestyle=':')
+    ax.axvline(color='grey', linestyle=':')
 
-    plt.xticks([np.pi, np.pi/2, 0, -np.pi/2, -np.pi],
+    ax.set_xticks([np.pi, np.pi/2, 0, -np.pi/2, -np.pi],
                labels=[r"$\pi$", r"$\pi/2$", r"$0$", r"$-\pi/2$", r"$-\pi$"])
-    plt.yticks([0, np.pi/2, np.pi],
+    ax.set_yticks([0, np.pi/2, np.pi],
                labels=[r"$0$", r"$\pi/2$", r"$\pi$", ])
 
-    cb = plt.colorbar(p, ax=ax, shrink=0.5)
+    cb = fig.colorbar(p, ax=ax, shrink=0.5)
     cb.set_label("RMS in dB" if TODB else "RMS")
     if title is not None:
         ax.set_title(title)
 
 
-def spherical_function_map(f, azi, zen, TODB=False, title=None, fig=None):
+def spherical_function_map(f, azi, zen, TODB=False, title=None, 
+                           clim=(None, None), fig=None):
     """Plot function 1D vector f over azi and zen, can also convert to dB.
 
     Examples
     --------
-    See :py:mod:`spaudiopy.parsa.sh_music`
+    See :py:mod:`spaudiopy.parsa.sh_beamform`
 
     """
     f = utils.asarray_1d(np.real_if_close(f))
@@ -572,8 +575,10 @@ def spherical_function_map(f, azi, zen, TODB=False, title=None, fig=None):
     ax = fig.add_subplot()
     ax.set_aspect('equal')
 
-    p = ax.tricontourf(azi, zen, f, levels=100, alpha=0.25)
-    p = ax.scatter(azi, zen, c=f, alpha=0.8, edgecolor='none')
+    p = ax.tricontourf(azi, zen, f, levels=100, alpha=0.25, vmin=clim[0],
+                       vmax=clim[1])
+    p = ax.scatter(azi, zen, c=f, alpha=0.8, edgecolor='none', vmin=clim[0],
+                   vmax=clim[1])
     ax.grid(True)
 
     ax.invert_xaxis()
@@ -586,15 +591,15 @@ def spherical_function_map(f, azi, zen, TODB=False, title=None, fig=None):
     ax.set_xlabel('Azimuth')
     ax.set_ylabel('Zenith')
 
-    plt.axhline(y=np.pi/2, color='grey', linestyle=':')
-    plt.axvline(color='grey', linestyle=':')
+    ax.axhline(y=np.pi/2, color='grey', linestyle=':')
+    ax.axvline(color='grey', linestyle=':')
 
-    plt.xticks([np.pi, np.pi/2, 0, -np.pi/2, -np.pi],
-               labels=[r"$\pi$", r"$\pi/2$", r"$0$", r"$-\pi/2$", r"$-\pi$"])
-    plt.yticks([0, np.pi/2, np.pi],
-               labels=[r"$0$", r"$\pi/2$", r"$\pi$", ])
+    ax.set_xticks([np.pi, np.pi/2, 0, -np.pi/2, -np.pi],
+                  labels=[r"$\pi$", r"$\pi/2$", r"$0$", r"$-\pi/2$", r"$-\pi$"])
+    ax.set_yticks([0, np.pi/2, np.pi],
+                  labels=[r"$0$", r"$\pi/2$", r"$\pi$", ])
 
-    cb = plt.colorbar(p, ax=ax, shrink=0.5)
+    cb = fig.colorbar(p, ax=ax, shrink=0.5)
     cb.set_label("in dB" if TODB else None)
     if title is not None:
         ax.set_title(title)
@@ -1077,12 +1082,12 @@ def hrirs_ild_itd(hrirs, plevels=50, pclims=(None, None), title=None,
                         labels=[r"$0$", r"$\pi/2$", r"$\pi$", ])
 
     ax2.set_xlabel('Azimuth')
-    cb1 = plt.colorbar(p1, ax=ax1)
+    cb1 = fig.colorbar(p1, ax=ax1)
     cb1.set_label("ILD in dB")
-    cb2 = plt.colorbar(p2, ax=ax2)
+    cb2 = fig.colorbar(p2, ax=ax2)
     cb2.set_label("ITD in ms")
     if title is not None:
-        plt.suptitle(title)
+        fig.suptitle(title)
 
 
 def set_aspect_equal3d(ax=None, XYZlim=None):
