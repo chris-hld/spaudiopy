@@ -1316,7 +1316,7 @@ def sh2bin(sig_nm, hrirs_nm):
     return np.vstack((out_l, out_r))
 
 
-def magls_bin(hrirs, N_sph, f_trans=None, hf_cont='angle', hf_delay=(0, 0)):
+def magls_bin(hrirs, N_sph, f_trans=None, hf_cont='avg', hf_delay=(0, 0)):
     """Magnitude Least-Squares (magLS) binaural decoder.
 
     This binaural decoder renders the (least squares) binaural output below
@@ -1333,7 +1333,7 @@ def magls_bin(hrirs, N_sph, f_trans=None, hf_cont='angle', hf_delay=(0, 0)):
         Transition frequency between linear and magLS handling.
         The default is None, which sets it to 'N_sph * 500'.
     hf_cont : ['delay', 'avg', 'angle'], optional
-        High Frequency phase continuation method . The default is 'angle'.
+        High Frequency phase continuation method . The default is 'avg'.
     hf_delay : (2,), optional
         High frequency (additional) group delay in smpls.
         The default is (0, 0).
@@ -1350,7 +1350,8 @@ def magls_bin(hrirs, N_sph, f_trans=None, hf_cont='angle', hf_delay=(0, 0)):
 
     Notes
     -----
-    The iterative procedure in [1] suffers form HF dispersion (available by
+    Details can be found in [1].
+    The iterative procedure in [2] suffers form HF dispersion (available by
     `hf_cont='delay'` and `hf_delay=(0, 0))`.
     This function offers multiple options to mitigate this issue. E.g. manually
     estimating and setting `hf_delay`, or estimating a phase difference on
@@ -1364,7 +1365,10 @@ def magls_bin(hrirs, N_sph, f_trans=None, hf_cont='angle', hf_delay=(0, 0)):
 
     References
     ----------
-    [1] Zotter, F., & Frank, M. (2019). Ambisonics. Springer Topics in Signal
+    [1] Hold, C., Meyer-Kahlen, N., & Pulkki, V. (2023). Magnitude-Least-Squares
+    Binaural Ambisonic Rendering with Phase Continuation. 
+    Fortschritte Der Akustik - DAGA.
+    [2] Zotter, F., & Frank, M. (2019). Ambisonics. Springer Topics in Signal
     Processing.
 
     See Also
@@ -1373,7 +1377,7 @@ def magls_bin(hrirs, N_sph, f_trans=None, hf_cont='angle', hf_delay=(0, 0)):
     """
     assert(isinstance(hrirs, sig.HRIRs))
     if f_trans is None:
-        f_trans = N_sph * 500  # from N > kr
+        f_trans = N_sph * 600  # from N > kr
     fs = hrirs.fs
     hrirs_l = hrirs.left
     hrirs_r = hrirs.right
