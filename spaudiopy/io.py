@@ -95,7 +95,8 @@ def save_audio(signal, filename, fs=None, subtype='FLOAT'):
         data = signal.get_signals().T
         data_fs = signal.fs
     elif isinstance(signal, (np.ndarray, np.generic)):
-        assert(fs)
+        if fs is None:
+            raise ValueError("Needs fs for generic audio data!")
         data = signal
         data_fs = fs
     else:
@@ -105,6 +106,8 @@ def save_audio(signal, filename, fs=None, subtype='FLOAT'):
         assert(data.ndim == 2)
         if (data.shape[1] > data.shape[0]):
             warn(f"Writing file with {data.shape[1]} channels")
+    if (np.max(np.abs(data)) > 1.0):
+        warn("Audio clipped!")
     sf.write(os.path.expanduser(filename), data, data_fs, subtype=subtype)
 
 
