@@ -107,7 +107,7 @@ def save_audio(signal, filename, fs=None, subtype='FLOAT'):
         if (data.shape[1] > data.shape[0]):
             warn(f"Writing file with {data.shape[1]} channels")
     if (np.max(np.abs(data)) > 1.0):
-        warn("Audio clipped!")
+        warn(f"Audio clipped! ({np.max(np.abs(data)):.2f})")
     sf.write(os.path.expanduser(filename), data, data_fs, subtype=subtype)
 
 
