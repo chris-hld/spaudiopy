@@ -1073,7 +1073,7 @@ def sh_mult(a_nm, b_nm, sh_type):
     a_nm = utils.asarray_1d(np.asfarray(a_nm))
     b_nm = utils.asarray_1d(np.asfarray(b_nm))
     N1 = int(np.sqrt(len(a_nm)) - 1)
-    N2 = int(np.sqrt(len(a_nm)) - 1)
+    N2 = int(np.sqrt(len(b_nm)) - 1)
     N_out = N1 + N2
 
     # get discretization points
