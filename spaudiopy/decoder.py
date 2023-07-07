@@ -167,8 +167,8 @@ class LoudspeakerSetup:
             N_e = self.characteristic_order
         return N_e
 
-    def ambisonics_setup(self, N_kernel=50, update_hull=False,
-                         imaginary_ls=None):
+    def ambisonics_setup(self, update_hull=False, imaginary_ls=None, 
+                         characteristic_order=None, N_kernel=50):
         """Prepare loudspeaker hull for ambisonic rendering.
         Sets the `kernel_hull` as an n-design of twice `N_kernel`,
         and updates the ambisonic hull with an additional imaginary
@@ -176,11 +176,14 @@ class LoudspeakerSetup:
 
         Parameters
         ----------
-        N_kernel : int, optional
         update_hull : bool, optional
         imaginary_ls : (L, 3), cartesian, optional
             Imaginary loudspeaker positions, if set to 'None' calls
             'find_imaginary_loudspeaker()' for 'update_hull'.
+        characteristic_order : int, optional
+            Characteristic Ambisonic order, 'None' calls
+            'get_characteristic_order()'
+        N_kernel : int, optional
 
         Examples
         --------
@@ -192,7 +195,11 @@ class LoudspeakerSetup:
             ls_setup.ambisonics_hull.show(title=f"Ambisonic Hull, $N_e={N_e}$")
 
         """
-        self.characteristic_order = self.get_characteristic_order()
+        if characteristic_order is None:
+            self.characteristic_order = self.get_characteristic_order()
+        else:
+            self.characteristic_order = characteristic_order
+                
         if N_kernel is None:
             warn('Setting setup kernel order =', self.characteristic_order)
             N_kernel = self.characteristic_order
