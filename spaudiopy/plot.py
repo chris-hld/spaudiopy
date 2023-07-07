@@ -938,7 +938,8 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
     plt.subplots_adjust(wspace=0.25)
 
 
-def doa(azi, colat, p=None, size=250, fs=None):
+def doa(azi, colat, p=None, size=250, c=None, fs=None, title=None,
+        ltitle=None):
     """Direction of Arrival, with optional p(t) scaling the size.
 
     Examples
@@ -956,7 +957,7 @@ def doa(azi, colat, p=None, size=250, fs=None):
         azi, colat, r = spa.utils.cart2sph(x, y, z)
 
         ps = 1 / np.exp(np.linspace(0, 3, n))
-        spa.plot.doa(azi, colat, ps, fs=fs)
+        spa.plot.doa(azi, colat, ps, fs=fs, ltitle="p(t)")
 
     """
     # shift azi to [np.pi, np.pi]
@@ -975,12 +976,12 @@ def doa(azi, colat, p=None, size=250, fs=None):
     ax.set_aspect('equal')
 
     # plot in reverse order so that first reflections are on top
-    if fs is not None:# t in ms
+    if c is None and fs is not None:  # t in ms
         t_ms = np.linspace(0, len(azi) / fs, len(azi), endpoint=False) * 1000
         p = ax.scatter(azi[::-1], ele[::-1], s=s_plot[::-1], c=t_ms[::-1],
                        alpha=0.35)
     else:
-        p = ax.scatter(azi[::-1], ele[::-1], s=s_plot[::-1],
+        p = ax.scatter(azi[::-1], ele[::-1], s=s_plot[::-1], c=c,
                        alpha=0.35)
     ax.invert_xaxis()
     ax.set_xlabel("Azimuth in rad")
@@ -993,7 +994,7 @@ def doa(azi, colat, p=None, size=250, fs=None):
     ax.axvline(x=0, color='grey', linestyle=':')
     ax.axhline(y=0, color='grey', linestyle=':')
     ax.grid(True)
-    
+
     if fs is not None:
         # show t as colorbar
         cbar = plt.colorbar(p, ax=ax, orientation='horizontal')
@@ -1003,9 +1004,12 @@ def doa(azi, colat, p=None, size=250, fs=None):
         # produce a legend with a cross section of sizes from the scatter
         handles, labels = p.legend_elements(prop="sizes", alpha=0.3, num=5,
                                             func=lambda x: x/size)
-        ax.legend(handles, labels, loc="upper right", title="p(t)")
+        ax.legend(handles, labels, loc="upper right", title=ltitle)
     except AttributeError:  # mpl < 3.3.0
         pass
+
+    if title is not None:
+        ax.set_title(title)
 
 
 def hrirs_ild_itd(hrirs, plevels=50, pclims=(None, None), title=None,
