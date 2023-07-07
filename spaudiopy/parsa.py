@@ -194,10 +194,10 @@ def separate_cov(cov_x, num_cut=None):
         fig, axs = plt.subplots(1, 3, constrained_layout=True)
         axs[0].matshow(S_xx)
         axs[0].set_title("X")
-        axs[1].matshow(S_nn)
-        axs[1].set_title("N")
-        axs[2].matshow(S_pp)
-        axs[2].set_title("S")
+        axs[1].matshow(S_pp)
+        axs[1].set_title("S")
+        axs[2].matshow(S_nn)
+        axs[2].set_title("N")
 
     """
     assert(cov_x.shape[0] == cov_x.shape[1])

@@ -167,8 +167,8 @@ class LoudspeakerSetup:
             N_e = self.characteristic_order
         return N_e
 
-    def ambisonics_setup(self, N_kernel=50, update_hull=False,
-                         imaginary_ls=None):
+    def ambisonics_setup(self, update_hull=False, imaginary_ls=None, 
+                         characteristic_order=None, N_kernel=50):
         """Prepare loudspeaker hull for ambisonic rendering.
         Sets the `kernel_hull` as an n-design of twice `N_kernel`,
         and updates the ambisonic hull with an additional imaginary
@@ -176,11 +176,14 @@ class LoudspeakerSetup:
 
         Parameters
         ----------
-        N_kernel : int, optional
         update_hull : bool, optional
         imaginary_ls : (L, 3), cartesian, optional
             Imaginary loudspeaker positions, if set to 'None' calls
             'find_imaginary_loudspeaker()' for 'update_hull'.
+        characteristic_order : int, optional
+            Characteristic Ambisonic order, 'None' calls
+            'get_characteristic_order()'
+        N_kernel : int, optional
 
         Examples
         --------
@@ -192,7 +195,11 @@ class LoudspeakerSetup:
             ls_setup.ambisonics_hull.show(title=f"Ambisonic Hull, $N_e={N_e}$")
 
         """
-        self.characteristic_order = self.get_characteristic_order()
+        if characteristic_order is None:
+            self.characteristic_order = self.get_characteristic_order()
+        else:
+            self.characteristic_order = characteristic_order
+                
         if N_kernel is None:
             warn('Setting setup kernel order =', self.characteristic_order)
             N_kernel = self.characteristic_order
@@ -1316,7 +1323,7 @@ def sh2bin(sig_nm, hrirs_nm):
     return np.vstack((out_l, out_r))
 
 
-def magls_bin(hrirs, N_sph, f_trans=None, hf_cont='angle', hf_delay=(0, 0)):
+def magls_bin(hrirs, N_sph, f_trans=None, hf_cont='avg', hf_delay=(0, 0)):
     """Magnitude Least-Squares (magLS) binaural decoder.
 
     This binaural decoder renders the (least squares) binaural output below
@@ -1333,7 +1340,7 @@ def magls_bin(hrirs, N_sph, f_trans=None, hf_cont='angle', hf_delay=(0, 0)):
         Transition frequency between linear and magLS handling.
         The default is None, which sets it to 'N_sph * 500'.
     hf_cont : ['delay', 'avg', 'angle'], optional
-        High Frequency phase continuation method . The default is 'angle'.
+        High Frequency phase continuation method . The default is 'avg'.
     hf_delay : (2,), optional
         High frequency (additional) group delay in smpls.
         The default is (0, 0).
@@ -1350,7 +1357,8 @@ def magls_bin(hrirs, N_sph, f_trans=None, hf_cont='angle', hf_delay=(0, 0)):
 
     Notes
     -----
-    The iterative procedure in [1] suffers form HF dispersion (available by
+    Details can be found in [1].
+    The iterative procedure in [2] suffers form HF dispersion (available by
     `hf_cont='delay'` and `hf_delay=(0, 0))`.
     This function offers multiple options to mitigate this issue. E.g. manually
     estimating and setting `hf_delay`, or estimating a phase difference on
@@ -1364,7 +1372,10 @@ def magls_bin(hrirs, N_sph, f_trans=None, hf_cont='angle', hf_delay=(0, 0)):
 
     References
     ----------
-    [1] Zotter, F., & Frank, M. (2019). Ambisonics. Springer Topics in Signal
+    [1] Hold, C., Meyer-Kahlen, N., & Pulkki, V. (2023). Magnitude-Least-Squares
+    Binaural Ambisonic Rendering with Phase Continuation. 
+    Fortschritte Der Akustik - DAGA.
+    [2] Zotter, F., & Frank, M. (2019). Ambisonics. Springer Topics in Signal
     Processing.
 
     See Also
@@ -1373,7 +1384,7 @@ def magls_bin(hrirs, N_sph, f_trans=None, hf_cont='angle', hf_delay=(0, 0)):
     """
     assert(isinstance(hrirs, sig.HRIRs))
     if f_trans is None:
-        f_trans = N_sph * 500  # from N > kr
+        f_trans = N_sph * 600  # from N > kr
     fs = hrirs.fs
     hrirs_l = hrirs.left
     hrirs_r = hrirs.right

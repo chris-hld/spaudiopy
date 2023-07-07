@@ -28,7 +28,7 @@ sdm_p = ambi_ir.W
 sdm_azi, sdm_colat, _ = spa.parsa.pseudo_intensity(ambi_ir, f_bp=(100, 5000))
 
 # Show first 10000 samples DOA
-spa.plot.doa(sdm_azi[:10000], sdm_colat[:10000], fs, p=sdm_p[:10000])
+spa.plot.doa(sdm_azi[:10000], sdm_colat[:10000], fs=fs, p=sdm_p[:10000])
 
 
 # - SDM Decoding:

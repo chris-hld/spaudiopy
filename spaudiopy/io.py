@@ -84,7 +84,6 @@ def save_audio(signal, filename, fs=None, subtype='FLOAT'):
     subtype : optional
 
     """
-    # assert(isinstance(signal, (sig.MonoSignal, sig.MultiSignal)))
     if isinstance(sig, sig.MonoSignal):
         if fs is not None:
             assert(signal.fs == fs)
@@ -96,11 +95,19 @@ def save_audio(signal, filename, fs=None, subtype='FLOAT'):
         data = signal.get_signals().T
         data_fs = signal.fs
     elif isinstance(signal, (np.ndarray, np.generic)):
+        if fs is None:
+            raise ValueError("Needs fs for generic audio data!")
         data = signal
         data_fs = fs
     else:
         raise NotImplementedError('Data type not supported.')
-
+    data = np.asarray(data)
+    if (data.ndim > 1):
+        assert(data.ndim == 2)
+        if (data.shape[1] > data.shape[0]):
+            warn(f"Writing file with {data.shape[1]} channels")
+    if (np.max(np.abs(data)) > 1.0):
+        warn(f"Audio clipped! ({np.max(np.abs(data)):.2f})")
     sf.write(os.path.expanduser(filename), data, data_fs, subtype=subtype)
 
 
