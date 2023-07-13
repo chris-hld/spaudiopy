@@ -510,8 +510,19 @@ def sh_rms_map(F_nm, TODB=False, w_n=None, sh_type=None, n_plot=50, title=None,
     Y_smp = sph.sh_matrix(N_sph, azi_plot.ravel(), zen_plot.ravel(), sh_type)
     if w_n is None:
         w_n = sph.hypercardioid_modal_weights(N_sph)
-    f_d = Y_smp @ np.diag(sph.repeat_per_order(w_n)) @ F_nm
-    rms_d = np.abs(utils.rms(f_d, axis=1))
+
+    mem_block = 2**16
+    if F_nm.shape[1] > mem_block:
+        rms_d_list = []
+        start_idx = 0
+        while start_idx + mem_block <= F_nm.shape[1]:
+            f_d = Y_smp @ np.diag(sph.repeat_per_order(w_n)) @ F_nm[:, start_idx:start_idx+mem_block]
+            rms_d_list.append(np.abs(utils.rms(f_d, axis=1)))
+            start_idx += mem_block
+        rms_d = np.sqrt(np.square(np.array(rms_d_list)).mean(axis=0))
+    else:
+        f_d = Y_smp @ np.diag(sph.repeat_per_order(w_n)) @ F_nm
+        rms_d = np.abs(utils.rms(f_d, axis=1))
 
     if TODB:
         rms_d = utils.db(rms_d)
