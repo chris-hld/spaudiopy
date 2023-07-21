@@ -71,9 +71,9 @@ class MonoSignal:
         """Return an independent (deep) copy of the instance."""
         return copy.deepcopy(self)
 
-    def save(self, filename):
+    def save(self, filename, subtype='FLOAT'):
         """Save to file."""
-        io.save_audio(self, os.path.expanduser(filename))
+        io.save_audio(self, os.path.expanduser(filename), subtype=subtype)
 
     def trim(self, start, stop):
         """Trim audio to start and stop in seconds."""
