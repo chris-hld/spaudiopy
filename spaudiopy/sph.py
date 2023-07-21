@@ -24,7 +24,7 @@ from scipy import special as scyspecial
 from . import utils, grids
 
 
-def sh_matrix(N_sph, azi, colat, sh_type='complex'):
+def sh_matrix(N_sph, azi, colat, sh_type='real'):
     r"""Evaluates the spherical harmonics up to order `N_sph` for given angles.
 
     Matrix returns spherical harmonics up to order :math:`N`
@@ -64,7 +64,7 @@ def sh_matrix(N_sph, azi, colat, sh_type='complex'):
     azi : (Q,) array_like
         Azimuth.
     colat : (Q,) array_like
-        Colatitude.
+        Colatitude / Zenith.
     sh_type :  'complex' or 'real' spherical harmonics.
 
     Returns
@@ -128,7 +128,7 @@ def sht(f, N_sph, azi, colat, sh_type, weights=None, Y_nm=None):
     azi : (Q,) array_like
         Azimuth.
     colat : (Q,) array_like
-        Colatitude.
+        Colatitude / Zenith.
     sh_type :  'complex' or 'real' spherical harmonics.
     weights : (Q,) array_like, optional
         Quadrature weights.
@@ -170,7 +170,7 @@ def sht_lstsq(f, N_sph, azi, colat, sh_type, Y_nm=None):
     azi : (Q,) array_like
         Azimuth.
     colat : (Q,) array_like
-        Colatitude.
+        Colatitude / Zenith.
     sh_type :  'complex' or 'real' spherical harmonics.
     Y_nm : (Q, (N+1)**2) numpy.ndarray, optional
         Matrix of spherical harmonics.
@@ -197,7 +197,7 @@ def inverse_sht(F_nm, azi, colat, sh_type, N_sph=None, Y_nm=None):
     azi : (Q,) array_like
         Azimuth.
     colat : (Q,) array_like
-        Colatitude.
+        Colatitude / Zenith.
     sh_type :  'complex' or 'real' spherical harmonics.
     N_sph : int, optional
         Maximum SH order.
