@@ -365,6 +365,36 @@ def sh_lcmv(cov_x, dirs_azi_c, dirs_zen_c, c_gain):
     return w_nm
 
 
+def sh_sector_beamformer(A_nm):
+    """
+    Get sector pressure and intensity beamformers.
+
+    Parameters
+    ----------
+    A_nm : (J, (N+1)**2), np.ndarray
+        SH beamformer matrix, see spa.sph.design_sph_filterbank().
+
+    Returns
+    -------
+    A_wxyz : ((4*J), (N+2)**2)
+        SH sector pattern beamformers.
+
+    """
+    num_sec = A_nm.shape[0]
+    A_wxyz = np.zeros((4*num_sec, int(np.sqrt(A_nm.shape[1])+1)**2))
+
+    w_nm = np.sqrt(4*np.pi) * np.array([1, 0, 0, 0])
+    x_nm = np.sqrt(4/3*np.pi) * np.array([0, 0, 0, 1])
+    y_nm = np.sqrt(4/3*np.pi) * np.array([0, 1, 0, 0])
+    z_nm = np.sqrt(4/3*np.pi) * np.array([0, 0, 1, 0])
+    for idx_s in range(num_sec):
+        A_wxyz[idx_s*4+0, :] = sph.sh_mult(w_nm, A_nm[idx_s, :], 'real')
+        A_wxyz[idx_s*4+1, :] = sph.sh_mult(x_nm, A_nm[idx_s, :], 'real')
+        A_wxyz[idx_s*4+2, :] = sph.sh_mult(y_nm, A_nm[idx_s, :], 'real')
+        A_wxyz[idx_s*4+3, :] = sph.sh_mult(z_nm, A_nm[idx_s, :], 'real')
+    return A_wxyz
+
+
 # part of parallel pseudo_intensity:
 def _intensity_sample(i, W, X, Y, Z, win):
     buf = len(win)
