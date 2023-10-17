@@ -949,7 +949,7 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
     plt.subplots_adjust(wspace=0.25)
 
 
-def doa(azi, colat, p=None, size=250, c=None, alpha=0.35, fs=None, title=None,
+def doa(azi, colat, p=None, size=250, c=None, alpha=None, fs=None, title=None,
         ltitle=None):
     """Direction of Arrival, with optional p(t) scaling the size.
 
@@ -983,6 +983,9 @@ def doa(azi, colat, p=None, size=250, c=None, alpha=0.35, fs=None, title=None,
     # scale
     s_plot *= size
 
+    if alpha is None:
+        alpha = 0.35 * np.ones_like(azi)
+
     fig, ax = plt.subplots(constrained_layout=True)
     ax.set_aspect('equal')
 
@@ -990,22 +993,24 @@ def doa(azi, colat, p=None, size=250, c=None, alpha=0.35, fs=None, title=None,
     if c is None and fs is not None:  # t in ms
         t_ms = np.linspace(0, len(azi) / fs, len(azi), endpoint=False) * 1000
         p = ax.scatter(azi[::-1], ele[::-1], s=s_plot[::-1], c=t_ms[::-1],
-                       alpha=alpha)
+                       alpha=alpha[::-1])
     else:
-        p = ax.scatter(azi[::-1], ele[::-1], s=s_plot[::-1], c=c,
-                       alpha=alpha)
+        if c is None:
+            c = np.ones_like(azi)
+        p = ax.scatter(azi[::-1], ele[::-1], s=s_plot[::-1], c=c[::-1],
+                       alpha=alpha[::-1])
+    ax.set_xlim([-(np.pi+0.03), (np.pi+0.03)])
+    ax.set_ylim([-(np.pi/2+0.03), (np.pi/2+0.03)])
     ax.invert_xaxis()
     ax.set_xlabel("Azimuth in rad")
     ax.set_ylabel("Elevation in rad")
     ax.set_xticks([-np.pi, -np.pi/2, 0, np.pi/2, np.pi])
     ax.set_xticklabels([r'$-\pi$', r'$-\pi / 2$', r'$0$',
                         r'$\pi / 2$', r'$\pi$'])
-    ax.set_xlim([-(np.pi+0.03), (np.pi+0.03)])
     ax.set_yticks([-np.pi/2, 0, np.pi/2])
     ax.set_yticklabels([r'$-\pi / 2$', r'$0$', r'$\pi / 2$'])
     ax.axvline(x=0, color='grey', linestyle=':')
     ax.axhline(y=0, color='grey', linestyle=':')
-    ax.set_ylim([-(np.pi/2+0.03), (np.pi/2+0.03)])
 
     ax.grid(True)
 
