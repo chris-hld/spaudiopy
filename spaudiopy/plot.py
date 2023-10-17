@@ -949,7 +949,7 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
     plt.subplots_adjust(wspace=0.25)
 
 
-def doa(azi, colat, p=None, size=250, c=None, fs=None, title=None,
+def doa(azi, colat, p=None, size=250, c=None, alpha=0.35, fs=None, title=None,
         ltitle=None):
     """Direction of Arrival, with optional p(t) scaling the size.
 
@@ -958,7 +958,7 @@ def doa(azi, colat, p=None, size=250, c=None, fs=None, title=None,
     .. plot::
         :context: close-figs
 
-        n = 1000
+        n = 300
         fs = 44100
         t_ms = np.linspace(0, n/fs, n, endpoint=False) * 1000  # t in ms
 
@@ -973,7 +973,7 @@ def doa(azi, colat, p=None, size=250, c=None, fs=None, title=None,
     """
     # shift azi to [np.pi, np.pi]
     azi[azi > np.pi] = azi[azi > np.pi] % -np.pi
-    # colar to elevation
+    # colat to elevation
     ele = np.pi/2 - colat
 
     if p is not None:
@@ -990,20 +990,23 @@ def doa(azi, colat, p=None, size=250, c=None, fs=None, title=None,
     if c is None and fs is not None:  # t in ms
         t_ms = np.linspace(0, len(azi) / fs, len(azi), endpoint=False) * 1000
         p = ax.scatter(azi[::-1], ele[::-1], s=s_plot[::-1], c=t_ms[::-1],
-                       alpha=0.35)
+                       alpha=alpha)
     else:
         p = ax.scatter(azi[::-1], ele[::-1], s=s_plot[::-1], c=c,
-                       alpha=0.35)
+                       alpha=alpha)
     ax.invert_xaxis()
     ax.set_xlabel("Azimuth in rad")
     ax.set_ylabel("Elevation in rad")
     ax.set_xticks([-np.pi, -np.pi/2, 0, np.pi/2, np.pi])
     ax.set_xticklabels([r'$-\pi$', r'$-\pi / 2$', r'$0$',
                         r'$\pi / 2$', r'$\pi$'])
+    ax.set_xlim([-(np.pi+0.03), (np.pi+0.03)])
     ax.set_yticks([-np.pi/2, 0, np.pi/2])
     ax.set_yticklabels([r'$-\pi / 2$', r'$0$', r'$\pi / 2$'])
     ax.axvline(x=0, color='grey', linestyle=':')
     ax.axhline(y=0, color='grey', linestyle=':')
+    ax.set_ylim([-(np.pi/2+0.03), (np.pi/2+0.03)])
+
     ax.grid(True)
 
     if fs is not None:
@@ -1011,13 +1014,14 @@ def doa(azi, colat, p=None, size=250, c=None, fs=None, title=None,
         cbar = plt.colorbar(p, ax=ax, orientation='horizontal')
         cbar.set_label("t in ms")
 
-    try:
-        # produce a legend with a cross section of sizes from the scatter
-        handles, labels = p.legend_elements(prop="sizes", alpha=0.3, num=5,
-                                            func=lambda x: x/size)
-        ax.legend(handles, labels, loc="upper right", title=ltitle)
-    except AttributeError:  # mpl < 3.3.0
-        pass
+    if ltitle is not None:
+        try:
+            # produce a legend with a cross section of sizes from the scatter
+            handles, labels = p.legend_elements(prop="sizes", alpha=0.3, num=5,
+                                                func=lambda x: x/size)
+            ax.legend(handles, labels, loc="upper right", title=ltitle)
+        except AttributeError:  # mpl < 3.3.0
+            pass
 
     if title is not None:
         ax.set_title(title)
