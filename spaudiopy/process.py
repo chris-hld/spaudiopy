@@ -149,7 +149,7 @@ def ilds_from_hrirs(hrirs, f_cut=(1e3, 20e3), TODB=True):
         ILD per grid point, positive value indicates left ear louder.
 
     """
-    assert(isinstance(hrirs, sig.HRIRs))
+    assert isinstance(hrirs, sig.HRIRs)
     fs = hrirs.fs
     sos = signal.butter(2, f_cut, 'bandpass', fs=fs, output='sos')
 
@@ -190,7 +190,7 @@ def itds_from_hrirs(hrirs, f_cut=(100, 1.5e3), upsample=4):
     relevant methods of inter-aural time difference estimation. JASA.
 
     """
-    assert(isinstance(hrirs, sig.HRIRs))
+    assert isinstance(hrirs, sig.HRIRs)
     fs_rs = upsample*hrirs.fs
     hrirs_l_us, hrirs_r_us, _ = resample_hrirs(hrirs.left, hrirs.right,
                                                hrirs.fs, fs_rs)
@@ -312,7 +312,7 @@ def frac_octave_smoothing(a, smoothing_n, WEIGHTED=True):
     a : (n,) array_like
         Input spectrum.
     smoothing_n : int
-        smoothing_n / 8 octave band.
+        1 / smoothing_n octave band.
     WEIGHTED : bool, optional
         Use (hamming) weighting on mean around center. The default is True.
 
