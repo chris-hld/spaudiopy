@@ -24,7 +24,7 @@ from joblib import Memory
 import multiprocessing
 import logging
 
-from . import utils, sph, sig
+from . import utils, sph, sig, grids
 
 
 # Prepare Caching
@@ -130,6 +130,79 @@ def resample_spectrum(single_spec, fs_current, fs_target, axis=-1):
     s_time_resamp = resampy.resample(s_time, fs_current, fs_target, axis=axis)
     single_spec_resamp = np.fft.rfft(s_time_resamp, axis=axis)
     return np.squeeze(single_spec_resamp)
+
+
+def hrirs_ctf(hrirs, MIN_PHASE=True, freq_lims=(125, 10e3), grid_weights=None):
+    """
+    Get common transfer function (CTF) EQ for HRIRs.
+
+    Often used to equalize the direction independent coloration of a
+    measurement. Can be used to replace headphone EQ.
+
+    Parameters
+    ----------
+    hrirs : sig.HRIRs
+    MIN_PHASE : bool, optional
+        Minimum phase EQ. The default is True.
+    freq_lims : tuple, optional
+        Frequency limits of inversion. The default is (125, 10e3).
+    grid_weights : array_like, optional
+        Grid weights of hrirs, `None` will calculate them. The default is None.
+
+    Returns
+    -------
+    eq_taps : np.ndarray
+        EQ filter taps, same length as HRIRs.
+
+    """
+    if grid_weights is None:
+        grid_weights = grids.calculate_grid_weights(hrirs.azi, hrirs.zen, 5)
+
+    num_taps = hrirs.num_samples
+    num_grid_points = hrirs.num_grid_points
+
+    assert len(grid_weights) == num_grid_points
+    nfft = 16 * num_taps
+    H_left = np.fft.rfft(hrirs.left, nfft, axis=-1)
+    H_right = np.fft.rfft(hrirs.right, nfft, axis=-1)
+
+    H_avg_left = 0.5*np.sqrt(np.sum(grid_weights[:, None] *
+                                    np.abs(H_left)**2, axis=0)) / (4*np.pi)
+    H_avg_right = 0.5*np.sqrt(np.sum(grid_weights[:, None] *
+                                     np.abs(H_right)**2, axis=0)) / (4*np.pi)
+
+    # Smoothing
+    H_avg_smooth = 0.5*frac_octave_smoothing(np.squeeze(H_avg_left),
+                                             1, WEIGHTED=True) + \
+        0.5*frac_octave_smoothing(np.squeeze(H_avg_right),
+                                  1, WEIGHTED=True)
+
+    freq_vec = np.fft.rfftfreq(nfft, 1/hrirs.fs)
+
+    freq_weights = np.ones(len(freq_vec))
+    idx_lo = np.argmin(abs(freq_vec - freq_lims[0]))
+    idx_hi = np.argmin(abs(freq_vec - freq_lims[1]))
+    w_lo = np.hanning(2*idx_lo + 1)[:idx_lo]
+    w_hi = np.hanning(2*(len(freq_vec)-idx_hi)+1)[(len(freq_vec)-idx_hi)+1:]
+    freq_weights[:idx_lo] = w_lo
+    freq_weights[idx_hi:] = w_hi
+
+    # norm filters
+    idx_1k = np.argmin(abs(freq_vec - 1000))
+    H_target = H_avg_smooth / np.mean(np.abs(H_avg_smooth[idx_1k-5:idx_1k+5]))
+    H_weighted_inv = freq_weights * (1 / H_target) + \
+        (1 - freq_weights) * np.ones(len(freq_weights))
+
+    # get EQ
+    if MIN_PHASE:
+        eq_taps = signal.minimum_phase(
+            np.fft.fftshift(np.fft.irfft(H_weighted_inv**2)))[:num_taps]
+    else:
+        eq_taps = np.roll(np.fft.irfft(H_weighted_inv),
+                          num_taps//2+1)[:num_taps]
+        eq_taps *= np.hanning(num_taps)
+
+    return eq_taps
 
 
 def ilds_from_hrirs(hrirs, f_cut=(1e3, 20e3), TODB=True):

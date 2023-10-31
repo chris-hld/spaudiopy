@@ -319,6 +319,28 @@ class HRIRs:
         vec_g = np.stack(utils.sph2cart(self.azi, self.zen), axis=1)
         return np.argmax(vec@vec_g.T, axis=1).squeeze()
 
+    def apply_ctf_eq(self, eq_taps=None, mode='full'):
+        """
+        Equalize common transfer function (CTF) of HRIRs.
+
+        Parameters
+        ----------
+        eq_taps : array_like, optional
+            FIR filter, `None` will calculate. The default is None.
+        mode : string, optional
+            Forwarded to scipy.signal.convolve(). The default is 'full'.
+
+        Returns
+        -------
+        None.
+
+        """
+        if eq_taps is None:
+            eq_taps = pcs.hrirs_ctf(self)
+        self.left = scysig.convolve(self.left, eq_taps[None, :], mode)
+        self.right = scysig.convolve(self.right, eq_taps[None, :], mode)
+        self.num_samples = self.left.shape[1]
+
 
 def trim_audio(A, start, stop):
     """Trim copy of MultiSignal audio to start and stop in seconds."""
