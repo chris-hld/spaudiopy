@@ -227,11 +227,11 @@ def rotation_matrix(N_sph, yaw, pitch, roll, sh_type='real',
     ----------
     N_sph : int
         Maximum SH order.
-    yaw: (...) numpy.ndarray
+    yaw: float
         Rotation around Z axis.
-    pitch: (...) numpy.ndarray
+    pitch: float
         Rotation around Y axis.
-    roll: (...) numpy.ndarray
+    roll: float
         Rotation around X axis.
     sh_type : 'complex' or 'real' spherical harmonics. Currently only 'real' is
         supported.
@@ -260,15 +260,15 @@ def rotation_matrix(N_sph, yaw, pitch, roll, sh_type='real',
     else:
         raise ValueError('Unknown SH type')    
     
-    input_shape = yaw.shape
-    yaw_flat = yaw.flatten()
-    pitch_flat = pitch.flatten()
-    roll_flat = roll.flatten()
-    rot_mat = utils.rotation_euler(yaw_flat, pitch_flat, roll_flat)
-    rot_mat = np.reshape(rot_mat, input_shape + (3, 3))
+    
 
-    r_blocks = [1]
-    r1 = rot_mat[..., [1, 2, 0], [1, 2, 0]] # change order to y, z, x
+    rot_mat_cartesian = utils.rotation_euler(yaw, pitch, roll)
+
+    r_blocks = [np.array([[1]])]
+
+    # change order to y, z, x
+    r1 = rot_mat_cartesian[..., [1, 2, 0], :]
+    r1 = r1[..., :, [1, 2, 0]]
     r_blocks.append(r1)
 
     # auxiliary functions
@@ -324,7 +324,7 @@ def rotation_matrix(N_sph, yaw, pitch, roll, sh_type='real',
 
     rlm1 = r1
     for l in range(2, N_sph + 1):
-        rl = np.zeros(yaw.shape + (2 * l + 1, 2 * l + 1))
+        rl = np.zeros((2 * l + 1, 2 * l + 1))
         for m in range(-l, l + 1):
             for n in range(-l, l + 1):
                 d = int(m == 0)
@@ -362,10 +362,11 @@ def rotation_matrix(N_sph, yaw, pitch, roll, sh_type='real',
         return r_blocks
     else:
         # compose a block-diagonal matrix 
-        R = np.zeros(input_shape + 2*[(N_sph+1)**2])
+        R = np.zeros(2*[(N_sph+1)**2])
         index = 0
         for r_block in r_blocks:
-            R[..., index:r_block.shape[-1], index:r_block.shape[-1]] = r_block
+            R[..., index:index + r_block.shape[-1], 
+              index:index + r_block.shape[-1]] = r_block
             index += r_block.shape[-1]
         return R
 
@@ -377,11 +378,11 @@ def rotate_sh(F_nm, yaw, pitch, roll, sh_type='real'):
     ----------
     F_nm : (..., (N_sph+1)**2) numpy.ndarray
         Spherical harmonics coefficients
-    yaw: (...) numpy.ndarray
+    yaw: float
         Rotation around Z axis.
-    pitch: (...) numpy.ndarray
+    pitch: float
         Rotation around Y axis.
-    roll: (...) numpy.ndarray
+    roll: float
         Rotation around X axis.
     sh_type : 'complex' or 'real' spherical harmonics. Currently only 'real' is
         supported.
@@ -407,10 +408,15 @@ def rotate_sh(F_nm, yaw, pitch, roll, sh_type='real'):
     r_blocks = rotation_matrix(N_sph, yaw, pitch, roll, sh_type)
     
     index = 0
+
+    F_nm_rot = np.zeros_like(F_nm)
+
     for r_block in r_blocks:
-        F_nm[..., index:r_block.shape[-1]] = (
-            r_block @ F_nm[..., index:r_block.shape[-1]])
+        F_nm_rot[..., index:index + r_block.shape[-1]] = (r_block @
+            F_nm[..., index:index + r_block.shape[-1]][..., None]).squeeze(-1)
         index += r_block.shape[-1]
+
+    return F_nm_rot
 
 
 def check_cond_sht(N_sph, azi, colat, sh_type, lim=None):
