@@ -49,39 +49,29 @@ def test_calculate_grid_weights(test_n_sph):
     assert_allclose(q_weights_t, q_weights)
 
 
-
-
 @pytest.mark.parametrize('test_n_sph', N_SPHS)
 def test_rotation(test_n_sph):
-    # use integer angles here (these definitely will not lead to special 
-    # cases in which a rotation matches by chance)
-    test_yaw, test_pitch, test_roll = (1, 3, 5), (1, 3, 5), (1, 3, 5)
+    test_yaw, test_pitch, test_roll = (0, np.pi/2, 5), (0, 3, 5), (0, -3, 5)
+
+    tgrid = spa.grids.load_t_design(degree=2*test_n_sph)
+    tazi, tzen, _ = spa.utils.cart2sph(*tgrid.T)
+
     for yaw in test_yaw:
         for pitch in test_pitch:
             for roll in test_roll:
-                tgrid = spa.grids.load_t_design(degree=2*test_n_sph)                
-                tx = tgrid[:, 0]
-                ty = tgrid[:, 1]
-                tz = tgrid[:, 2]
-                tazi, tcolat, _ = spa.utils.cart2sph(tx, ty, tz)
-
+                print(yaw, pitch, roll)
                 R = spa.utils.rotation_euler(yaw, pitch, roll)
-                tgrid_rot = (R @ tgrid.T).T             
-                tx_rot = tgrid_rot[:, 0]
-                ty_rot = tgrid_rot[:, 1]
-                tz_rot = tgrid_rot[:, 2]
-                tazi_rot, tcolat_rot, _ = spa.utils.cart2sph(
-                    tx_rot, ty_rot, tz_rot)
-                
-                shmat = spa.sph.sh_matrix(test_n_sph, tazi, tcolat, 'real')
-                shmat_ref = spa.sph.sh_matrix(test_n_sph, tazi_rot, tcolat_rot)
+                tgrid_rot = (R @ tgrid.T).T
+                tazi_rot, tzen_rot, _ = spa.utils.cart2sph(*tgrid_rot.T)
 
-                R = spa.sph.rotation_matrix(test_n_sph, yaw, pitch, roll,
-                                            sh_type='real', 
-                                            return_as_blocks=False)
+                shmat = spa.sph.sh_matrix(test_n_sph, tazi, tzen, 'real')
+                shmat_ref = spa.sph.sh_matrix(test_n_sph, tazi_rot, tzen_rot)
 
-                shmat_rot = (R @ shmat[..., None]).squeeze(-1)
+                R = spa.sph.sh_rotation_matrix(test_n_sph, yaw, pitch, roll,
+                                               sh_type='real')
+
+                shmat_rot = (R @ shmat.T).T
                 assert_allclose(shmat_ref, shmat_rot, rtol=1e-3)
 
-                shmat_rot = spa.sph.rotate_sh(shmat, yaw, pitch, roll)
-                assert_allclose(shmat_ref, shmat_rot, rtol=1e-3)
+                shmat_rotate_sh = spa.sph.rotate_sh(shmat, yaw, pitch, roll)
+                assert_allclose(shmat_ref, shmat_rotate_sh, rtol=1e-3)

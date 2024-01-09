@@ -219,8 +219,8 @@ def inverse_sht(F_nm, azi, colat, sh_type, N_sph=None, Y_nm=None):
     return np.matmul(Y_nm, F_nm[:(N_sph + 1) ** 2, :])
 
 
-def rotation_matrix(N_sph, yaw, pitch, roll, sh_type='real',
-                    return_as_blocks=True):
+def sh_rotation_matrix(N_sph, yaw, pitch, roll, sh_type='real',
+                       return_as_blocks=False):
     """Computes a Wigner-D matrix for the rotation of spherical harmonics.
 
     Parameters
@@ -235,15 +235,16 @@ def rotation_matrix(N_sph, yaw, pitch, roll, sh_type='real',
         Rotation around X axis.
     sh_type : 'complex' or 'real' spherical harmonics. Currently only 'real' is
         supported.
-    return_as_blocks: whether to return a list of blocks (one for each order)
-        or the full block diagonal matrix
+    return_as_blocks: return full block diagonal matrix, or a list of blocks
 
     Returns
     -------
-    Either a list r_blocks of numpy arrays [r(n) for n in range(N_sph)], where
-        the shape of r is (..., 2*n-1, 2*n-1) or a block diagonal matrix R with
-        shape (..., (N_sph+1)**2, (N_sph+1)**2)
-    
+    A block diagonal matrix R with shape (..., (N_sph+1)**2, (N_sph+1)**2), or
+    a list r_blocks of numpy arrays [r(n) for n in range(N_sph)], where the
+    shape of r is (..., 2*n-1, 2*n-1)
+
+    References
+    ----------
     Implemented according to: Ivanic, Joseph, and Klaus Ruedenberg. "Rotation
     matrices for real spherical harmonics. Direct determination by recursion."
     The Journal of Physical Chemistry 100.15 (1996): 6342-6347.
@@ -258,9 +259,7 @@ def rotation_matrix(N_sph, yaw, pitch, roll, sh_type='real',
     elif sh_type == 'real':
         pass
     else:
-        raise ValueError('Unknown SH type')    
-    
-    
+        raise ValueError('Unknown SH type')
 
     rot_mat_cartesian = utils.rotation_euler(yaw, pitch, roll)
 
@@ -286,10 +285,8 @@ def rotation_matrix(N_sph, yaw, pitch, roll, sh_type='real',
         else:
             return ri0 * rlm1[..., a + l - 1, b + l - 1]
 
-
     def _rot_u_func(l, m, n, r1, rlm1):
         return _rot_p_func(0, l, m, n, r1, rlm1)
-
 
     def _rot_v_func(l, m, n, r1, rlm1):
         if m == 0:
@@ -309,7 +306,6 @@ def rotation_matrix(N_sph, yaw, pitch, roll, sh_type='real',
                 return p1 * np.sqrt(2)
             else:
                 return p1 + _rot_p_func(1, l, m + 1, n, r1, rlm1)
-
 
     def _rot_w_func(l, m, n, r1, rlm1):
         if m > 0:
@@ -361,11 +357,11 @@ def rotation_matrix(N_sph, yaw, pitch, roll, sh_type='real',
     if return_as_blocks:
         return r_blocks
     else:
-        # compose a block-diagonal matrix 
+        # compose a block-diagonal matrix
         R = np.zeros(2*[(N_sph+1)**2])
         index = 0
         for r_block in r_blocks:
-            R[..., index:index + r_block.shape[-1], 
+            R[..., index:index + r_block.shape[-1],
               index:index + r_block.shape[-1]] = r_block
             index += r_block.shape[-1]
         return R
@@ -400,23 +396,14 @@ def rotate_sh(F_nm, yaw, pitch, roll, sh_type='real'):
         pass
     else:
         raise ValueError('Unknown SH type')
-    
+
     N_sph = np.sqrt(F_nm.shape[-1]) - 1
     assert N_sph == np.floor(N_sph), 'Invalid number of coefficients'
     N_sph = int(N_sph)
 
-    r_blocks = rotation_matrix(N_sph, yaw, pitch, roll, sh_type)
-    
-    index = 0
+    R = sh_rotation_matrix(N_sph, yaw, pitch, roll, sh_type)
 
-    F_nm_rot = np.zeros_like(F_nm)
-
-    for r_block in r_blocks:
-        F_nm_rot[..., index:index + r_block.shape[-1]] = (r_block @
-            F_nm[..., index:index + r_block.shape[-1]][..., None]).squeeze(-1)
-        index += r_block.shape[-1]
-
-    return F_nm_rot
+    return F_nm @ R.T
 
 
 def check_cond_sht(N_sph, azi, colat, sh_type, lim=None):
