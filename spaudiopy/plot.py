@@ -616,6 +616,84 @@ def spherical_function_map(f, azi, zen, TODB=False, title=None,
         ax.set_title(title)
 
 
+def sh_bar(x_nm, TODB=True, centered=False, num_groups=1, s=250, vf=4,
+           clim=None, xticklabels=None, title=None, fig=None):
+    """
+    Barplot over SH channels.
+
+    Parameters
+    ----------
+    x_nm : array_like
+        C x L.
+    TODB : TYPE, optional
+        DESCRIPTION. The default is True.
+    centered : TYPE, optional
+        DESCRIPTION. The default is False.
+    num_groups : TYPE, optional
+        Plot gourps. The default is 1.
+    s : TYPE, optional
+        Scatter plot size. The default is 250.
+    vf : TYPE, optional
+        Vertical ratio. The default is 4.
+    clim : TYPE, optional
+        DESCRIPTION. The default is None.
+    xticklabels : TYPE, optional
+        DESCRIPTION. The default is None.
+    title : TYPE, optional
+        DESCRIPTION. The default is None.
+    fig : TYPE, optional
+        DESCRIPTION. The default is None.
+
+    Returns
+    -------
+    None.
+
+    """
+    val_plot = utils.db(np.asarray(x_nm)) if TODB else np.asarray(x_nm)
+    val_plot = np.atleast_2d(val_plot)
+    if centered:
+        norm = colors.CenteredNorm()
+    else:
+        norm = colors.Normalize(vmin=val_plot.min(), vmax=val_plot.max())
+    mapper = cm.ScalarMappable(norm=norm, cmap='RdYlBu_r')
+    mapper.set_array(val_plot)
+    if clim is None:
+        clim = (val_plot.min(), val_plot.max())
+    mapper.set_clim(vmin=clim[0], vmax=clim[1])
+    cols = mapper.to_rgba(val_plot)
+    if fig is None:
+        fig = plt.figure(constrained_layout=True)
+
+    ax = fig.add_subplot()
+    vf = vf
+    hf = 1.
+    verts = [[-vf, -hf], [vf, -hf], [vf, hf], [-vf, hf], [-vf, -hf]]
+
+    L = val_plot.shape[1]
+    fidx = 0
+    xticks = []
+    for idx1 in range(val_plot.shape[0] // num_groups):
+        for idx2 in np.linspace(-0.25, 0.25, num_groups):
+            xtick = idx1 + idx2
+            for l_idx in range(L):
+                ax.scatter(xtick, l_idx, color=cols[fidx, l_idx],
+                           edgecolors='grey', linewidth=0.5, marker=verts, s=s)
+            fidx += 1
+            xticks.append(xtick)
+
+    ax.set_xticks(np.array(xticks))
+    if xticklabels is not None:
+        ax.set_xticklabels(xticklabels, rotation=45, ha='right')
+    ax.set_yticks([(n)**2 for n in range(int(np.sqrt(L)-1)+1)])
+    ax.set_ylabel("L")
+    ax.spines[['right', 'top']].set_visible(False)
+    cb = fig.colorbar(mapper, ax=ax, aspect=40, extend='both'
+                      if np.max(np.abs(clim)) < np.max(np.abs(val_plot))
+                      else 'neither')
+    cb.set_label("in dB" if TODB else None)
+    ax.grid(True)
+
+
 def hull(hull, simplices=None, mark_invalid=True, title=None, draw_ls=True,
          ax_lim=None, color=None, clim=None, fig=None):
     """Plot loudspeaker setup and valid simplices from its hull object.
