@@ -233,15 +233,21 @@ def sh_rotation_matrix(N_sph, yaw, pitch, roll, sh_type='real',
         Rotation around Y axis.
     roll: float
         Rotation around X axis.
-    sh_type : 'complex' or 'real' spherical harmonics. Currently only 'real' is
-        supported.
-    return_as_blocks: return full block diagonal matrix, or a list of blocks
+    sh_type : 'complex' or 'real' spherical harmonics.
+        Currently only 'real' is supported.
+    return_as_blocks: optional, default is False.
+        Return full block diagonal matrix, or a list of blocks if True.
 
     Returns
     -------
-    A block diagonal matrix R with shape (..., (N_sph+1)**2, (N_sph+1)**2), or
-    a list r_blocks of numpy arrays [r(n) for n in range(N_sph)], where the
-    shape of r is (..., 2*n-1, 2*n-1)
+    R: (..., (N_sph+1)**2, (N_sph+1)**2) numpy.ndarray
+        A block diagonal matrix R with shape (..., (N_sph+1)**2, (N_sph+1)**2),
+        or a list r_blocks of numpy arrays [r(n) for n in range(N_sph)],
+        where the shape of r is (..., 2*n-1, 2*n-1).
+
+    See Also
+    --------
+    :py:func:`spaudiopy.sph.rotate_sh` : Apply rotation to SH signals.
 
     References
     ----------
@@ -249,8 +255,8 @@ def sh_rotation_matrix(N_sph, yaw, pitch, roll, sh_type='real',
     matrices for real spherical harmonics. Direct determination by recursion."
     The Journal of Physical Chemistry 100.15 (1996): 6342-6347.
 
+    Ported from https://git.iem.at/audioplugins/IEMPluginSuite .
 
-    Ported from https://git.iem.at/audioplugins/IEMPluginSuite
     """
 
     if sh_type == 'complex':
@@ -380,13 +386,26 @@ def rotate_sh(F_nm, yaw, pitch, roll, sh_type='real'):
         Rotation around Y axis.
     roll: float
         Rotation around X axis.
-    sh_type : 'complex' or 'real' spherical harmonics. Currently only 'real' is
-        supported.
+    sh_type : 'complex' or 'real' spherical harmonics.
+        Currently only 'real' is supported.
 
     Returns
     -------
     F_nm_rot : (..., (N_sph+1)**2) numpy.ndarray
         Rotated spherical harmonics coefficients.
+
+    Examples
+    --------
+    .. plot::
+        :context: close-figs
+
+        N_sph = 5
+        y1 = spa.sph.sh_matrix(N_sph, 0, np.pi/2, 'real')
+        y2 = 0.5 * spa.sph.sh_matrix(N_sph, np.pi/3, np.pi/2, 'real')
+        y_org = (4 * np.pi) / (N_sph + 1)**2 * (y1 + y2)
+        y_rot = spa.sph.rotate_sh(y_org, -np.pi/2, np.pi/8, np.pi/4)
+
+        spa.plot.sh_coeffs_subplot([y_org, y_rot])
 
     """
     if sh_type == 'complex':
@@ -403,7 +422,7 @@ def rotate_sh(F_nm, yaw, pitch, roll, sh_type='real'):
 
     R = sh_rotation_matrix(N_sph, yaw, pitch, roll, sh_type)
 
-    return F_nm @ R.T
+    return np.atleast_2d(F_nm) @ R.T
 
 
 def check_cond_sht(N_sph, azi, colat, sh_type, lim=None):
