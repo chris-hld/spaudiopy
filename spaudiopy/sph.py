@@ -405,7 +405,8 @@ def rotate_sh(F_nm, yaw, pitch, roll, sh_type='real'):
         y_org = (4 * np.pi) / (N_sph + 1)**2 * (y1 + y2)
         y_rot = spa.sph.rotate_sh(y_org, -np.pi/2, np.pi/8, np.pi/4)
 
-        spa.plot.sh_coeffs_subplot([y_org, y_rot])
+        spa.plot.sh_coeffs_subplot([y_org, y_rot],
+                                   titles=['before', 'after'], cbar=False)
 
     """
     if sh_type == 'complex':

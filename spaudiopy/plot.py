@@ -249,7 +249,7 @@ def spherical_function(f, azi, colat, title=None, fig=None):
 
 
 def sh_coeffs(F_nm, sh_type=None, azi_steps=5, el_steps=3, title=None,
-              fig=None):
+              fig=None, ax=None, cbar=True):
     """Plot spherical harmonics coefficients as function on the sphere.
     Evaluates the inverse SHT.
 
@@ -279,7 +279,8 @@ def sh_coeffs(F_nm, sh_type=None, azi_steps=5, el_steps=3, title=None,
 
     if fig is None:
         fig = plt.figure(constrained_layout=True)
-    ax = fig.add_subplot(projection='3d')
+    if ax is None:
+        ax = fig.add_subplot(projection='3d')
     ax.view_init(25, 230)
 
     m = cm.ScalarMappable(cmap=cm.hsv,
@@ -309,14 +310,52 @@ def sh_coeffs(F_nm, sh_type=None, azi_steps=5, el_steps=3, title=None,
     ax.set_zlabel('z')
     ax.locator_params(nbins=5)
 
-    cb = plt.colorbar(m, ticks=[-np.pi, 0, np.pi], shrink=0.5, aspect=10)
-    cb.set_label("Phase in rad")
-    cb.set_ticklabels([r'$-\pi$', r'$0$', r'$\pi$'])
+    if cbar:
+        cb = plt.colorbar(m, ticks=[-np.pi, 0, np.pi], shrink=0.5, aspect=10)
+        cb.set_label("Phase in rad")
+        cb.set_ticklabels([r'$-\pi$', r'$0$', r'$\pi$'])
 
     plt.grid(True)
     set_aspect_equal3d(ax)
     if title is not None:
         plt.title(title)
+
+
+def sh_coeffs_subplot(F_nm_list, titles=None, fig=None, **kwargs):
+    """Plot spherical harmonics coefficients list as function on the sphere.
+    `kwargs` are forwarded to :py:mod:`spaudiopy.plt.sh_coeffs`.
+
+    Examples
+    --------
+    See :py:mod:`spaudiopy.sph`
+
+    """
+    num_plots = len(F_nm_list)
+
+    if fig is None:
+        fig = plt.figure(figsize=plt.figaspect(1 / num_plots),
+                         constrained_layout=True)
+    axs = kwargs.pop('ax', None)
+    if axs is None:
+        axs = fig.subplots(1, num_plots, subplot_kw={'projection': '3d'})
+    sub_cbar = kwargs.pop('cbar', True)
+    plt.suptitle(kwargs.pop('title', None))
+
+    for idx_p, ax in enumerate(axs):
+        sh_coeffs(F_nm_list[idx_p], fig=fig, ax=ax, cbar=False, **kwargs)
+
+        ax.locator_params(nbins=3)
+        if titles is not None:
+            ax.set_title(titles[idx_p])
+
+    if sub_cbar:
+        m = cm.ScalarMappable(cmap=cm.hsv,
+                              norm=colors.Normalize(vmin=-np.pi, vmax=np.pi))
+        cb = plt.colorbar(m, ax=axs, shrink=0.5, aspect=10*num_plots, pad=0.1,
+                          orientation='horizontal', anchor='S')
+        cb.set_label("Phase in rad")
+        cb.set_ticks([-np.pi, 0, np.pi])
+        cb.set_ticklabels([r'$-\pi$', r'$0$', r'$\pi$'])
 
 
 def sh_coeffs_overlay(F_nm_list, sh_type=None, azi_steps=5, el_steps=3,
@@ -392,84 +431,6 @@ def sh_coeffs_overlay(F_nm_list, sh_type=None, azi_steps=5, el_steps=3,
     set_aspect_equal3d(ax)
     if title is not None:
         plt.title(title)
-
-
-def sh_coeffs_subplot(F_nm_list, sh_type=None, azi_steps=5, el_steps=3,
-                      titles=None, fig=None):
-    """Plot spherical harmonics coefficients list as function on the sphere.
-
-    Examples
-    --------
-    See :py:mod:`spaudiopy.sph`
-
-    """
-    num_plots = len(F_nm_list)
-
-    phi_plot, theta_plot = np.meshgrid(np.linspace(0., 2 * np.pi,
-                                                   int(360 / azi_steps)),
-                                       np.linspace(10e-8, np.pi - 10e-8,
-                                                   int(180 / el_steps)))
-
-    if fig is None:
-        fig = plt.figure(figsize=plt.figaspect(1 / num_plots),
-                         constrained_layout=True)
-    axs = fig.subplots(1, num_plots, subplot_kw={'projection': '3d'})
-
-    for idx_p, ax in enumerate(axs):
-        F_nm = utils.asarray_1d(F_nm_list[idx_p])
-        F_nm = F_nm[:, np.newaxis]
-        if sh_type is None:
-            sh_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
-
-        f_plot = sph.inverse_sht(F_nm, phi_plot.ravel(), theta_plot.ravel(),
-                                 sh_type)
-        f_r = np.abs(f_plot)
-        f_ang = np.angle(f_plot)
-
-        x_plot, y_plot, z_plot = utils.sph2cart(phi_plot.ravel(),
-                                                theta_plot.ravel(),
-                                                f_r.ravel())
-
-        m = cm.ScalarMappable(cmap=cm.hsv,
-                              norm=colors.Normalize(vmin=-np.pi, vmax=np.pi))
-        m.set_array(f_ang)
-        c = m.to_rgba(f_ang.reshape(phi_plot.shape))
-
-        ax.plot_surface(x_plot.reshape(phi_plot.shape),
-                        y_plot.reshape(phi_plot.shape),
-                        z_plot.reshape(phi_plot.shape),
-                        facecolors=c,
-                        edgecolor='none', linewidth=0.06, alpha=0.68,
-                        shade=True)
-        ax.set_xlim(-1, 1)
-        ax.set_ylim(-1, 1)
-        ax.set_zlim(-1, 1)
-
-        # Draw axis lines
-        x0 = np.array([1, 0, 0])
-        y0 = np.array([0, 1, 0])
-        z0 = np.array([0, 0, 1])
-        for i in range(3):
-            ax.plot([-x0[i], x0[i]], [-y0[i], y0[i]], [-z0[i], z0[i]], 'k',
-                    alpha=0.3)
-
-        if idx_p == 0:
-            ax.set_xlabel('x')
-            ax.set_ylabel('y')
-            ax.set_zlabel('z')
-
-        ax.locator_params(nbins=3)
-        plt.grid(True)
-        ax.view_init(25, 230)
-        if titles is not None:
-            ax.set_title(titles[idx_p])
-        set_aspect_equal3d(ax)
-
-    cbar = plt.colorbar(m, ax=axs, shrink=0.5, aspect=10*num_plots, pad=0.1,
-                        orientation='horizontal', anchor='S')
-    cbar.set_label("Phase in rad")
-    cbar.set_ticks([-np.pi, 0, np.pi])
-    cbar.set_ticklabels([r'$-\pi$', r'$0$', r'$\pi$'])
 
 
 def sh_rms_map(F_nm, TODB=False, w_n=None, sh_type=None, n_plot=50, title=None,
