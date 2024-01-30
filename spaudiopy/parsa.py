@@ -80,8 +80,8 @@ def sh_beamformer_from_pattern(pattern, N_sph, azi_steer, zen_steer):
         else:
             raise ValueError("Pattern not available: " + pattern)
     else:
-        c_n = utils.asarray1d(pattern)
-    assert len(c_n) == (N_sph+1), "Input not matching:" + c_n
+        c_n = utils.asarray_1d(pattern)
+    assert len(c_n) == (N_sph+1), "Input not matching:" + str(c_n)
 
     w_nm = sph.repeat_per_order(c_n)
     Y_steer = sph.sh_matrix(N_sph, azi_steer, zen_steer, sh_type='real')
