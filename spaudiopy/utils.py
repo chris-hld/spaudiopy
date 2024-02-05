@@ -74,12 +74,6 @@ def matlab_sph2cart(az, elev, r=1):
     return x, y, z
 
 
-def vecs2dirs(vecs, positive_azi=True):
-    """Helper to convert [x, y, z] to [azi, colat]."""
-    azi, colat, _ = cart2sph(vecs[:, 0], vecs[:, 1], vecs[:, 2])
-    if positive_azi:
-        azi = azi % (2 * np.pi)  # [-pi, pi] -> [0, 2pi)
-    return np.c_[azi, colat]
 def cart2dir(x, y, z):
     """Vectorized conversion of cartesian coordinates to (azi, zen)."""
     return np.arctan2(y, x), \

@@ -52,32 +52,33 @@ def myglobal(request):
 @pytest.mark.parametrize('expected_dirs', [ref_struct['dirs'], ])
 def test_tDesign(expected_dirs):
     vecs = spa.grids.load_t_design(2*N_sph)
-    dirs = spa.utils.vecs2dirs(vecs)
-    assert(np.allclose(dirs, expected_dirs))
+    dirs = spa.utils.vec2dir(vecs)
+    dirs = dirs % (2 * np.pi)  # [-pi, pi] -> [0, 2pi)
+    assert (np.allclose(dirs, expected_dirs))
 
 
 @pytest.mark.parametrize('expected_Ynm', [ref_struct['Y_N_r'], ])
 def test_realSH(expected_Ynm):
     vecs = spa.grids.load_t_design(2*N_sph)
-    dirs = spa.utils.vecs2dirs(vecs)
+    dirs = spa.utils.vec2dir(vecs)
     Y_nm = spa.sph.sh_matrix(N_sph, dirs[:, 0], dirs[:, 1], sh_type='real')
-    assert(np.allclose(Y_nm, expected_Ynm))
+    assert (np.allclose(Y_nm, expected_Ynm))
 
 
 @pytest.mark.parametrize('expected_Ynm', [ref_struct['Y_N_c'], ])
 def test_cpxSH(expected_Ynm):
     vecs = spa.grids.load_t_design(2*N_sph)
-    dirs = spa.utils.vecs2dirs(vecs)
+    dirs = spa.utils.vec2dir(vecs)
     Y_nm = spa.sph.sh_matrix(N_sph, dirs[:, 0], dirs[:, 1], sh_type='complex')
-    assert(np.allclose(Y_nm, expected_Ynm))
+    assert (np.allclose(Y_nm, expected_Ynm))
 
 
 # Coordinate system conversion
 @pytest.mark.parametrize('coord, polar', cart_sph_data)
 def test_cart2sph(coord, polar):
     x, y, z = coord
-    a = spa.utils.cart2sph(x, y, z)
-    a_steady = spa.utils.cart2sph(x, y, z, steady_colat=True)
+    a = spa.utils.cart2sph(x, y, z, positive_azi=False)
+    a_steady = spa.utils.cart2sph(x, y, z, positive_azi=False, steady_zen=True)
     assert_allclose(a_steady, a)
     assert_allclose(np.squeeze(a), polar)
 
@@ -85,5 +86,5 @@ def test_cart2sph(coord, polar):
 @pytest.mark.parametrize('coord, polar', cart_sph_data)
 def test_sph2cart(coord, polar):
     alpha, beta, r = polar
-    b = spa.utils.sph2cart(azi=alpha, colat=beta, r=r)
+    b = spa.utils.sph2cart(azi=alpha, zen=beta, r=r)
     assert_allclose(np.squeeze(b), coord)
