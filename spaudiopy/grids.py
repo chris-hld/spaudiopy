@@ -49,7 +49,7 @@ def calculate_grid_weights(azi, zen, order=None):
             if cond > 2*(itOrder+1):  # experimental condition
                 order = itOrder-1
                 break
-    assert(order > 0)
+    assert (order > 0)
     Y = sph.sh_matrix(order, azi, zen, 'real')
     P_leftinv = np.linalg.pinv(Y)
     weights = np.sqrt(4*np.pi) * P_leftinv[0, :]
@@ -318,7 +318,7 @@ def equal_angle(n):
     -------
     azi : array_like
         Azimuth.
-    colat : array_like
+    zen : array_like
         Colatitude.
     weights : array_like
         Quadrature weights.
@@ -332,24 +332,24 @@ def equal_angle(n):
     .. plot::
         :context: close-figs
 
-        azi, colat, weights = spa.grids.equal_angle(n=5)
-        spa.plot.hull(spa.decoder.get_hull(*spa.utils.sph2cart(azi, colat)))
+        azi, zen, weights = spa.grids.equal_angle(n=5)
+        spa.plot.hull(spa.decoder.get_hull(*spa.utils.sph2cart(azi, zen)))
 
     """
     azi = np.linspace(0, 2*np.pi, 2*n+2, endpoint=False)
-    colat, d_colat = np.linspace(0, np.pi, 2*n+2, endpoint=False, retstep=True)
-    colat += d_colat/2
+    zen, d_zen = np.linspace(0, np.pi, 2*n+2, endpoint=False, retstep=True)
+    zen += d_zen/2
 
-    weights = np.zeros_like(colat)
+    weights = np.zeros_like(zen)
     p = np.arange(1, 2*n+2, 2)
-    for i, theta in enumerate(colat):
+    for i, theta in enumerate(zen):
         weights[i] = 2*np.pi/(n+1) * np.sin(theta) * np.sum(np.sin(p*theta)/p)
 
     azi = np.tile(azi, 2*n+2)
-    colat = np.repeat(colat, 2*n+2)
+    zen = np.repeat(zen, 2*n+2)
     weights = np.repeat(weights, 2*n+2)
     weights /= n+1     # sum(weights) == 4pi
-    return azi, colat, weights
+    return azi, zen, weights
 
 
 def gauss(n):
@@ -364,7 +364,7 @@ def gauss(n):
     -------
     azi : array_like
         Azimuth.
-    colat : array_like
+    zen : array_like
         Colatitude.
     weights : array_like
         Quadrature weights.
@@ -378,18 +378,18 @@ def gauss(n):
     .. plot::
         :context: close-figs
 
-        azi, colat, weights = spa.grids.gauss(n=5)
-        spa.plot.hull(spa.decoder.get_hull(*spa.utils.sph2cart(azi, colat)))
+        azi, zen, weights = spa.grids.gauss(n=5)
+        spa.plot.hull(spa.decoder.get_hull(*spa.utils.sph2cart(azi, zen)))
 
     """
     azi = np.linspace(0, 2*np.pi, 2*n+2, endpoint=False)
     x, weights = np.polynomial.legendre.leggauss(n+1)
-    colat = np.arccos(x)
+    zen = np.arccos(x)
     azi = np.tile(azi, n+1)
-    colat = np.repeat(colat, 2*n+2)
+    zen = np.repeat(zen, 2*n+2)
     weights = np.repeat(weights, 2*n+2)
     weights *= np.pi / (n+1)      # sum(weights) == 4pi
-    return azi, colat, weights
+    return azi, zen, weights
 
 
 def equal_polar_angle(n):

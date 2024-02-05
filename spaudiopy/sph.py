@@ -24,7 +24,7 @@ from scipy import special as scyspecial
 from . import utils, grids
 
 
-def sh_matrix(N_sph, azi, colat, sh_type='real'):
+def sh_matrix(N_sph, azi, zen, sh_type='real'):
     r"""Evaluates the spherical harmonics up to order `N_sph` for given angles.
 
     Matrix returns spherical harmonics up to order :math:`N`
@@ -63,7 +63,7 @@ def sh_matrix(N_sph, azi, colat, sh_type='real'):
         Maximum SH order.
     azi : (Q,) array_like
         Azimuth.
-    colat : (Q,) array_like
+    zen : (Q,) array_like
         Colatitude / Zenith.
     sh_type :  'complex' or 'real' spherical harmonics.
 
@@ -78,7 +78,7 @@ def sh_matrix(N_sph, azi, colat, sh_type='real'):
 
     """
     azi = utils.asarray_1d(azi)
-    colat = utils.asarray_1d(colat)
+    zen = utils.asarray_1d(zen)
     if azi.ndim == 0:
         Q = 1
     else:
@@ -94,25 +94,25 @@ def sh_matrix(N_sph, azi, colat, sh_type='real'):
     for n in range(N_sph+1):
         for m in range(-n, n+1):
             if sh_type == 'complex':
-                Ymn[:, idx] = scyspecial.sph_harm(m, n, azi, colat)
+                Ymn[:, idx] = scyspecial.sph_harm(m, n, azi, zen)
             elif sh_type == 'real':
                 if m == 0:
                     Ymn[:, idx] = np.real(
-                                  scyspecial.sph_harm(0, n, azi, colat))
+                                  scyspecial.sph_harm(0, n, azi, zen))
                 if m < 0:
                     Ymn[:, idx] = np.sqrt(2) * (-1) ** abs(m) * \
                                   np.imag(
-                                  scyspecial.sph_harm(abs(m), n, azi, colat))
+                                  scyspecial.sph_harm(abs(m), n, azi, zen))
                 if m > 0:
                     Ymn[:, idx] = np.sqrt(2) * (-1) ** abs(m) * \
                                   np.real(
-                                  scyspecial.sph_harm(abs(m), n, azi, colat))
+                                  scyspecial.sph_harm(abs(m), n, azi, zen))
 
             idx += 1
     return Ymn
 
 
-def sht(f, N_sph, azi, colat, sh_type, weights=None, Y_nm=None):
+def sht(f, N_sph, azi, zen, sh_type, weights=None, Y_nm=None):
     """Spherical harmonics transform of f for appropriate point sets.
 
     If f is a QxS matrix then the transform is applied to each column
@@ -122,12 +122,12 @@ def sht(f, N_sph, azi, colat, sh_type, weights=None, Y_nm=None):
     Parameters
     ----------
     f : (Q, S)
-        The spherical function(S) evaluated at Q directions 'azi/colat'.
+        The spherical function(S) evaluated at Q directions 'azi/zen'.
     N_sph : int
         Maximum SH order.
     azi : (Q,) array_like
         Azimuth.
-    colat : (Q,) array_like
+    zen : (Q,) array_like
         Colatitude / Zenith.
     sh_type :  'complex' or 'real' spherical harmonics.
     weights : (Q,) array_like, optional
@@ -143,7 +143,7 @@ def sht(f, N_sph, azi, colat, sh_type, weights=None, Y_nm=None):
     if f.ndim == 1:
         f = f[:, np.newaxis]  # upgrade to handle 1D arrays
     if Y_nm is None:
-        Y_nm = sh_matrix(N_sph, azi, colat, sh_type)
+        Y_nm = sh_matrix(N_sph, azi, zen, sh_type)
     if weights is None:
         Npoints = Y_nm.shape[0]
         Y_nm_transform = (4*np.pi / Npoints) * Y_nm.conj()
@@ -154,7 +154,7 @@ def sht(f, N_sph, azi, colat, sh_type, weights=None, Y_nm=None):
     return np.matmul(Y_nm_transform.T, f)
 
 
-def sht_lstsq(f, N_sph, azi, colat, sh_type, Y_nm=None):
+def sht_lstsq(f, N_sph, azi, zen, sh_type, Y_nm=None):
     """Spherical harmonics transform  of f as least-squares solution.
 
     If f is a QxS matrix then the transform is applied to each column
@@ -164,12 +164,12 @@ def sht_lstsq(f, N_sph, azi, colat, sh_type, Y_nm=None):
     Parameters
     ----------
     f : (Q, S)
-        The spherical function(S) evaluated at Q directions 'azi/colat'.
+        The spherical function(S) evaluated at Q directions 'azi/zen'.
     N_sph : int
         Maximum SH order.
     azi : (Q,) array_like
         Azimuth.
-    colat : (Q,) array_like
+    zen : (Q,) array_like
         Colatitude / Zenith.
     sh_type :  'complex' or 'real' spherical harmonics.
     Y_nm : (Q, (N+1)**2) numpy.ndarray, optional
@@ -183,11 +183,11 @@ def sht_lstsq(f, N_sph, azi, colat, sh_type, Y_nm=None):
     if f.ndim == 1:
         f = f[:, np.newaxis]  # upgrade to handle 1D arrays
     if Y_nm is None:
-        Y_nm = sh_matrix(N_sph, azi, colat, sh_type)
+        Y_nm = sh_matrix(N_sph, azi, zen, sh_type)
     return np.linalg.lstsq(Y_nm, f, rcond=None)[0]
 
 
-def inverse_sht(F_nm, azi, colat, sh_type, N_sph=None, Y_nm=None):
+def inverse_sht(F_nm, azi, zen, sh_type, N_sph=None, Y_nm=None):
     """Perform the inverse spherical harmonics transform.
 
     Parameters
@@ -196,7 +196,7 @@ def inverse_sht(F_nm, azi, colat, sh_type, N_sph=None, Y_nm=None):
         Matrix of spherical harmonics coefficients of spherical function(S).
     azi : (Q,) array_like
         Azimuth.
-    colat : (Q,) array_like
+    zen : (Q,) array_like
         Colatitude / Zenith.
     sh_type :  'complex' or 'real' spherical harmonics.
     N_sph : int, optional
@@ -207,14 +207,14 @@ def inverse_sht(F_nm, azi, colat, sh_type, N_sph=None, Y_nm=None):
     Returns
     -------
     f : (Q, S)
-        The spherical function(S) evaluated at Q directions 'azi/colat'.
+        The spherical function(S) evaluated at Q directions 'azi/zen'.
     """
     if F_nm.ndim == 1:
         F_nm = F_nm[:, np.newaxis]  # upgrade to handle 1D arrays
     if N_sph is None:
         N_sph = int(np.sqrt(F_nm.shape[0]) - 1)
     if Y_nm is None:
-        Y_nm = sh_matrix(N_sph, azi, colat, sh_type)
+        Y_nm = sh_matrix(N_sph, azi, zen, sh_type)
     # perform the inverse transform up to degree N
     return np.matmul(Y_nm, F_nm[:(N_sph + 1) ** 2, :])
 
@@ -426,11 +426,11 @@ def rotate_sh(F_nm, yaw, pitch, roll, sh_type='real'):
     return np.atleast_2d(F_nm) @ R.T
 
 
-def check_cond_sht(N_sph, azi, colat, sh_type, lim=None):
+def check_cond_sht(N_sph, azi, zen, sh_type, lim=None):
     """Check if condition number for a least-squares SHT(N_sph) is high."""
     if lim is None:
         lim = N_sph + N_sph / 2
-    Y = sh_matrix(N_sph, azi, colat, sh_type)
+    Y = sh_matrix(N_sph, azi, zen, sh_type)
     c = np.zeros(N_sph + 1)
     YYn = np.matmul(Y.conj().T, Y)
     c = np.linalg.cond(YYn)
@@ -455,7 +455,7 @@ def n3d_to_sn3d(F_nm, sh_axis=0):
         Matrix of spherical harmonics coefficients of spherical function(S).
 
     """
-    assert(F_nm.ndim == 2)
+    assert (F_nm.ndim == 2)
     # Input SH order
     N = int(np.sqrt(F_nm.shape[sh_axis]) - 1)
     # 1/sqrt(2n+1) conversion factor
@@ -481,7 +481,7 @@ def sn3d_to_n3d(F_nm, sh_axis=0):
         Matrix of spherical harmonics coefficients of spherical function(S).
 
     """
-    assert(F_nm.ndim == 2)
+    assert (F_nm.ndim == 2)
     # Input SH order
     N = int(np.sqrt(F_nm.shape[sh_axis]) - 1)
     # sqrt(2n+1) conversion factor
@@ -575,19 +575,19 @@ def soundfield_to_b(sig, W_weight=None):
     # get tetraeder position
     N_sph = 1
     t = platonic_solid('tetrahedron')
-    t_az, t_colat, t_r = utils.cart2sph(t[:, 0], t[:, 1], t[:, 2])
+    t_az, t_zen, t_r = utils.cart2sph(t[:, 0], t[:, 1], t[:, 2])
     # SHT of input signal
-    F_nm = sht(sig, N_sph, azi=t_az, colat=t_colat, sh_type='real')
+    F_nm = sht(sig, N_sph, azi=t_az, zen=t_zen, sh_type='real')
     return sh_to_b(F_nm, W_weight)
 
 
-def src_to_b(sig, src_azi, src_colat):
-    """Get B format signal channels for source in direction azi/colat."""
+def src_to_b(sig, src_azi, src_zen):
+    """Get B format signal channels for source in direction azi/zen."""
     sig = utils.asarray_1d(sig)
     src_azi = utils.asarray_1d(src_azi)
-    src_colat = utils.asarray_1d(src_colat)
+    src_zen = utils.asarray_1d(src_zen)
     gw = np.ones(len(src_azi))
-    gx, gy, gz = utils.sph2cart(src_azi, src_colat)
+    gx, gy, gz = utils.sph2cart(src_azi, src_zen)
     g = np.c_[gw, gx, gy, gz]
     return np.outer(g, sig)
 
@@ -667,7 +667,7 @@ def bandlimited_dirac(N_sph, d, w_n=None):
         :context: close-figs
 
         dirac_azi = np.deg2rad(0)
-        dirac_colat = np.deg2rad(90)
+        dirac_zen = np.deg2rad(90)
         N_sph = 5
 
         # cross section
@@ -683,7 +683,7 @@ def bandlimited_dirac(N_sph, d, w_n=None):
     d = utils.asarray_1d(d)
     if w_n is None:
         w_n = np.ones(N_sph + 1)
-    assert(len(w_n) == N_sph + 1), "Provide weight per order."
+    assert (len(w_n) == N_sph + 1), "Provide weight per order."
     g_n = np.zeros([(N_sph + 1)**2, len(d)])
     for n, i in enumerate(range(N_sph + 1)):
         g_n[i, :] = w_n[i] * (2 * n + 1) / (4 * np.pi) * \
@@ -710,7 +710,7 @@ def max_rE_weights(N_sph):
         :context: close-figs
 
         dirac_azi = np.deg2rad(45)
-        dirac_colat = np.deg2rad(45)
+        dirac_zen = np.deg2rad(45)
         N = 5
 
         # cross section
@@ -753,7 +753,7 @@ def r_E(p, g):
     """
     p = np.atleast_2d(p)
     g = np.atleast_2d(g)
-    assert(p.shape[0] == g.shape[1]), 'Provide gain per speaker!'
+    assert (p.shape[0] == g.shape[1]), 'Provide gain per speaker!'
     E = np.sum(g**2, axis=1)
     with np.errstate(divide='ignore', invalid='ignore'):
         rE = np.diag(1 / E) @ (g**2 @ p)
@@ -1154,7 +1154,7 @@ def sph_filterbank_reconstruction_factor(w_nm, num_secs, mode=None):
 
     """
     w_nm = np.atleast_2d(w_nm)
-    assert(mode)
+    assert mode
     if mode.lower() in ['amplitude', 'amp']:
         beta = np.sqrt(4*np.pi) / (w_nm[0, 0] * num_secs)
     elif mode.lower() in ['energy', 'en']:
@@ -1285,9 +1285,9 @@ def sh_mult(a_nm, b_nm, sh_type):
 
     # get discretization points
     v = grids.load_t_design(2*N_out)
-    v_dirs = utils.vecs2dirs(v)
+    v_dirs = utils.vec2dir(v)
 
     c_nm = sht(inverse_sht(a_nm, v_dirs[:, 0], v_dirs[:, 1], sh_type=sh_type) *
                inverse_sht(b_nm, v_dirs[:, 0], v_dirs[:, 1], sh_type=sh_type),
-               N_out, azi=v_dirs[:, 0], colat=v_dirs[:, 1], sh_type=sh_type)
+               N_out, azi=v_dirs[:, 0], zen=v_dirs[:, 1], sh_type=sh_type)
     return utils.asarray_1d(c_nm)

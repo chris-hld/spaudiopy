@@ -284,7 +284,7 @@ class HRIRs:
         ----------
         azi : float
             Azimuth.
-        colat : float
+        zen : float
             Zenith / Colatitude.
 
         Returns
@@ -307,7 +307,7 @@ class HRIRs:
         ----------
         azi : float, array_like
             Azimuth.
-        colat : float, array_like
+        zen : float, array_like
             Zenith / Colatitude.
 
         Returns
@@ -315,6 +315,8 @@ class HRIRs:
         idx : int, np.ndarray
             Index.
         """
+        azi = utils.asarray_1d(azi)
+        zen = utils.asarray_1d(zen)
         vec = np.stack(utils.sph2cart(azi, zen), axis=1)
         vec_g = np.stack(utils.sph2cart(self.azi, self.zen), axis=1)
         return np.argmax(vec@vec_g.T, axis=1).squeeze()

@@ -24,10 +24,10 @@ def test_pseudo_intensity(test_jobs):
                                   np.random.randn(n_samples),
                                   np.random.randn(n_samples),
                                   np.random.randn(n_samples)], fs=fs)
-    azi_r, colat_r, r_r = spa.parsa.pseudo_intensity(ambi_b, jobs_count=1)
-    azi_t, colat_t, r_t = spa.parsa.pseudo_intensity(ambi_b,
+    azi_r, zen_r, r_r = spa.parsa.pseudo_intensity(ambi_b, jobs_count=1)
+    azi_t, zen_t, r_t = spa.parsa.pseudo_intensity(ambi_b,
                                                      jobs_count=test_jobs)
-    assert_allclose([azi_t, colat_t, r_t], [azi_r, colat_r, r_r])
+    assert_allclose([azi_t, zen_t, r_t], [azi_r, zen_r, r_r])
 
 
 @pytest.mark.parametrize('test_jobs', JOB_COUNTS)

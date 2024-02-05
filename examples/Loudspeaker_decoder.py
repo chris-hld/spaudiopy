@@ -72,7 +72,7 @@ plot.hull_normals(ls_setup)
 
 # Test source location
 src = np.array([1, 0.5, 2.5])
-src_azi, src_colat, _ = utils.cart2sph(*src.tolist())
+src_azi, src_zen, _ = utils.cart2sph(*src.tolist())
 
 # %% VBAP
 gains_vbap = decoder.vbap(src, ls_setup, norm=1)  # norm1 because binaural
@@ -91,7 +91,7 @@ gains_allrap = decoder.allrap(src, ls_setup, N_sph=N_e)
 # ALLRAP2
 gains_allrap2 = decoder.allrap2(src, ls_setup, N_sph=N_e)
 # ALLRAD
-input_F_nm = sph.sh_matrix(N_e, src_azi, src_colat, 'real').T  # SH dirac
+input_F_nm = sph.sh_matrix(N_e, src_azi, src_zen, 'real').T  # SH dirac
 out_allrad = decoder.allrad(input_F_nm, ls_setup, N_sph=N_e)
 out_allrad2 = decoder.allrad2(input_F_nm, ls_setup, N_sph=N_e)
 
@@ -139,8 +139,8 @@ l_nls_ir, r_nls_ir = ls_setup.binauralize(ls_setup.loudspeaker_signals(
 
 # %%
 fig, axs = plt.subplots(5, 1)
-axs[0].plot(hrirs.nearest_hrirs(src_azi, src_colat)[0])
-axs[0].plot(hrirs.nearest_hrirs(src_azi, src_colat)[1])
+axs[0].plot(hrirs.nearest_hrirs(src_azi, src_zen)[0])
+axs[0].plot(hrirs.nearest_hrirs(src_azi, src_zen)[1])
 axs[0].set_title("hrir")
 axs[1].plot(l_vbap_ir)
 axs[1].plot(r_vbap_ir)
@@ -172,8 +172,8 @@ s_out_allrap2 = sig.MultiSignal(2*[s_in.signal], fs=fs)
 s_out_allrap2 = s_out_allrap2.conv([l_allrap2_ir, r_allrap2_ir])
 
 s_out_hrir = sig.MultiSignal(2*[s_in.signal], fs=fs)
-s_out_hrir = s_out_hrir.conv([hrirs.nearest_hrirs(src_azi, src_colat)[0],
-                              hrirs.nearest_hrirs(src_azi, src_colat)[1]])
+s_out_hrir = s_out_hrir.conv([hrirs.nearest_hrirs(src_azi, src_zen)[0],
+                              hrirs.nearest_hrirs(src_azi, src_zen)[1]])
 
 
 if LISTEN:

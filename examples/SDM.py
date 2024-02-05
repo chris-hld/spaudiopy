@@ -25,18 +25,18 @@ fs = ambi_ir.fs
 
 # - SDM Encoding:
 sdm_p = ambi_ir.W
-sdm_azi, sdm_colat, _ = spa.parsa.pseudo_intensity(ambi_ir, f_bp=(100, 5000))
+sdm_azi, sdm_zen, _ = spa.parsa.pseudo_intensity(ambi_ir, f_bp=(100, 5000))
 
 # Show first 10000 samples DOA
-spa.plot.doa(sdm_azi[:10000], sdm_colat[:10000], fs=fs, p=sdm_p[:10000])
+spa.plot.doa(sdm_azi[:10000], sdm_zen[:10000], fs=fs, p=sdm_p[:10000])
 
 
 # - SDM Decoding:
 # very quick stereo SDM decoding. This is only for testing!
-ir_st_l, ir_st_r = spa.parsa.render_stereo_sdm(sdm_p, sdm_azi, sdm_colat)
+ir_st_l, ir_st_r = spa.parsa.render_stereo_sdm(sdm_p, sdm_azi, sdm_zen)
 
 # Loudspeaker decoding
-s_pos = np.array(spa.utils.sph2cart(sdm_azi, sdm_colat)).T
+s_pos = np.array(spa.utils.sph2cart(sdm_azi, sdm_zen)).T
 ls_gains = spa.decoder.nearest_loudspeaker(s_pos, ls_setup)
 assert len(ls_gains) == len(sdm_p)
 ir_ls_l, ir_ls_r = spa.parsa.render_binaural_loudspeaker_sdm(sdm_p, ls_gains,

@@ -41,7 +41,7 @@ def spectrum(x, fs, ylim=None, scale_mag=False, **kwargs):
 
     specs = []
     for s in x:
-        assert(s.ndim == 1)
+        assert (s.ndim == 1)
         # rfft returns half sided spectrum
         mag = np.abs(np.fft.rfft(s))
         # Scale the amplitude (factor two for mirrored frequencies)
@@ -86,7 +86,7 @@ def freq_resp(freq, amp, TODB=True, smoothing_n=None, xlim=(20, 24000),
         if not isinstance(labels, (list, tuple)):
             labels = [labels]
 
-    assert(all(len(a) == len(freq) for a in amp))
+    assert (all(len(a) == len(freq) for a in amp))
 
     if TODB:
         # Avoid zeros in spec for dB
@@ -195,16 +195,16 @@ def compare_ambi(Ambi_A, Ambi_B):
     plt.title('B-format')
 
 
-def spherical_function(f, azi, colat, title=None, fig=None):
-    """Plot function 1D vector f over azi and colat."""
+def spherical_function(f, azi, zen, title=None, fig=None):
+    """Plot function 1D vector f over azi and zen."""
     f = utils.asarray_1d(np.real_if_close(f))
     azi = utils.asarray_1d(azi)
-    colat = utils.asarray_1d(colat)
-    x, y, z = utils.sph2cart(azi, colat, r=abs(f))
+    zen = utils.asarray_1d(zen)
+    x, y, z = utils.sph2cart(azi, zen, r=abs(f))
 
     # triangulate in the underlying parametrization
     chull = ConvexHull(np.column_stack((x, y, z)))
-    triang = tri.Triangulation(colat, azi, triangles=chull.simplices)
+    triang = tri.Triangulation(zen, azi, triangles=chull.simplices)
 
     if fig is None:
         fig = plt.figure(constrained_layout=True)
@@ -456,7 +456,7 @@ def sh_rms_map(F_nm, TODB=False, w_n=None, sh_type=None, n_plot=50, title=None,
 
     """
     F_nm = np.atleast_2d(F_nm)
-    assert(F_nm.ndim == 2)
+    assert (F_nm.ndim == 2)
     if sh_type is None:
         sh_type = 'complex' if np.iscomplexobj(F_nm) else 'real'
     N_sph = int(np.sqrt(F_nm.shape[0]) - 1)
@@ -702,7 +702,7 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, draw_ls=True,
         if clim is None:
             clim = (None, None)
         color = utils.asarray_1d(color)
-        assert(len(color) == simplices.shape[0])
+        assert (len(color) == simplices.shape[0])
         m = cm.ScalarMappable(cmap=cm.Spectral,
                               norm=colors.Normalize(vmin=clim[0],
                                                     vmax=clim[1]))
@@ -944,8 +944,8 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
         if show_ls:
             for s, co in enumerate(ls_points):
                 # map to pixels grid
-                _azi_ls, _colat_ls, _ = utils.cart2sph(*co)
-                ax.plot(_azi_ls, _colat_ls, marker='2', color='grey')
+                _azi_ls, _zen_ls, _ = utils.cart2sph(*co)
+                ax.plot(_azi_ls, _zen_ls, marker='2', color='grey')
                 # ax.text(_x_plot, _y_plot, s)  # LS Number
         # Labeling etc
         ax.grid(True)
@@ -988,7 +988,7 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
     plt.subplots_adjust(wspace=0.25)
 
 
-def doa(azi, colat, p=None, size=250, c=None, alpha=None, fs=None, title=None,
+def doa(azi, zen, p=None, size=250, c=None, alpha=None, fs=None, title=None,
         ltitle=None):
     """Direction of Arrival, with optional p(t) scaling the size.
 
@@ -1004,16 +1004,16 @@ def doa(azi, colat, p=None, size=250, c=None, alpha=None, fs=None, title=None,
         x = np.random.randn(n)
         y = np.random.randn(n)
         z = np.random.randn(n)
-        azi, colat, r = spa.utils.cart2sph(x, y, z)
+        azi, zen, r = spa.utils.cart2sph(x, y, z)
 
         ps = 1 / np.exp(np.linspace(0, 3, n))
-        spa.plot.doa(azi, colat, ps, fs=fs, ltitle="p(t)")
+        spa.plot.doa(azi, zen, ps, fs=fs, ltitle="p(t)")
 
     """
     # shift azi to [np.pi, np.pi]
     azi[azi > np.pi] = azi[azi > np.pi] % -np.pi
-    # colat to elevation
-    ele = np.pi/2 - colat
+    # zen to elevation
+    ele = np.pi/2 - zen
 
     if p is not None:
         s_plot = np.clip(p / np.max(p), 10e-15, None)

@@ -86,7 +86,7 @@ def save_audio(signal, filename, fs=None, subtype='FLOAT'):
     """
     if isinstance(sig, sig.MonoSignal):
         if fs is not None:
-            assert(signal.fs == fs)
+            assert (signal.fs == fs)
 
     if type(signal) == sig.MonoSignal:
         data = signal.signal
@@ -103,7 +103,7 @@ def save_audio(signal, filename, fs=None, subtype='FLOAT'):
         raise NotImplementedError('Data type not supported.')
     data = np.asarray(data)
     if (data.ndim > 1):
-        assert(data.ndim == 2)
+        assert (data.ndim == 2)
         if (data.shape[1] > data.shape[0]):
             warn(f"Writing file with {data.shape[1]} channels")
     if (np.max(np.abs(data)) > 1.0):
@@ -113,7 +113,7 @@ def save_audio(signal, filename, fs=None, subtype='FLOAT'):
 
 def load_hrirs(fs, filename=None, jobs_count=None):
     """Convenience function to load 'HRIRs.mat'.
-    The file contains ['hrir_l', 'hrir_r', 'fs', 'azi', 'colat'].
+    The file contains ['hrir_l', 'hrir_r', 'fs', 'azi', 'zen'].
 
     Parameters
     ----------
@@ -141,14 +141,14 @@ def load_hrirs(fs, filename=None, jobs_count=None):
 
     """
     if filename == 'dummy':
-        azi, colat, _ = grids.gauss(15)
+        azi, zen, _ = grids.gauss(15)
         # Create diracs as dummy
         hrir_l = np.zeros([len(azi), 256])
         hrir_r = np.zeros_like(hrir_l)
         hrir_fs = fs
         # apply ILD / ITD
-        a_l = 0.5*(1 + np.cos(azi - np.pi/2)) * np.sin(colat)
-        a_r = 0.5*(1 + np.cos(azi + np.pi/2)) * np.sin(colat)
+        a_l = 0.5*(1 + np.cos(azi - np.pi/2)) * np.sin(zen)
+        a_r = 0.5*(1 + np.cos(azi + np.pi/2)) * np.sin(zen)
         hrir_l[np.arange(len(azi)), (a_r * 0.75e-3 * fs + 10).astype(int)] = 1.
         hrir_r[np.arange(len(azi)), (a_l * 0.75e-3 * fs + 10).astype(int)] = 1.
         hrir_l *= a_l[:, np.newaxis] + 0.1
@@ -183,14 +183,14 @@ def load_hrirs(fs, filename=None, jobs_count=None):
             hrir_fs = int(mat['SamplingRate'])
 
         azi = np.array(np.squeeze(mat['azi']), dtype=float)
-        colat = np.array(np.squeeze(mat['colat']), dtype=float)
+        zen = np.array(np.squeeze(mat['zen']), dtype=float)
 
-    HRIRs = sig.HRIRs(hrir_l, hrir_r, azi, colat, hrir_fs)
+    HRIRs = sig.HRIRs(hrir_l, hrir_r, azi, zen, hrir_fs)
     assert HRIRs.fs == fs
     return HRIRs
 
 
-def get_default_hrirs(grid_azi=None, grid_colat=None, jobs_count=None):
+def get_default_hrirs(grid_azi=None, grid_zen=None, jobs_count=None):
     """Creates the default HRIRs loaded by load_hrirs() by inverse SHT.
     By default it renders onto a gauss grid of order N=35, and additionally
     resamples fs to 48kHz.
@@ -198,7 +198,7 @@ def get_default_hrirs(grid_azi=None, grid_colat=None, jobs_count=None):
     Parameters
     ----------
     grid_azi : array_like, optional
-    grid_colat : array_like, optional
+    grid_zen : array_like, optional
     jobs_count : int or None, optional
         Number of parallel jobs for resample_hrirs(),
         'None' employs 'cpu_count'.
@@ -235,12 +235,12 @@ def get_default_hrirs(grid_azi=None, grid_colat=None, jobs_count=None):
     f = np.squeeze(file['SH'][0][0][5])
 
     # default grid:
-    if (grid_azi is None) and (grid_colat is None):
-        grid_azi, grid_colat, _ = grids.gauss(35)  # grid positions
+    if (grid_azi is None) and (grid_zen is None):
+        grid_azi, grid_zen, _ = grids.gauss(35)  # grid positions
 
     # Inverse SHT
-    HRTF_l = sph.inverse_sht(SH_l, grid_azi, grid_colat, 'complex')
-    HRTF_r = sph.inverse_sht(SH_r, grid_azi, grid_colat, 'complex')
+    HRTF_l = sph.inverse_sht(SH_l, grid_azi, grid_zen, 'complex')
+    HRTF_r = sph.inverse_sht(SH_r, grid_azi, grid_zen, 'complex')
     assert HRTF_l.shape == HRTF_r.shape
     # ifft
     hrir_l = np.fft.irfft(HRTF_l)  # creates 256 samples(t)
@@ -263,19 +263,19 @@ def get_default_hrirs(grid_azi=None, grid_colat=None, jobs_count=None):
                          'HRIRs_default_44100.mat'),
             {'hrir_l': hrir_l,
              'hrir_r': hrir_r,
-             'azi': grid_azi, 'colat': grid_colat,
+             'azi': grid_azi, 'zen': grid_zen,
              'fs': 44100})
     savemat(os.path.join(current_file_dir, '../data/HRIRs/'
                          'HRIRs_default_48000.mat'),
             {'hrir_l': hrir_l_48k,
              'hrir_r': hrir_r_48k,
-             'azi': grid_azi, 'colat': grid_colat,
+             'azi': grid_azi, 'zen': grid_zen,
              'fs': 48000})
     savemat(os.path.join(current_file_dir, '../data/HRIRs/'
                          'HRIRs_default_96000.mat'),
             {'hrir_l': hrir_l_96k,
              'hrir_r': hrir_r_96k,
-             'azi': grid_azi, 'colat': grid_colat,
+             'azi': grid_azi, 'zen': grid_zen,
              'fs': 96000})
     print("Saved new default HRIRs.")
 
@@ -317,10 +317,10 @@ def load_sofa_hrirs(filename):
     fs = int(sdata['Data.SamplingRate'])
     irs = np.asarray(sdata['Data.IR'])
     grid = np.asarray(sdata['SourcePosition'])
-    assert(abs((grid[:, 2]-grid[:, 2].mean())).mean() < 0.1)  # Otherwise not r
+    assert (abs((grid[:, 2]-grid[:, 2].mean())).mean() < 0.1)  # Otherwise not r
     grid_azi, grid_zen = np.deg2rad(grid[:, 0]), np.pi/2 - np.deg2rad(
                                                             grid[:, 1])
-    assert(all(grid_zen > -10e-6))  # Otherwise not zen
+    assert (all(grid_zen > -10e-6))  # Otherwise not zen
     irs_left = np.squeeze(irs[:, 0, :])
     irs_right = np.squeeze(irs[:, 1, :])
     HRIRs = sig.HRIRs(irs_left, irs_right, grid_azi, grid_zen, fs)
@@ -358,7 +358,7 @@ def sofa_to_sh(filename, N_sph, sh_type='real'):
 def load_sdm(filename, init_nan=True):
     """Convenience function to load 'SDM.mat'.
     The file contains
-    ['h_ref' or 'p', 'sdm_azi' or 'sdm_phi', 'sdm_colat' or 'sdm_theta', 'fs'].
+    ['h_ref' or 'p', 'sdm_azi' or 'sdm_phi', 'sdm_zen' or 'sdm_theta', 'fs'].
 
     Parameters
     ----------
@@ -373,7 +373,7 @@ def load_sdm(filename, init_nan=True):
         p(t).
     sdm_azi : (n,) array_like
         Azimuth angle.
-    sdm_colat : (n,) array_like
+    sdm_zen : (n,) array_like
         Colatitude angle.
     fs : int
         fs(t).
@@ -389,15 +389,15 @@ def load_sdm(filename, init_nan=True):
     except KeyError:
         sdm_azi = np.array(np.squeeze(mat['sdm_phi']), dtype=float)
     try:
-        sdm_colat = np.array(np.squeeze(mat['sdm_colat']), dtype=float)
+        sdm_zen = np.array(np.squeeze(mat['sdm_zen']), dtype=float)
     except KeyError:
-        sdm_colat = np.array(np.squeeze(mat['sdm_theta']), dtype=float)
+        sdm_zen = np.array(np.squeeze(mat['sdm_theta']), dtype=float)
 
     if init_nan:
         sdm_azi[np.isnan(sdm_azi)] = 0.
-        sdm_colat[np.isnan(sdm_colat)] = np.pi / 2
+        sdm_zen[np.isnan(sdm_zen)] = np.pi / 2
     fs = int(mat['fs'])
-    return h, sdm_azi, sdm_colat, fs
+    return h, sdm_azi, sdm_zen, fs
 
 
 def write_ssr_brirs_loudspeaker(filename, ls_irs, hull, fs, subtype='FLOAT',
@@ -423,7 +423,7 @@ def write_ssr_brirs_loudspeaker(filename, ls_irs, hull, fs, subtype='FLOAT',
     """
     if hrirs is None:
         hrirs = load_hrirs(fs=fs)
-    assert(hrirs.fs == fs)
+    assert (hrirs.fs == fs)
 
     if jobs_count is None:
         jobs_count = multiprocessing.cpu_count()
@@ -491,7 +491,7 @@ def write_ssr_brirs_sdm(filename, sdm_p, sdm_phi, sdm_theta, fs,
     """
     if hrirs is None:
         hrirs = load_hrirs(fs=fs)
-    assert(hrirs.fs == fs)
+    assert (hrirs.fs == fs)
 
     if not filename[-4:] == '.wav':
         filename = filename + '.wav'

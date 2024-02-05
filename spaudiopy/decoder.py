@@ -106,22 +106,22 @@ class LoudspeakerSetup:
         self.characteristic_order = None
 
         # some checks
-        assert(len(self.d) == self.npoints)
+        assert (len(self.d) == self.npoints)
 
     @classmethod
-    def from_sph(cls, azi, colat, r=1, listener_position=None):
+    def from_sph(cls, azi, zen, r=1, listener_position=None):
         """ Alternative constructor, using spherical coordinates in rad.
 
         Parameters
         ----------
         azi : array_like, spherical
-        colat : array_like, spherical
+        zen : array_like, spherical
         r : array_like, spherical
-        listener_position : (azi, colat, r), spherical, optional
+        listener_position : (azi, zen, r), spherical, optional
             Offset, will be substracted from the loudspeaker positions.
 
         """
-        x, y, z = utils.sph2cart(azi, colat, r)
+        x, y, z = utils.sph2cart(azi, zen, r)
         if listener_position is None:
             listener_position = [0, 0, 0]
         listener_position = utils.asarray_1d(listener_position)
@@ -199,11 +199,11 @@ class LoudspeakerSetup:
             self.characteristic_order = self.get_characteristic_order()
         else:
             self.characteristic_order = characteristic_order
-                
+
         if N_kernel is None:
             warn('Setting setup kernel order =', self.characteristic_order)
             N_kernel = self.characteristic_order
-        if(not update_hull and imaginary_ls is not None):
+        if (not update_hull and imaginary_ls is not None):
             warn('Not updating hull but imaginary_ls position given.')
 
         ambi_ls = self.points
@@ -216,7 +216,7 @@ class LoudspeakerSetup:
                 imaginary_ls_idx = ambi_ls.shape[0] - 1
             else:
                 imaginary_ls = np.atleast_2d(imaginary_ls)
-                assert(imaginary_ls.shape[1] == 3)
+                assert (imaginary_ls.shape[1] == 3)
                 # add imaginary loudspeaker(s) to hull
                 ambi_ls = np.vstack([ambi_ls, imaginary_ls])
                 # mark imaginary speaker (last one(s))
@@ -254,8 +254,8 @@ class LoudspeakerSetup:
         ls_signals : (L, S) np.ndarray
             Loudspeaker signals.
         fs : int
-        orientation : (azi, colat) tuple, optional
-            Listener orientation offset (azimuth, colatitude) in rad.
+        orientation : (azi, zen) tuple, optional
+            Listener orientation offset (azimuth, zenith) in rad.
         hrirs : sig.HRIRs, optional
 
         Returns
@@ -266,14 +266,14 @@ class LoudspeakerSetup:
         """
         if hrirs is None:
             hrirs = io.load_hrirs(fs)
-        assert(hrirs.fs == fs)
+        assert (hrirs.fs == fs)
         ls_signals = np.atleast_2d(ls_signals)
         assert ls_signals.shape[0] == self.npoints, \
             'Provide signal per loudspeaker!'
         # distance attenuation
         relative_position = self.points - \
                             self.listener_position
-        ls_azi, ls_colat, ls_r = utils.cart2sph(*relative_position.T)
+        ls_azi, ls_zen, ls_r = utils.cart2sph(*relative_position.T)
         ls_signals = np.diag(1 / ls_r ** self.a) @ ls_signals
         # convolve with hrir
         l_sig = np.zeros(ls_signals.shape[1] + len(hrirs) - 1)
@@ -282,7 +282,7 @@ class LoudspeakerSetup:
             if any(abs(ls_sig) > 10e-6):  # Gate at -100dB
                 hrir_l, hrir_r = hrirs.nearest_hrirs(ls_azi[ch] -
                                                      orientation[0],
-                                                     ls_colat[ch] -
+                                                     ls_zen[ch] -
                                                      orientation[1])
                 # sum all loudspeakers
                 l_sig += signal.convolve(ls_sig, hrir_l)
@@ -306,7 +306,7 @@ class LoudspeakerSetup:
         if sig_in is None:
             sig_in = np.ones(ls_gains.shape[0])
         sig_in = utils.asarray_1d(sig_in)
-        assert(ls_gains.shape[1] == len(self.points)), \
+        assert (ls_gains.shape[1] == len(self.points)), \
             'Provide gain per speaker!'
         return (sig_in[:, np.newaxis] * ls_gains).T
 
@@ -540,7 +540,7 @@ def _vbap_gains_single_source(src_idx, src, inverted_ls_triplets,
         # normalization
         projection /= np.linalg.norm(projection, ord=norm)
         if np.all(projection > -10e-6):
-            assert(np.count_nonzero(projection) <= 3)
+            assert (np.count_nonzero(projection) <= 3)
             # print(f"Source {src_idx}: Gains {projection}")
             shared_array[src_idx, valid_simplices[face_idx]] = projection
             break  # found valid gains
@@ -593,7 +593,7 @@ def vbap(src, hull, norm=2, valid_simplices=None, retain_outside=False,
     if jobs_count is None:
         jobs_count = multiprocessing.cpu_count()
     if retain_outside:
-        assert(valid_simplices is None)
+        assert (valid_simplices is None)
         if hull.ambisonics_hull:
             hull = hull.ambisonics_hull
             if hull.imaginary_ls_idx is None:
@@ -612,7 +612,7 @@ def vbap(src, hull, norm=2, valid_simplices=None, retain_outside=False,
         inverted_vbase = hull.inverted_vbase
 
     src = np.atleast_2d(src)
-    assert(src.shape[1] == 3)
+    assert (src.shape[1] == 3)
     src_count = src.shape[0]
 
     ls_count = hull.npoints
@@ -627,7 +627,7 @@ def vbap(src, hull, norm=2, valid_simplices=None, retain_outside=False,
                 # normalization
                 projection /= np.linalg.norm(projection, ord=norm)
                 if np.all(projection > -10e-6):
-                    assert(np.count_nonzero(projection) <= 3)
+                    assert (np.count_nonzero(projection) <= 3)
                     # print(f"Source {src_idx}: Gains {projection}")
                     gains[src_idx, valid_simplices[face_idx]] = projection
                     break  # found valid gains
@@ -697,7 +697,7 @@ def vbip(src, hull, norm=2, valid_simplices=None, retain_outside=False,
 
     """
     src = np.atleast_2d(src)
-    assert(src.shape[1] == 3)
+    assert (src.shape[1] == 3)
     # Treat VBAP output as squared gains
     g_sq = vbap(src, hull, valid_simplices=valid_simplices,
                 retain_outside=retain_outside, jobs_count=jobs_count)
@@ -789,7 +789,7 @@ def allrap(src, hull, N_sph=None, jobs_count=1):
         N_sph = hull.characteristic_order
 
     src = np.atleast_2d(src)
-    assert(src.shape[1] == 3)
+    assert (src.shape[1] == 3)
 
     # normalize direction
     src = src / np.linalg.norm(src, axis=1)[:, np.newaxis]
@@ -805,15 +805,15 @@ def allrap(src, hull, N_sph=None, jobs_count=1):
     a_nm = sph.repeat_per_order(a_n)
 
     # sources
-    _s_azi, _s_colat, _s_r = utils.cart2sph(src[:, 0],
-                                            src[:, 1],
-                                            src[:, 2])
-    Y_s = sph.sh_matrix(N_sph, _s_azi, _s_colat, sh_type='real')
+    _s_azi, _s_zen, _s_r = utils.cart2sph(src[:, 0],
+                                          src[:, 1],
+                                          src[:, 2])
+    Y_s = sph.sh_matrix(N_sph, _s_azi, _s_zen, sh_type='real')
     # kernel
-    _k_azi, _k_colat, _k_r = utils.cart2sph(kernel_hull.points[:, 0],
-                                            kernel_hull.points[:, 1],
-                                            kernel_hull.points[:, 2])
-    Y_k = sph.sh_matrix(N_sph, _k_azi, _k_colat, sh_type='real')
+    _k_azi, _k_zen, _k_r = utils.cart2sph(kernel_hull.points[:, 0],
+                                          kernel_hull.points[:, 1],
+                                          kernel_hull.points[:, 2])
+    Y_k = sph.sh_matrix(N_sph, _k_azi, _k_zen, sh_type='real')
 
     # discretized (band-limited) ambisonic panning function
     G_bld = Y_s @ np.diag(a_nm) @ Y_k.T
@@ -874,7 +874,7 @@ def allrap2(src, hull, N_sph=None, jobs_count=1):
         N_sph = hull.characteristic_order
 
     src = np.atleast_2d(src)
-    assert(src.shape[1] == 3)
+    assert (src.shape[1] == 3)
 
     # normalize direction
     src = src / np.linalg.norm(src, axis=1)[:, np.newaxis]
@@ -894,15 +894,15 @@ def allrap2(src, hull, N_sph=None, jobs_count=1):
     a_nm = sph.repeat_per_order(a_n)
 
     # sources
-    _s_azi, _s_colat, _s_r = utils.cart2sph(src[:, 0],
-                                            src[:, 1],
-                                            src[:, 2])
-    Y_s = sph.sh_matrix(N_sph, _s_azi, _s_colat, sh_type='real')
+    _s_azi, _s_zen, _s_r = utils.cart2sph(src[:, 0],
+                                          src[:, 1],
+                                          src[:, 2])
+    Y_s = sph.sh_matrix(N_sph, _s_azi, _s_zen, sh_type='real')
     # kernel
-    _k_azi, _k_colat, _k_r = utils.cart2sph(kernel_hull.points[:, 0],
-                                            kernel_hull.points[:, 1],
-                                            kernel_hull.points[:, 2])
-    Y_k = sph.sh_matrix(N_sph, _k_azi, _k_colat, sh_type='real')
+    _k_azi, _k_zen, _k_r = utils.cart2sph(kernel_hull.points[:, 0],
+                                          kernel_hull.points[:, 1],
+                                          kernel_hull.points[:, 2])
+    Y_k = sph.sh_matrix(N_sph, _k_azi, _k_zen, sh_type='real')
 
     # discretized (band-limited) ambisonic panning function
     G_bld = Y_s @ np.diag(a_nm) @ Y_k.T
@@ -963,7 +963,7 @@ def allrad(F_nm, hull, N_sph=None, jobs_count=1):
         N_sph = hull.characteristic_order
 
     N_sph_in = int(np.sqrt(F_nm.shape[0]) - 1)
-    assert(N_sph == N_sph_in)  # for now
+    assert (N_sph == N_sph_in)  # for now
     if N_sph_in > kernel_hull.N_kernel:
         warn("Undersampling the sphere. Needs higher N_Kernel.")
 
@@ -979,11 +979,11 @@ def allrad(F_nm, hull, N_sph=None, jobs_count=1):
     a_nm = sph.repeat_per_order(a_n)
 
     # virtual Ambisonic decoder
-    _k_azi, _k_colat, _k_r = utils.cart2sph(kernel_hull.points[:, 0],
-                                            kernel_hull.points[:, 1],
-                                            kernel_hull.points[:, 2])
+    _k_azi, _k_zen, _k_r = utils.cart2sph(kernel_hull.points[:, 0],
+                                          kernel_hull.points[:, 1],
+                                          kernel_hull.points[:, 2])
     # band-limited Dirac
-    Y_bld = sph.sh_matrix(N_sph, _k_azi, _k_colat, sh_type='real')
+    Y_bld = sph.sh_matrix(N_sph, _k_azi, _k_zen, sh_type='real')
 
     # ALLRAD Decoder
     D = 4 * np.pi / J * G_k.T @ Y_bld
@@ -1046,7 +1046,7 @@ def allrad2(F_nm, hull, N_sph=None, jobs_count=1):
         N_sph = hull.characteristic_order
 
     N_sph_in = int(np.sqrt(F_nm.shape[0]) - 1)
-    assert(N_sph == N_sph_in)  # for now
+    assert (N_sph == N_sph_in)  # for now
     if N_sph_in > kernel_hull.N_kernel:
         warn("Undersampling the sphere. Needs higher N_Kernel.")
 
@@ -1058,11 +1058,11 @@ def allrad2(F_nm, hull, N_sph=None, jobs_count=1):
     # tapering already applied in kernel, sufficient?
 
     # virtual Ambisonic decoder
-    _k_azi, _k_colat, _k_r = utils.cart2sph(kernel_hull.points[:, 0],
-                                            kernel_hull.points[:, 1],
-                                            kernel_hull.points[:, 2])
+    _k_azi, _k_zen, _k_r = utils.cart2sph(kernel_hull.points[:, 0],
+                                          kernel_hull.points[:, 1],
+                                          kernel_hull.points[:, 2])
     # band-limited Dirac
-    Y_bld = sph.sh_matrix(N_sph, _k_azi, _k_colat, sh_type='real')
+    Y_bld = sph.sh_matrix(N_sph, _k_azi, _k_zen, sh_type='real')
 
     # ALLRAD2 Decoder
     D = 4 * np.pi / J * G_k.T @ Y_bld
@@ -1113,10 +1113,10 @@ def sad(F_nm, hull, N_sph=None):
 
     L = hull.npoints
     N_sph_in = int(np.sqrt(F_nm.shape[0]) - 1)
-    assert(N_sph_in >= N_sph)  # for now
+    assert (N_sph_in >= N_sph)  # for now
 
-    ls_azi, ls_colat, ls_r = utils.cart2sph(*hull.points.T)
-    Y_ls = sph.sh_matrix(N_sph, ls_azi, ls_colat, sh_type='real')
+    ls_azi, ls_zen, ls_r = utils.cart2sph(*hull.points.T)
+    Y_ls = sph.sh_matrix(N_sph, ls_azi, ls_zen, sh_type='real')
 
     D = Y_ls
     D *= np.sqrt(4*np.pi / (N_sph+1)**2)
@@ -1167,10 +1167,10 @@ def mad(F_nm, hull, N_sph=None):
 
     L = hull.npoints
     N_sph_in = int(np.sqrt(F_nm.shape[0]) - 1)
-    assert(N_sph_in >= N_sph)  # for now
+    assert (N_sph_in >= N_sph)  # for now
 
-    ls_azi, ls_colat, ls_r = utils.cart2sph(*hull.points.T)
-    Y_ls = sph.sh_matrix(N_sph, ls_azi, ls_colat, sh_type='real')
+    ls_azi, ls_zen, ls_r = utils.cart2sph(*hull.points.T)
+    Y_ls = sph.sh_matrix(N_sph, ls_azi, ls_zen, sh_type='real')
 
     D = (np.linalg.pinv(Y_ls)).T
     D *= np.sqrt(L / (N_sph+1)**2)  # Energy to unity (on t-design)
@@ -1234,11 +1234,11 @@ def epad(F_nm, hull, N_sph=None):
              f' ({L} < {(N_sph+1)**2})')
 
     N_sph_in = int(np.sqrt(F_nm.shape[0]) - 1)
-    assert(N_sph_in >= N_sph)  # for now
+    assert (N_sph_in >= N_sph)  # for now
 
     # SVD of LS base
-    ls_azi, ls_colat, ls_r = utils.cart2sph(*hull.points.T)
-    Y_ls = sph.sh_matrix(N_sph, ls_azi, ls_colat, sh_type='real')
+    ls_azi, ls_zen, ls_r = utils.cart2sph(*hull.points.T)
+    Y_ls = sph.sh_matrix(N_sph, ls_azi, ls_zen, sh_type='real')
     U, S, VH = np.linalg.svd(Y_ls)
     # Set singular values to identity and truncate
     S_new = np.eye(L, (N_sph+1)**2)
@@ -1313,9 +1313,9 @@ def sh2bin(sig_nm, hrirs_nm):
     --------
     :py:func:`spaudiopy.decoder.magls_bin` : MagLS binaural decoder.
     """
-    assert(sig_nm.ndim == 2)
-    assert(hrirs_nm.ndim == 3)
-    assert(sig_nm.shape[0] == hrirs_nm.shape[1])
+    assert (sig_nm.ndim == 2)
+    assert (hrirs_nm.ndim == 3)
+    assert (sig_nm.shape[0] == hrirs_nm.shape[1])
     out_l = np.sum(signal.oaconvolve(sig_nm, np.squeeze(hrirs_nm[0, :, :]),
                                      axes=-1), axis=0)
     out_r = np.sum(signal.oaconvolve(sig_nm, np.squeeze(hrirs_nm[1, :, :]),
@@ -1382,7 +1382,7 @@ def magls_bin(hrirs, N_sph, f_trans=None, hf_cont='avg', hf_delay=(0, 0)):
     --------
     :py:func:`spaudiopy.decoder.sh2bin` : Decode Ambisonic streams to binaural.
     """
-    assert(isinstance(hrirs, sig.HRIRs))
+    assert (isinstance(hrirs, sig.HRIRs))
     if f_trans is None:
         f_trans = N_sph * 600  # from N > kr
     fs = hrirs.fs
@@ -1417,7 +1417,7 @@ def magls_bin(hrirs, N_sph, f_trans=None, hf_cont='avg', hf_delay=(0, 0)):
     if hf_cont == 'avg':
         # get the delta (from prediction frame)
         n_delta = 5
-        assert(k_cuton > n_delta)
+        assert (k_cuton > n_delta)
         # from spat avg
         delta_phi_l = np.mean(np.diff(np.unwrap(np.angle(
             hrtfs_mls_nm[0, 0, :k_cuton]))[k_cuton-n_delta-1:k_cuton-1]))
@@ -1426,7 +1426,7 @@ def magls_bin(hrirs, N_sph, f_trans=None, hf_cont='avg', hf_delay=(0, 0)):
     elif hf_cont == 'angle':
         # get the delta (from prediction frame)
         n_delta = 5
-        assert(k_cuton > n_delta)
+        assert (k_cuton > n_delta)
         # for each angle
         delta_phi_l = np.mean(np.diff(np.unwrap(
             phi_l_mod)[:, k_cuton-n_delta-1:k_cuton-1]), axis=-1)

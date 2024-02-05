@@ -40,30 +40,32 @@ def rad2deg(rad):
     return rad / np.pi * 180 % 360
 
 
-def cart2sph(x, y, z, steady_colat=False):
-    """Vectorized conversion of cartesian to spherical coordinates."""
-    x = asarray_1d(x)
-    y = asarray_1d(y)
-    z = asarray_1d(z)
+def cart2sph(x, y, z, positive_azi=False, steady_zen=False):
+    """Conversion of cartesian to spherical coordinates."""
+    x = np.asarray(x)
+    y = np.asarray(y)
+    z = np.asarray(z)
     r = np.sqrt(x**2 + y**2 + z**2)
     azi = np.arctan2(y, x)
-    colat = np.arccos(z / r) if not steady_colat else \
-            np.arccos(z / np.clip(r, 10e-15, None))
-    return azi, colat, r
+    if positive_azi:
+        azi = azi % (2 * np.pi)  # [-pi, pi] -> [0, 2pi)
+    zen = np.arccos(z / r) if not steady_zen else \
+        np.arccos(z / np.clip(r, 10e-15, None))
+    return azi, zen, r
 
 
-def sph2cart(azi, colat, r=1):
-    """Vectorized conversion of spherical to cartesian coordinates."""
-    azi = asarray_1d(azi)
-    colat = asarray_1d(colat)
-    r = asarray_1d(r)
-    x = r * np.cos(azi) * np.sin(colat)
-    y = r * np.sin(azi) * np.sin(colat)
-    z = r * np.cos(colat)
+def sph2cart(azi, zen, r=1):
+    """Conversion of spherical to cartesian coordinates."""
+    azi = np.asarray(azi)
+    zen = np.asarray(zen)
+    r = np.asarray(r)
+    x = r * np.cos(azi) * np.sin(zen)
+    y = r * np.sin(azi) * np.sin(zen)
+    z = r * np.cos(zen)
     return x, y, z
 
 
-def matlab_sph2cart(az, elev, r):
+def matlab_sph2cart(az, elev, r=1):
     """Matlab port with ELEVATION."""
     z = r * np.sin(elev)
     rcoselev = r * np.cos(elev)
@@ -78,6 +80,21 @@ def vecs2dirs(vecs, positive_azi=True):
     if positive_azi:
         azi = azi % (2 * np.pi)  # [-pi, pi] -> [0, 2pi)
     return np.c_[azi, colat]
+def cart2dir(x, y, z):
+    """Vectorized conversion of cartesian coordinates to (azi, zen)."""
+    return np.arctan2(y, x), \
+        np.arccos(z/(np.sqrt(np.square(x) + np.square(y) + np.square(z))))
+
+
+def dir2cart(azi, zen):
+    """Vectorized conversion of direction to cartesian coordinates."""
+    return np.cos(azi) * np.sin(zen), np.sin(azi) * np.sin(zen), np.cos(zen)
+
+
+def vec2dir(vec):
+    """Convert (along last axis) vec: [x, y, z] to dir: [azi, zen]."""
+    azi, zen = cart2dir(vec[..., 0], vec[..., 1], vec[..., 2])
+    return np.stack((azi, zen), axis=-1)
 
 
 def angle_between(v1, v2, vi=None):
@@ -110,7 +127,7 @@ def rotation_rodrigues(k, theta):
     """Matrix rotating around axis defined by unit vector k, by angle theta.
     See https://mathworld.wolfram.com/RodriguesRotationFormula.html
     """
-    assert(len(k) == 3)
+    assert (len(k) == 3)
     if theta > 10e-10:
         k = k / np.linalg.norm(k)
         K = np.array([[0, -k[2], k[1]], [k[2], 0, -k[0]], [-k[1], k[0], 0]])
@@ -122,8 +139,8 @@ def rotation_rodrigues(k, theta):
 
 def rotation_vecvec(f, t):
     """Matrix rotating from vector f to vector t, forces unit length."""
-    assert(len(f) == 3)
-    assert(len(t) == 3)
+    assert (len(f) == 3)
+    assert (len(t) == 3)
     f = f / np.linalg.norm(f)
     t = t / np.linalg.norm(t)
     k = np.cross(f, t)
@@ -133,16 +150,16 @@ def rotation_vecvec(f, t):
     return R
 
 
-def haversine(azi1, colat1, azi2, colat2, r=1):
+def haversine(azi1, zen1, azi2, zen2, r=1):
     """Calculate the spherical distance between two points on the sphere.
     The spherical distance is central angle for r=1.
 
     Parameters
     ----------
     azi1 : (n,) float, array_like
-    colat1 : (n,) float, array_like
+    zen1 : (n,) float, array_like
     azi2 : (n,) float, array_like
-    colat2: (n,) float, array_like
+    zen2: (n,) float, array_like
     r : float, optional.
 
     Returns
@@ -150,18 +167,18 @@ def haversine(azi1, colat1, azi2, colat2, r=1):
     c : (n,) array_like
         Haversine distance between pairs of points.
 
-    Reference
-    ---------
+    References
+    ----------
     https://en.wikipedia.org/wiki/Haversine_formula
 
     """
     azi1 = np.asarray(azi1)
-    colat1 = np.asarray(colat1)
+    zen1 = np.asarray(zen1)
     azi2 = np.asarray(azi2)
-    colat2 = np.asarray(colat2)
+    zen2 = np.asarray(zen2)
 
-    lat1 = np.pi / 2 - colat1
-    lat2 = np.pi / 2 - colat2
+    lat1 = np.pi / 2 - zen1
+    lat2 = np.pi / 2 - zen2
 
     dlon = azi2 - azi1
     dlat = lat2 - lat1

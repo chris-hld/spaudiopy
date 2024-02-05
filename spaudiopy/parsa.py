@@ -109,7 +109,7 @@ def sh_beamform(w_nm, sig_nm):
         :context: close-figs
 
         vecs, _ = spa.grids.load_maxDet(50)
-        dirs = spa.utils.vecs2dirs(vecs)
+        dirs = spa.utils.vec2dir(vecs)
         w_nm = spa.parsa.sh_beamformer_from_pattern('cardioid', N_sph,
                                                     dirs[:,0], dirs[:,1])
         y = spa.parsa.sh_beamform(w_nm, x_nm)
@@ -200,7 +200,7 @@ def separate_cov(cov_x, num_cut=None):
         axs[2].set_title("N")
 
     """
-    assert(cov_x.shape[0] == cov_x.shape[1])
+    assert (cov_x.shape[0] == cov_x.shape[1])
     w, v = np.linalg.eigh(cov_x)
     if num_cut is None:
         num_cut = estimate_num_sources([], w=w)
@@ -239,13 +239,13 @@ def sh_music(cov_x, num_src, dirs_azi, dirs_zen):
         num_src_est = spa.parsa.estimate_num_sources(S_xx)
 
         vecs, _ = spa.grids.load_maxDet(50)
-        dirs = spa.utils.vecs2dirs(vecs)
+        dirs = spa.utils.vec2dir(vecs)
         P_music = spa.parsa.sh_music(S_xx, num_src_est, dirs[:,0], dirs[:,1])
         spa.plot.spherical_function_map(P_music, dirs[:,0], dirs[:,1],
                                         TODB=True, title="MUSIC spectrum")
 
     """
-    assert(cov_x.shape[0] == cov_x.shape[1])
+    assert (cov_x.shape[0] == cov_x.shape[1])
     N_sph = int(np.sqrt(cov_x.shape[0]) - 1)
     dirs_azi = utils.asarray_1d(dirs_azi)
     dirs_zen = utils.asarray_1d(dirs_zen)
@@ -290,14 +290,14 @@ def sh_mvdr(cov_x, dirs_azi, dirs_zen):
         _, S_nn = spa.parsa.separate_cov(S_xx, num_cut=num_src_est)
 
         vecs, _ = spa.grids.load_maxDet(50)
-        dirs = spa.utils.vecs2dirs(vecs)
+        dirs = spa.utils.vec2dir(vecs)
         W_nm = spa.parsa.sh_mvdr(S_nn, dirs[:,0], dirs[:,1])
         y = spa.parsa.sh_beamform(W_nm, x_nm)
         spa.plot.spherical_function_map(spa.utils.rms(y), dirs[:,0], dirs[:,1],
                                         TODB=True, title="MVDR output RMS")
 
     """
-    assert(cov_x.shape[0] == cov_x.shape[1])
+    assert (cov_x.shape[0] == cov_x.shape[1])
     N_sph = int(np.sqrt(cov_x.shape[0]) - 1)
     dirs_azi = utils.asarray_1d(dirs_azi)
     dirs_zen = utils.asarray_1d(dirs_zen)
@@ -351,13 +351,13 @@ def sh_lcmv(cov_x, dirs_azi_c, dirs_zen_c, c_gain):
         spa.plot.sh_coeffs(w_nm)
 
     """
-    assert(cov_x.shape[0] == cov_x.shape[1])
+    assert (cov_x.shape[0] == cov_x.shape[1])
     dirs_azi_c = utils.asarray_1d(dirs_azi_c)
     dirs_zen_c = utils.asarray_1d(dirs_zen_c)
     c_gain = utils.asarray_1d(c_gain)
 
-    assert(len(dirs_azi_c) == len(dirs_zen_c))
-    assert(len(dirs_azi_c) == len(c_gain))
+    assert (len(dirs_azi_c) == len(dirs_zen_c))
+    assert (len(dirs_azi_c) == len(c_gain))
     N_sph = int(np.sqrt(cov_x.shape[0]) - 1)
     V = sph.sh_matrix(N_sph, dirs_azi_c, dirs_zen_c, sh_type='real').T
     S_inv = np.linalg.inv(cov_x)
@@ -425,7 +425,7 @@ def pseudo_intensity(ambi_b, win_len=33, f_bp=None, smoothing_order=5,
 
     Returns
     -------
-    I_azi, I_colat, I_r : array_like
+    I_azi, I_zen, I_r : array_like
         Pseudo intensity vector for each time sample.
 
     """
@@ -433,7 +433,7 @@ def pseudo_intensity(ambi_b, win_len=33, f_bp=None, smoothing_order=5,
     if jobs_count is None:
         jobs_count = multiprocessing.cpu_count()
 
-    assert(win_len % 2)
+    assert (win_len % 2)
     win = np.hanning(win_len)
     fs = ambi_b.fs
     # Z_0 = 413.3
@@ -487,12 +487,12 @@ def pseudo_intensity(ambi_b, win_len=33, f_bp=None, smoothing_order=5,
             shared_array_shape)
 
     if smoothing_order > 0:
-        assert(smoothing_order % 2)
+        assert (smoothing_order % 2)
         I_vec = np.apply_along_axis(signal.convolve, 0, I_vec,
                                     np.hanning(smoothing_order), 'same')
-    I_azi, I_colat, I_r = utils.cart2sph(I_vec[:, 0], I_vec[:, 1],
-                                         I_vec[:, 2], steady_colat=True)
-    return I_azi, I_colat, I_r
+    I_azi, I_zen, I_r = utils.cart2sph(I_vec[:, 0], I_vec[:, 1],
+                                       I_vec[:, 2], steady_zen=True)
+    return I_azi, I_zen, I_r
 
 
 def render_stereo_sdm(sdm_p, sdm_phi, sdm_theta):
@@ -622,7 +622,7 @@ def render_binaural_loudspeaker_sdm(sdm_p, ls_gains, ls_setup, fs,
     """
     n = len(sdm_p)
     ls_gains = np.atleast_2d(ls_gains)
-    assert(n == ls_gains.shape[0])
+    assert (n == ls_gains.shape[0])
 
     # render loudspeaker signals
     ls_sigs = ls_setup.loudspeaker_signals(ls_gains=ls_gains, sig_in=sdm_p)
@@ -630,7 +630,8 @@ def render_binaural_loudspeaker_sdm(sdm_p, ls_gains, ls_setup, fs,
     # post EQ
     if post_eq_func is not None:
         if post_eq_func == 'default':
-            ls_sigs = post_equalization(ls_sigs, sdm_p, fs, ls_setup, **kwargs)
+            ls_sigs = sdm_post_equalization(ls_sigs, sdm_p, fs, ls_setup,
+                                            **kwargs)
         else:  # user defined function
             ls_sigs = post_eq_func(ls_sigs, sdm_p, fs, ls_setup, **kwargs)
     else:
@@ -640,7 +641,7 @@ def render_binaural_loudspeaker_sdm(sdm_p, ls_gains, ls_setup, fs,
     return ir_l, ir_r
 
 
-def post_equalization(ls_sigs, sdm_p, fs, ls_setup, soft_clip=True):
+def sdm_post_equalization(ls_sigs, sdm_p, fs, ls_setup, soft_clip=True):
     """Post equalization to compensate spectral whitening.
 
     Parameters
@@ -687,7 +688,7 @@ def post_equalization(ls_sigs, sdm_p, fs, ls_setup, soft_clip=True):
     padsize = band_blocksizes.max()
 
     ntaps = padsize // 2 - 1
-    assert(ntaps % 2), "N does not produce uneven number of filter taps."
+    assert (ntaps % 2), "N does not produce uneven number of filter taps."
     irs = np.zeros([filter_gs.shape[0], ntaps])
     for ir_idx, g_b in enumerate(filter_gs):
         irs[ir_idx, :] = signal.firwin2(ntaps, np.linspace(0, 1, len(g_b)),
@@ -701,7 +702,7 @@ def post_equalization(ls_sigs, sdm_p, fs, ls_setup, soft_clip=True):
     ls_sigs_band = np.zeros([ls_sigs_compensated.shape[0],
                              ls_sigs_compensated.shape[1],
                              irs.shape[0]])
-    assert(len(p_padded) == x_padded.shape[1])
+    assert (len(p_padded) == x_padded.shape[1])
 
     for band_idx in range(irs.shape[0]):
         blocksize = band_blocksizes[band_idx]
@@ -756,7 +757,7 @@ def post_equalization(ls_sigs, sdm_p, fs, ls_setup, soft_clip=True):
             # inverse STFT
             X = np.real(np.fft.ifft(Y, axis=1))
             # Zero Phase
-            assert(np.mod(X.shape[1], 2))
+            assert (np.mod(X.shape[1], 2))
             # delay
             zp_delay = X.shape[1] // 2
             X = np.roll(X, zp_delay, axis=1)
@@ -788,11 +789,11 @@ def post_equalization(ls_sigs, sdm_p, fs, ls_setup, soft_clip=True):
         warn('Truncated valid signal, consider more zero padding.')
 
     ls_sigs_compensated = ls_sigs_compensated[:, out_start_idx: out_end_idx]
-    assert(ls_sigs_compensated.shape == ls_sigs.shape)
+    assert (ls_sigs_compensated.shape == ls_sigs.shape)
     return ls_sigs_compensated
 
 
-def post_equalization2(ls_sigs, sdm_p, fs, ls_setup,
+def sdm_post_equalization2(ls_sigs, sdm_p, fs, ls_setup,
                        blocksize=4096, smoothing_order=5):
     """Post equalization to compensate spectral whitening. This alternative
     version works on fixed blocksizes with octave band gain smoothing.
@@ -832,13 +833,13 @@ def post_equalization2(ls_sigs, sdm_p, fs, ls_setup,
     x_padded = np.hstack([pad, ls_sigs, pad])
     p_padded = np.hstack([np.zeros(blocksize), sdm_p, np.zeros(blocksize)])
     ls_sigs_compensated = np.hstack([pad, np.zeros_like(x_padded), pad])
-    assert(len(p_padded) == x_padded.shape[1])
+    assert (len(p_padded) == x_padded.shape[1])
 
     # prepare filterbank
     filter_gs, ff = pcs.frac_octave_filterbank(n=1, N_out=blocksize//2 + 1,
                                                fs=fs, f_low=62.5, f_high=16000)
     ntaps = blocksize+1
-    assert(ntaps % 2), "N does not produce uneven number of filter taps."
+    assert (ntaps % 2), "N does not produce uneven number of filter taps."
     irs = np.zeros([filter_gs.shape[0], ntaps])
     for ir_idx, g_b in enumerate(filter_gs):
         irs[ir_idx, :] = signal.firwin2(ntaps, np.linspace(0, 1, len(g_b)),
@@ -861,7 +862,7 @@ def post_equalization2(ls_sigs, sdm_p, fs, ls_setup,
         sdm_H = np.diag(1 / ls_distance**a) @ np.fft.rfft(block_sdm, axis=1)
         sdm_mag_incoherent = np.sqrt(np.sum(np.abs(sdm_H)**2, axis=0))
         sdm_mag_coherent = np.sum(np.abs(sdm_H), axis=0)
-        assert(len(p_mag) == len(sdm_mag_incoherent) == len(sdm_mag_coherent))
+        assert (len(p_mag) == len(sdm_mag_incoherent) == len(sdm_mag_coherent))
 
         # get gains
         L_p = pcs.subband_levels(filter_gs * p_mag, ff[:, 2] - ff[:, 0], fs)
@@ -951,7 +952,7 @@ def post_equalization2(ls_sigs, sdm_p, fs, ls_setup,
         warn('Truncated valid signal, consider more zero padding.')
 
     ls_sigs_compensated = ls_sigs_compensated[:, out_start_idx: out_end_idx]
-    assert(ls_sigs_compensated.shape == ls_sigs.shape)
+    assert (ls_sigs_compensated.shape == ls_sigs.shape)
     return ls_sigs_compensated, band_gains_list[2:-2]
 
 
