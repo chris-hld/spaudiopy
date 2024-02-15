@@ -311,7 +311,8 @@ def sh_coeffs(F_nm, sh_type=None, azi_steps=5, el_steps=3, title=None,
     ax.locator_params(nbins=5)
 
     if cbar:
-        cb = plt.colorbar(m, ticks=[-np.pi, 0, np.pi], shrink=0.5, aspect=10)
+        cb = plt.colorbar(mappable=m, ax=ax, ticks=[-np.pi, 0, np.pi],
+                          shrink=0.5, aspect=10)
         cb.set_label("Phase in rad")
         cb.set_ticklabels([r'$-\pi$', r'$0$', r'$\pi$'])
 
