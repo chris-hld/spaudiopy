@@ -990,7 +990,7 @@ def decoder_performance(hull, renderer_type, azi_steps=5, ele_steps=3,
 
 
 def doa(azi, zen, p=None, size=250, c=None, alpha=None, fs=None, title=None,
-        ltitle=None):
+        ltitle=None, ax=None):
     """Direction of Arrival, with optional p(t) scaling the size.
 
     Examples
@@ -1011,6 +1011,10 @@ def doa(azi, zen, p=None, size=250, c=None, alpha=None, fs=None, title=None,
         spa.plot.doa(azi, zen, ps, fs=fs, ltitle="p(t)")
 
     """
+    if ax is None:
+        fig, ax = plt.subplots(constrained_layout=True)
+    ax.set_aspect('equal')
+
     # shift azi to [np.pi, np.pi]
     azi[azi > np.pi] = azi[azi > np.pi] % -np.pi
     # zen to elevation
@@ -1025,9 +1029,6 @@ def doa(azi, zen, p=None, size=250, c=None, alpha=None, fs=None, title=None,
 
     if alpha is None:
         alpha = 0.35 * np.ones_like(azi)
-
-    fig, ax = plt.subplots(constrained_layout=True)
-    ax.set_aspect('equal')
 
     # plot in reverse order so that first reflections are on top
     if c is None and fs is not None:  # t in ms
