@@ -195,7 +195,7 @@ def compare_ambi(Ambi_A, Ambi_B):
     plt.title('B-format')
 
 
-def spherical_function(f, azi, zen, title=None, fig=None):
+def spherical_function(f, azi, zen, title=None, ax=None):
     """Plot function 1D vector f over azi and zen."""
     f = utils.asarray_1d(np.real_if_close(f))
     azi = utils.asarray_1d(azi)
@@ -206,9 +206,11 @@ def spherical_function(f, azi, zen, title=None, fig=None):
     chull = ConvexHull(np.column_stack((x, y, z)))
     triang = tri.Triangulation(zen, azi, triangles=chull.simplices)
 
-    if fig is None:
+    if ax is None:
         fig = plt.figure(constrained_layout=True)
-    ax = fig.add_subplot(projection='3d')
+        ax = fig.add_subplot(projection='3d')
+    else:
+        fig = ax.get_figure()
     ax.view_init(25, 230)
 
     p_tri = ax.plot_trisurf(x, y, z,
@@ -249,7 +251,7 @@ def spherical_function(f, azi, zen, title=None, fig=None):
 
 
 def sh_coeffs(F_nm, sh_type=None, azi_steps=5, el_steps=3, title=None,
-              fig=None, ax=None, cbar=True):
+              ax=None, cbar=True):
     """Plot spherical harmonics coefficients as function on the sphere.
     Evaluates the inverse SHT.
 
@@ -277,10 +279,11 @@ def sh_coeffs(F_nm, sh_type=None, azi_steps=5, el_steps=3, title=None,
                                             theta_plot.ravel(),
                                             f_r.ravel())
 
-    if fig is None:
-        fig = plt.figure(constrained_layout=True)
     if ax is None:
+        fig = plt.figure(constrained_layout=True)
         ax = fig.add_subplot(projection='3d')
+    else:
+        fig = ax.get_figure()
     ax.view_init(25, 230)
 
     m = cm.ScalarMappable(cmap=cm.hsv,
@@ -343,7 +346,7 @@ def sh_coeffs_subplot(F_nm_list, titles=None, fig=None, **kwargs):
     plt.suptitle(kwargs.pop('title', None))
 
     for idx_p, ax in enumerate(axs):
-        sh_coeffs(F_nm_list[idx_p], fig=fig, ax=ax, cbar=False, **kwargs)
+        sh_coeffs(F_nm_list[idx_p], ax=ax, cbar=False, **kwargs)
 
         ax.locator_params(nbins=3)
         if titles is not None:
@@ -360,7 +363,7 @@ def sh_coeffs_subplot(F_nm_list, titles=None, fig=None, **kwargs):
 
 
 def sh_coeffs_overlay(F_nm_list, sh_type=None, azi_steps=5, el_steps=3,
-                      title=None, fig=None):
+                      title=None, ax=None):
     """Overlay spherical harmonics coefficients plot.
 
     Examples
@@ -373,9 +376,12 @@ def sh_coeffs_overlay(F_nm_list, sh_type=None, azi_steps=5, el_steps=3,
                                        np.linspace(10e-8, np.pi - 10e-8,
                                                    int(180 / el_steps)))
 
-    if fig is None:
+    if ax is None:
         fig = plt.figure(constrained_layout=True)
-    ax = fig.add_subplot(projection='3d')
+        ax = fig.add_subplot(projection='3d')
+    else:
+        fig = ax.get_figure()
+
     ax.view_init(25, 230)
 
     # m = cm.ScalarMappable(cmap=cm.hsv,
@@ -435,7 +441,7 @@ def sh_coeffs_overlay(F_nm_list, sh_type=None, azi_steps=5, el_steps=3,
 
 
 def sh_rms_map(F_nm, TODB=False, w_n=None, sh_type=None, n_plot=50, title=None,
-               clim=[None, None], fig=None):
+               clim=[None, None], ax=None):
     """Plot spherical harmonic signal RMS as function on the sphere.
     Evaluates the maxDI beamformer, if w_n is None.
 
@@ -489,10 +495,11 @@ def sh_rms_map(F_nm, TODB=False, w_n=None, sh_type=None, n_plot=50, title=None,
     if TODB:
         rms_d = utils.db(rms_d)
 
-    if fig is None:
+    if ax is None:
         fig = plt.figure(constrained_layout=True)
-
-    ax = fig.add_subplot()
+        ax = fig.add_subplot()
+    else:
+        fig = ax.get_figure()
     ax.set_aspect('equal')
 
     if clim[0] is None:
@@ -525,8 +532,8 @@ def sh_rms_map(F_nm, TODB=False, w_n=None, sh_type=None, n_plot=50, title=None,
         ax.set_title(title)
 
 
-def spherical_function_map(f, azi, zen, TODB=False, title=None, 
-                           clim=(None, None), fig=None):
+def spherical_function_map(f, azi, zen, TODB=False, title=None,
+                           clim=(None, None), ax=None):
     """Plot function 1D vector f over azi and zen, can also convert to dB.
 
     Examples
@@ -542,10 +549,11 @@ def spherical_function_map(f, azi, zen, TODB=False, title=None,
     if TODB:
         f = utils.db(f)
 
-    if fig is None:
+    if ax is None:
         fig = plt.figure(constrained_layout=True)
-
-    ax = fig.add_subplot()
+        ax = fig.add_subplot()
+    else:
+        fig = ax.get_figure()
     ax.set_aspect('equal')
 
     p = ax.tricontourf(azi, zen, f, levels=100, alpha=0.25, vmin=clim[0],
@@ -579,7 +587,7 @@ def spherical_function_map(f, azi, zen, TODB=False, title=None,
 
 
 def sh_bar(x_nm, TODB=True, centered=False, num_groups=1, s=250, vf=4,
-           clim=None, xticklabels=None, title=None, fig=None):
+           clim=None, xticklabels=None, title=None, ax=None):
     """
     Barplot over SH channels.
 
@@ -611,6 +619,12 @@ def sh_bar(x_nm, TODB=True, centered=False, num_groups=1, s=250, vf=4,
     None.
 
     """
+    if ax is None:
+        fig = plt.figure(constrained_layout=True)
+        ax = fig.add_subplot()
+    else:
+        fig = ax.get_figure()
+
     val_plot = utils.db(np.asarray(x_nm)) if TODB else np.asarray(x_nm)
     val_plot = np.atleast_2d(val_plot)
     if centered:
@@ -623,10 +637,7 @@ def sh_bar(x_nm, TODB=True, centered=False, num_groups=1, s=250, vf=4,
         clim = (val_plot.min(), val_plot.max())
     mapper.set_clim(vmin=clim[0], vmax=clim[1])
     cols = mapper.to_rgba(val_plot)
-    if fig is None:
-        fig = plt.figure(constrained_layout=True)
 
-    ax = fig.add_subplot()
     vf = vf
     hf = 1.
     verts = [[-vf, -hf], [vf, -hf], [vf, hf], [-vf, hf], [-vf, -hf]]
@@ -657,7 +668,7 @@ def sh_bar(x_nm, TODB=True, centered=False, num_groups=1, s=250, vf=4,
 
 
 def hull(hull, simplices=None, mark_invalid=True, title=None, draw_ls=True,
-         ax_lim=None, color=None, clim=None, fig=None):
+         ax_lim=None, color=None, clim=None, ax=None):
     """Plot loudspeaker setup and valid simplices from its hull object.
 
     Parameters
@@ -717,9 +728,11 @@ def hull(hull, simplices=None, mark_invalid=True, title=None, draw_ls=True,
     y = hull.points[:, 1]
     z = hull.points[:, 2]
 
-    if fig is None:
+    if ax is None:
         fig = plt.figure(constrained_layout=True)
-    ax = fig.add_subplot(projection='3d')
+        ax = fig.add_subplot(projection='3d')
+    else:
+        fig = ax.get_figure()
     ax.view_init(25, 230)
 
     # valid
@@ -1017,8 +1030,6 @@ def doa(azi, zen, p=None, size=250, c=None, alpha=None, fs=None, title=None,
 
     # shift azi to [np.pi, np.pi]
     azi[azi > np.pi] = azi[azi > np.pi] % -np.pi
-    # zen to elevation
-    ele = np.pi/2 - zen
 
     if p is not None:
         s_plot = np.clip(p / np.max(p), 10e-15, None)
@@ -1033,26 +1044,33 @@ def doa(azi, zen, p=None, size=250, c=None, alpha=None, fs=None, title=None,
     # plot in reverse order so that first reflections are on top
     if c is None and fs is not None:  # t in ms
         t_ms = np.linspace(0, len(azi) / fs, len(azi), endpoint=False) * 1000
-        p = ax.scatter(azi[::-1], ele[::-1], s=s_plot[::-1], c=t_ms[::-1],
+        p = ax.scatter(azi[::-1], zen[::-1], s=s_plot[::-1], c=t_ms[::-1],
                        alpha=alpha[::-1])
     else:
         if c is None:
             c = np.ones_like(azi)
-        p = ax.scatter(azi[::-1], ele[::-1], s=s_plot[::-1], c=c[::-1],
+        p = ax.scatter(azi[::-1], zen[::-1], s=s_plot[::-1], c=c[::-1],
                        alpha=alpha[::-1])
     ax.set_xlim([-(np.pi+0.03), (np.pi+0.03)])
-    ax.set_ylim([-(np.pi/2+0.03), (np.pi/2+0.03)])
-    ax.invert_xaxis()
-    ax.set_xlabel("Azimuth in rad")
-    ax.set_ylabel("Elevation in rad")
-    ax.set_xticks([-np.pi, -np.pi/2, 0, np.pi/2, np.pi])
-    ax.set_xticklabels([r'$-\pi$', r'$-\pi / 2$', r'$0$',
-                        r'$\pi / 2$', r'$\pi$'])
-    ax.set_yticks([-np.pi/2, 0, np.pi/2])
-    ax.set_yticklabels([r'$-\pi / 2$', r'$0$', r'$\pi / 2$'])
-    ax.axvline(x=0, color='grey', linestyle=':')
-    ax.axhline(y=0, color='grey', linestyle=':')
+    ax.set_ylim([-(0.03), (np.pi+0.03)])
 
+    ax.invert_xaxis()
+    ax.invert_yaxis()
+    ax.set_xticks(np.linspace(-np.pi, np.pi, 5))
+    ax.set_xticklabels([r'$-\pi$', r'$-\pi/2$', r'$0$',
+                        r'$\pi/2$', r'$\pi$'])
+    ax.set_yticks(np.linspace(0, np.pi, 3))
+    ax.set_yticklabels([r'$0$', r'$\pi/2$', r'$\pi$'])
+    ax.set_xlabel('Azimuth')
+    ax.set_ylabel('Zenith')
+
+    ax.axvline(x=0, color='grey', linestyle=':')
+    ax.axhline(y=np.pi/2, color='grey', linestyle=':')
+
+    ax.set_xticks([np.pi, np.pi/2, 0, -np.pi/2, -np.pi],
+        labels=[r"$\pi$", r"$\pi/2$", r"$0$", r"$-\pi/2$", r"$-\pi$"])
+    ax.set_yticks([0, np.pi/2, np.pi],
+        labels=[r"$0$", r"$\pi/2$", r"$\pi$", ])
     ax.grid(True)
 
     if fs is not None:
