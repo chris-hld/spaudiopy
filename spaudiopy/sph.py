@@ -439,14 +439,14 @@ def check_cond_sht(N_sph, azi, zen, sh_type, lim=None):
     return c
 
 
-def n3d_to_sn3d(F_nm, sh_axis=0):
+def n3d_to_sn3d(F_nm, axis=0):
     """Convert N3D (orthonormal) to SN3D (Schmidt semi-normalized) signals.
 
     Parameters
     ----------
     F_nm : ((N_sph+1)**2, S) numpy.ndarray
         Matrix of spherical harmonics coefficients of spherical function(S).
-    sh_axis : int, optional
+    axis : int, optional
         SH axis. The default is 0.
 
     Returns
@@ -457,22 +457,22 @@ def n3d_to_sn3d(F_nm, sh_axis=0):
     """
     assert (F_nm.ndim == 2)
     # Input SH order
-    N = int(np.sqrt(F_nm.shape[sh_axis]) - 1)
+    N = int(np.sqrt(F_nm.shape[axis]) - 1)
     # 1/sqrt(2n+1) conversion factor
     n_norm = np.array([1/np.sqrt(2*n + 1) for n in range(N + 1)])
     # Broadcast
-    n_norm = np.expand_dims(repeat_per_order(n_norm), axis=sh_axis-1)
+    n_norm = np.expand_dims(repeat_per_order(n_norm), axis=axis-1)
     return n_norm * F_nm
 
 
-def sn3d_to_n3d(F_nm, sh_axis=0):
+def sn3d_to_n3d(F_nm, axis=0):
     """Convert SN3D (Schmidt semi-normalized) to N3D (orthonormal) signals.
 
     Parameters
     ----------
     F_nm : ((N_sph+1)**2, S) numpy.ndarray
         Matrix of spherical harmonics coefficients of spherical function(S).
-    sh_axis : int, optional
+    axis : int, optional
         SH axis. The default is 0.
 
     Returns
@@ -483,11 +483,11 @@ def sn3d_to_n3d(F_nm, sh_axis=0):
     """
     assert (F_nm.ndim == 2)
     # Input SH order
-    N = int(np.sqrt(F_nm.shape[sh_axis]) - 1)
+    N = int(np.sqrt(F_nm.shape[axis]) - 1)
     # sqrt(2n+1) conversion factor
     n_norm = np.array([np.sqrt(2*n + 1) for n in range(N + 1)])
     # Broadcast
-    n_norm = np.expand_dims(repeat_per_order(n_norm), axis=sh_axis-1)
+    n_norm = np.expand_dims(repeat_per_order(n_norm), axis=axis-1)
     return n_norm * F_nm
 
 
