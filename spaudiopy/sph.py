@@ -84,9 +84,9 @@ def sh_matrix(N_sph, azi, zen, sh_type='real'):
     else:
         Q = len(azi)
     if sh_type == 'complex':
-        Ymn = np.zeros([Q, (N_sph+1)**2], dtype=np.complex_)
+        Ymn = np.zeros([Q, (N_sph+1)**2], dtype=np.complex128)
     elif sh_type == 'real':
-        Ymn = np.zeros([Q, (N_sph+1)**2], dtype=np.float_)
+        Ymn = np.zeros([Q, (N_sph+1)**2], dtype=np.float64)
     else:
         raise ValueError('sh_type unknown.')
 
