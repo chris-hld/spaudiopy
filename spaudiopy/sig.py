@@ -130,22 +130,31 @@ class MultiSignal(MonoSignal):
 
         """
         assert isinstance(signals, (list, tuple))
-        self.channel = []
+        self.channels = []
         if fs is None:
             raise ValueError("Provide fs (as kwarg).")
         else:
             self._fs = fs
         for s in signals:
-            self.channel.append(MonoSignal(s, fs))
-        self.channel_count = len(self.channel)
+            self.channels.append(MonoSignal(s, fs))
+
+        self.channel_count = self.num_channels
+
+    @property
+    def num_channels(self):
+        return len(self.channels)
+
+    @property
+    def signals(self):
+        return self.get_signals()
 
     def __len__(self):
         """Override len()."""
-        return len(self.channel[0])
+        return len(self.channels[0])
 
     def __getitem__(self, key):
         """Override [] operator, returns signal channel."""
-        return self.channel[key]
+        return self.channels[key]
 
     @classmethod
     def from_file(cls, filename, fs=None):
@@ -162,21 +171,21 @@ class MultiSignal(MonoSignal):
 
     def get_signals(self):
         """Return ndarray of signals, stacked along rows (nCH, nSmps)."""
-        return np.asarray([x.signal for x in self.channel])
+        return np.asarray([x.signal for x in self.channels])
 
     def trim(self, start, stop):
         """Trim all channels to start and stop in seconds."""
         assert start < len(self) / self.fs, "Trim start exceeds signal."
-        for c in self.channel:
+        for c in self.channels:
             c.signal = c.signal[int(start * c.fs): int(stop * c.fs)]
 
     def apply(self, func, *args, **kwargs):
         """Apply function 'func' to all signals, arguments are forwarded."""
-        for c in self.channel:
+        for c in self.channels:
             c.signal = func(*args, **kwargs)
 
     def conv(self, irs, **kwargs):
-        for c, h in zip(self.channel, irs):
+        for c, h in zip(self.channels, irs):
             h = utils.asarray_1d(h)
             c.signal = scysig.convolve(c, h, **kwargs)
         return self
@@ -202,10 +211,10 @@ class AmbiBSignal(MultiSignal):
     def __init__(self, signals, fs=None):
         MultiSignal.__init__(self, signals, fs=fs)
         assert self.channel_count == 4, "Provide four channels!"
-        self.W = utils.asarray_1d(self.channel[0].signal)
-        self.X = utils.asarray_1d(self.channel[1].signal)
-        self.Y = utils.asarray_1d(self.channel[2].signal)
-        self.Z = utils.asarray_1d(self.channel[3].signal)
+        self.W = utils.asarray_1d(self.channels[0].signal)
+        self.X = utils.asarray_1d(self.channels[1].signal)
+        self.Y = utils.asarray_1d(self.channels[2].signal)
+        self.Z = utils.asarray_1d(self.channels[3].signal)
 
     @classmethod
     def from_file(cls, filename, fs=None):
@@ -361,7 +370,7 @@ def trim_audio(A, start, stop):
     B = copy.deepcopy(A)
     assert start < len(B) / B.fs, 'Trim start exceeds signal.'
     for c in range(B.channel_count):
-        B.channel[c].signal = B.channel[c].signal[
+        B.channels[c].signal = B.channels[c].signal[
             int(start * B.fs):
             int(stop * B.fs)]
     return B
