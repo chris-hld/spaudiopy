@@ -43,8 +43,8 @@ class MonoSignal:
         fs : int
 
         """
-        self.signal = utils.asarray_1d(signal)
-        self.fs = fs
+        self._signal = utils.asarray_1d(signal)
+        self._fs = fs
 
     def __len__(self):
         """Override len()."""
@@ -53,6 +53,18 @@ class MonoSignal:
     def __getitem__(self, key):
         """Enable [] operator, returns signal data."""
         return self.signal[key]
+
+    @property
+    def signal(self):
+        return self._signal
+
+    @signal.setter
+    def signal(self, value):
+        self._signal = utils.asarray_1d(value)
+
+    @property
+    def fs(self):
+        return self._fs
 
     @classmethod
     def from_file(cls, filename, fs=None):
@@ -122,7 +134,7 @@ class MultiSignal(MonoSignal):
         if fs is None:
             raise ValueError("Provide fs (as kwarg).")
         else:
-            self.fs = fs
+            self._fs = fs
         for s in signals:
             self.channel.append(MonoSignal(s, fs))
         self.channel_count = len(self.channel)
