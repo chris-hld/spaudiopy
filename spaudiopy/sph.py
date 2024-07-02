@@ -1010,7 +1010,7 @@ def hypercardioid_modal_weights(N_sph):
 
 
 def cardioid_modal_weights(N_sph):
-    """Modal weights for beamformer resulting in a cardioid.
+    r"""Modal weights for beamformer resulting in a cardioid.
 
     Parameters
     ----------
@@ -1025,7 +1025,7 @@ def cardioid_modal_weights(N_sph):
     Notes
     -----
     Also called `in-phase weights`, where
-    :math:`w_{n, cardioid} = 4\pi*w_{n, inphase} / (N+1)` .
+    :math:`w_{n, cardioid} = 4\pi * w_{n, inphase} / (N+1)` .
 
     Examples
     --------
