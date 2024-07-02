@@ -88,7 +88,7 @@ def sh_matrix(N_sph, azi, zen, sh_type='real'):
     elif sh_type == 'real':
         Ymn = np.zeros([Q, (N_sph+1)**2], dtype=np.float64)
     else:
-        raise ValueError('sh_type unknown.')
+        raise ValueError(f"sh_type unknown: {sh_type}")
 
     idx = 0
     for n in range(N_sph+1):
