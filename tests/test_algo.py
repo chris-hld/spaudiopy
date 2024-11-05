@@ -23,7 +23,7 @@ def test_sph_filter_bank(test_n_sph):
     sec_dirs = spa.utils.cart2sph(*spa.grids.load_t_design(2*N_sph).T)
     c_n = spa.sph.maxre_modal_weights(N_sph)
     [A, B] = spa.sph.design_sph_filterbank(N_sph, sec_dirs[0], sec_dirs[1],
-                                           c_n, 'real', 'perfect')
+                                           c_n, mode='perfect')
 
     # diffuse SH signal
     in_nm = np.random.randn((N_sph+1)**2, 1000)

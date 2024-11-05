@@ -1164,7 +1164,7 @@ def sph_filterbank_reconstruction_factor(w_nm, num_secs, mode=None):
     return beta
 
 
-def design_sph_filterbank(N_sph, sec_azi, sec_zen, c_n, sh_type, mode):
+def design_sph_filterbank(N_sph, sec_azi, sec_zen, c_n, mode, sh_type='real'):
     """Design spherical filter bank analysis and reconstruction matrix.
 
     Parameters
@@ -1177,9 +1177,9 @@ def design_sph_filterbank(N_sph, sec_azi, sec_zen, c_n, sh_type, mode):
         Sector zenith/colatitude steering directions.
     c_n : (N,) array_like
         SH Modal weights, describing (axisymmetric) pattern.
-    sh_type : 'real' or 'complex'
-    mode : 'perfect' or 'energy'
+    mode : 'perfect' or 'energy' or 'pinv'
         Design achieves perfect reconstruction or energy reconstruction.
+    sh_type : 'real' or 'complex'
 
     Raises
     ------
@@ -1231,25 +1231,30 @@ def design_sph_filterbank(N_sph, sec_azi, sec_zen, c_n, sh_type, mode):
 
     # Preservation property
     if mode.lower() == 'perfect':
-        pres = 'amplitude'
+        beta = sph_filterbank_reconstruction_factor(A[0, :], num_secs,
+                                                    mode='amplitude')
     elif mode.lower() == 'energy':
-        pres = 'energy'
+        beta = sph_filterbank_reconstruction_factor(A[0, :], num_secs,
+                                                    mode='energy')
+    elif mode.lower() == 'pinv':
+        pass
     else:
         raise ValueError("Mode not implemented: " + mode)
 
-    beta = sph_filterbank_reconstruction_factor(A[0, :], num_secs, mode=pres)
 
     # Reconstruction matrix
     if mode.lower() == 'perfect':
-        B = beta * repeat_per_order(1/(c_n/c_n[0])) * \
-                       sh_matrix(N_sph, sec_azi, sec_zen, sh_type)
+        B = beta * (repeat_per_order(1/(c_n/c_n[0])) * \
+                       sh_matrix(N_sph, sec_azi, sec_zen, sh_type)).conj().T
     elif mode.lower() == 'energy':
-        B = np.sqrt(beta) * repeat_per_order(1/(c_n/c_n[0])) * \
-                                sh_matrix(N_sph, sec_azi, sec_zen, sh_type)
+        B = np.sqrt(beta) * (repeat_per_order(1/(c_n/c_n[0])) * \
+                    sh_matrix(N_sph, sec_azi, sec_zen, sh_type)).conj().T
+    elif mode.lower() == 'pinv':
+        B = np.linalg.pinv(A)
     else:
         raise ValueError("Mode not implemented: " + mode)
 
-    return A, B.conj().T
+    return A, B
 
 
 def sh_mult(a_nm, b_nm, sh_type):
