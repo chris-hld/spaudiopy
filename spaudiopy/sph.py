@@ -1039,8 +1039,10 @@ def cardioid_modal_weights(N_sph):
         spa.plot.sh_coeffs(w_nm)
 
     """
-    c_n = np.array([(np.math.factorial(N_sph)*np.math.factorial(N_sph)) /
-                    (np.math.factorial(N_sph+n+1) * np.math.factorial(N_sph-n))
+    c_n = np.array([(scyspecial.factorial(N_sph) *
+                     scyspecial.factorial(N_sph)) /
+                    (scyspecial.factorial(N_sph+n+1) *
+                     scyspecial.factorial(N_sph-n))
                     for n in range(N_sph+1)])
     # Note: 4pi to compensate for correct normalization, unit amplitude
     return 4*np.pi*c_n
@@ -1208,8 +1210,7 @@ def design_sph_filterbank(N_sph, sec_azi, sec_zen, c_n, mode, sh_type='real'):
         sec_dirs = spa.utils.cart2sph(*spa.grids.load_t_design(2*N_sph).T)
         c_n = spa.sph.maxre_modal_weights(N_sph)
         [A, B] = spa.sph.design_sph_filterbank(N_sph, sec_dirs[0],
-                                                sec_dirs[1], c_n, 'real',
-                                                'perfect')
+                                                sec_dirs[1], c_n, 'perfect')
         # diffuse input SH signal
         in_nm = np.random.randn((N_sph+1)**2, 1000)
         # Sector signals (Analysis)
