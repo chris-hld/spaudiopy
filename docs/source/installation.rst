@@ -11,7 +11,7 @@ It's easiest to start with something like `Anaconda <https://www.anaconda.com/di
 You'll need Python >= 3.6 .
 
 #. Create a conda environment:  
-    * `conda create --name spaudio python=3.6 anaconda joblib portaudio`
+    * `conda create --name spaudio python=3.8 anaconda portaudio`
 #. Activate this new environment:  
     * `conda activate spaudio`
 

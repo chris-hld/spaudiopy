@@ -19,11 +19,6 @@
     x_nm += np.sqrt(16/(4*np.pi)) * np.random.randn(16, 10000)
     spa.plot.sh_rms_map(x_nm, title="Input SHD Signal")
 
-**Memory cached functions**
-
-.. autofunction:: spaudiopy.parsa.pseudo_intensity(ambi_b, win_len=33, f_bp=None, smoothing_order=5, jobs_count=1)
-.. autofunction:: spaudiopy.parsa.render_bsdm(sdm_p, sdm_phi, sdm_theta, hrirs, jobs_count=None)
-
 """
 
 from itertools import repeat
@@ -31,7 +26,6 @@ from warnings import warn
 import logging
 
 import numpy as np
-from joblib import Memory
 import multiprocessing
 
 from scipy import signal
@@ -39,9 +33,7 @@ from . import utils, sph
 from . import process as pcs
 
 
-# Prepare Caching
-cachedir = './.spa_cache_dir'
-memory = Memory(cachedir)
+# Prepare
 shared_array = None
 lock = multiprocessing.RLock()
 
@@ -405,7 +397,6 @@ def _intensity_sample(i, W, X, Y, Z, win):
          np.trapz(win * W[i:i + buf] * Z[i:i + buf])])
 
 
-@memory.cache
 def pseudo_intensity(ambi_b, win_len=33, f_bp=None, smoothing_order=5,
                      jobs_count=1):
     """Direction of arrival (DOA) for each time sample from pseudo-intensity.
@@ -536,7 +527,6 @@ def _render_bsdm_sample(i, p, phi, theta, hrirs):
         shared_array[i:i + len(h_r), 1] += p * h_r
 
 
-@memory.cache
 def render_bsdm(sdm_p, sdm_phi, sdm_theta, hrirs, jobs_count=1):
     """Binaural SDM Render.
     Convolves each sample with corresponding hrir. No Post-EQ.

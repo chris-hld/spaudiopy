@@ -10,29 +10,18 @@
 
     import spaudiopy as spa
 
-**Memory cached functions**
-
-.. autofunction:: spaudiopy.process.resample_hrirs(hrir_l, hrir_r, fs_hrir, fs_target, jobs_count=None)
-
 """
 
 import numpy as np
 import resampy
 import pickle
 from scipy import signal
-from joblib import Memory
 import multiprocessing
 import logging
 
 from . import utils, sph, sig, grids
 
 
-# Prepare Caching
-cachedir = './.spa_cache_dir'
-memory = Memory(cachedir)
-
-
-@memory.cache
 def resample_hrirs(hrir_l, hrir_r, fs_hrir, fs_target, jobs_count=None):
     """
     Resample HRIRs to new SamplingRate(t), using multiprocessing.

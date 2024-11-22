@@ -33,7 +33,6 @@ setuptools.setup(name='spaudiopy',
                  install_requires=[
                                    'numpy',
                                    'scipy',
-                                   'joblib',
                                    'matplotlib !=3.1.*, !=3.2.*',  # axis3d aspect broken
                                    'soundfile',
                                    'sounddevice',
