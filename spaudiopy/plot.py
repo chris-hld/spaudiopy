@@ -22,8 +22,8 @@ from scipy.spatial import ConvexHull
 from . import utils, sph, decoder, process, grids
 
 
-def spectrum(x, fs, ylim=None, scale_mag=False, **kwargs):
-    """Positive (single sided) amplitude spectrum of time signal x.
+def spectrum(x, fs, scale_mag=False, **kwargs):
+    """Positive (single sided) magnitude spectrum of time signal x.
     kwargs are forwarded to plot.freq_resp().
 
     Parameters
@@ -58,59 +58,63 @@ def spectrum(x, fs, ylim=None, scale_mag=False, **kwargs):
             mag = mag * bins/2
         specs.append(mag)
 
-    freq_resp(freq, specs, ylim=ylim, **kwargs)
+    freq_resp(freq, specs, **kwargs)
 
 
-def freq_resp(freq, amp, TODB=True, smoothing_n=None, xlim=(20, 24000),
-              ylim=(-30, None), title=None, labels=None, ax=None):
+def freq_resp(freq, mag, TODB=True, smoothing_n=None, xlim=(20, 24000),
+              ylim=30, title=None, labels=None, ax=None):
     """ Plot magnitude of frequency response over time frequency f.
 
     Parameters
     ----------
     f : frequency array
-    amp : array_like, list of array_like
+    mag : array_like, list of array_like
     TODB : bool
         Plot in dB.
     smoothing_n : int
         Forwarded to process.frac_octave_smoothing()
-
 
     Examples
     --------
     See :py:func:`spaudiopy.sph.binaural_coloration_compensation`
 
     """
-    if not isinstance(amp, (list, tuple)):
-        amp = [amp]
+    if not isinstance(mag, (list, tuple)):
+        mag = [mag]
     if labels is not None:
         if not isinstance(labels, (list, tuple)):
             labels = [labels]
 
-    assert (all(len(a) == len(freq) for a in amp))
+    assert (all(len(a) == len(freq) for a in mag))
 
     if TODB:
         # Avoid zeros in spec for dB
-        amp = [utils.db(np.clip(np.abs(a), 10e-15, None)) for a in amp]
+        mag = [utils.db(np.clip(np.abs(a), 10e-15, None)) for a in mag]
 
     if smoothing_n is not None:
         smoothed = []
-        for a in amp:
+        for a in mag:
             smoothed.append(process.frac_octave_smoothing(a, smoothing_n,
                                                           WEIGHTED=True))
-        amp = smoothed
+        mag = smoothed
 
     if ax is None:
         fig, ax = plt.subplots()
-    [ax.semilogx(freq, a.flat) for a in amp]
+    [ax.semilogx(freq, a.flat) for a in mag]
 
     if smoothing_n is not None:
         if labels is None:
-            labels = [None] * len(amp)
+            labels = [None] * len(mag)
         # fake line for extra legend entry
         ax.plot([], [], '*', color='black')
         labels.append(r"$\frac{%d}{8}$ octave smoothing" % smoothing_n)
     if labels is not None:
         ax.legend(labels)
+    
+    # int specifies range from max
+    if isinstance(ylim, int):
+        ymax = np.max(mag)
+        ylim = (ymax - ylim, ymax)
 
     ax.set_xlabel('Frequency in Hz')
     ax.set_ylabel('Magnitude in dB')
@@ -127,9 +131,9 @@ def transfer_function(freq, H, title=None, xlim=(10, 25000)):
     H = np.clip(H, 10e-15, None)
     ax1.semilogx(freq, utils.db(H),
                  color=plt.rcParams['axes.prop_cycle'].by_key()['color'][0],
-                 label='Amplitude')
+                 label='Magnitude')
     ax1.set_xlabel('Frequency in Hz')
-    ax1.set_ylabel('Amplitude in dB')
+    ax1.set_ylabel('Magnitude in dB')
     ax1.set_xlim(xlim)
     ax1.grid(True)
 
