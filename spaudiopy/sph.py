@@ -1283,8 +1283,8 @@ def sh_mult(a_nm, b_nm, sh_type):
                                              'real'))
 
     """
-    a_nm = utils.asarray_1d(np.asfarray(a_nm))
-    b_nm = utils.asarray_1d(np.asfarray(b_nm))
+    a_nm = utils.asarray_1d(np.asarray(a_nm, dtype=float))
+    b_nm = utils.asarray_1d(np.asarray(b_nm, dtype=float))
     N1 = int(np.sqrt(len(a_nm)) - 1)
     N2 = int(np.sqrt(len(b_nm)) - 1)
     N_out = N1 + N2
