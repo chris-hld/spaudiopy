@@ -82,7 +82,7 @@ jobs:
     - name: Build docs
       run: |
         python -m sphinx docs/source _build
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: ci-docs
         path: _build/
