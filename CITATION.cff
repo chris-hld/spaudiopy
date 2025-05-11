@@ -5,7 +5,7 @@ authors:
   given-names: "Christoph"
   orcid: "https://orcid.org/0000-0001-6579-265X"
 title: "spaudiopy"
-version: 0.0.2
+version: 0.2.0
 doi: 
 date-released: 2025-05-11
 url: "https://github.com/chris-hld/spaudiopy"
