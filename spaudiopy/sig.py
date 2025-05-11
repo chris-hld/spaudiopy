@@ -87,9 +87,13 @@ class MonoSignal:
         """Save to file."""
         io.save_audio(self, os.path.expanduser(filename), subtype=subtype)
 
-    def trim(self, start, stop):
-        """Trim audio to start and stop in seconds."""
+    def trim(self, start, stop, dur=None):
+        """Trim audio to start and stop, or duration, in seconds."""
         assert start < len(self) / self.fs, "Trim start exceeds signal."
+        if dur is not None:
+            stop = start + dur
+        if stop > (len(self) / self.fs):
+            warn("Stop exceeds signal.")
         self.signal = self.signal[int(start * self.fs): int(stop * self.fs)]
 
     def apply(self, func, *args, **kwargs):
@@ -173,9 +177,13 @@ class MultiSignal(MonoSignal):
         """Return ndarray of signals, stacked along rows (nCH, nSmps)."""
         return np.asarray([x.signal for x in self.channels])
 
-    def trim(self, start, stop):
-        """Trim all channels to start and stop in seconds."""
+    def trim(self, start, stop, dur=None):
+        """Trim all channels to start and stop, or duration, in seconds."""
         assert start < len(self) / self.fs, "Trim start exceeds signal."
+        if dur is not None:
+            stop = start + dur
+        if stop > (len(self) / self.fs):
+            warn("Stop exceeds signal.")
         for c in self.channels:
             c.signal = c.signal[int(start * c.fs): int(stop * c.fs)]
 

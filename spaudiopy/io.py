@@ -222,7 +222,7 @@ def get_default_hrirs(grid_azi=None, grid_zen=None, jobs_count=None):
         print("Downloading from https://depositonce.tu-berlin.de/handle/"
               "11303/6153.5 ...")
         r = requests.get('https://depositonce.tu-berlin.de/bitstreams/'
-        '91447f43-b5c3-446a-bb7e-0d9e53f95ff9/download')
+                         '91447f43-b5c3-446a-bb7e-0d9e53f95ff9/download')
         with zipfile.ZipFile(io.BytesIO(r.content)) as zip_ref:
             zip_ref.extractall(os.path.join(current_file_dir,
                                             '../data/HRIRs/FABIAN/'))

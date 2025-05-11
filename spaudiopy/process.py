@@ -22,7 +22,7 @@ import logging
 from . import utils, sph, sig, grids
 
 
-def resample_hrirs(hrir_l, hrir_r, fs_hrir, fs_target, jobs_count=None):
+def resample_hrirs(hrir_l, hrir_r, fs_hrir, fs_target, jobs_count=1):
     """
     Resample HRIRs to new SamplingRate(t), using multiprocessing.
 
