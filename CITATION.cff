@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Hold"
+  given-names: "Christoph"
+  orcid: "https://orcid.org/0000-0001-6579-265X"
+title: "spaudiopy"
+version: 0.0.2
+doi: 
+date-released: 2025-05-11
+url: "https://github.com/chris-hld/spaudiopy"
