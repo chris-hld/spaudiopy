@@ -6,6 +6,6 @@ authors:
   orcid: "https://orcid.org/0000-0001-6579-265X"
 title: "spaudiopy"
 version: 0.2.0
-doi: 
+doi: 10.5281/zenodo.15384855
 date-released: 2025-05-11
 url: "https://github.com/chris-hld/spaudiopy"
