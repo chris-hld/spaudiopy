@@ -24,6 +24,20 @@ from scipy import special as scyspecial
 from . import utils, grids
 
 
+try:
+    from scipy.special import sph_harm_y
+
+    def eval_sph_harm(n_order, m_degree, azi, zen):
+        return sph_harm_y(n_order, m_degree, zen, azi)
+
+except ImportError:
+    # Deprecated since scipy v1.15.0.
+    from scipy.special import sph_harm
+
+    def eval_sph_harm(n_order, m_degree, azi, zen):
+        return sph_harm(m_degree, n_order, azi, zen)
+
+
 def sh_matrix(N_sph, azi, zen, sh_type='real'):
     r"""Evaluates the spherical harmonics up to order `N_sph` for given angles.
 
@@ -94,19 +108,19 @@ def sh_matrix(N_sph, azi, zen, sh_type='real'):
     for n in range(N_sph+1):
         for m in range(-n, n+1):
             if sh_type == 'complex':
-                Ymn[:, idx] = scyspecial.sph_harm(m, n, azi, zen)
+                Ymn[:, idx] = eval_sph_harm(n, m, azi, zen)
             elif sh_type == 'real':
                 if m == 0:
                     Ymn[:, idx] = np.real(
-                                  scyspecial.sph_harm(0, n, azi, zen))
+                                  eval_sph_harm(n, 0, azi, zen))
                 if m < 0:
                     Ymn[:, idx] = np.sqrt(2) * (-1) ** abs(m) * \
                                   np.imag(
-                                  scyspecial.sph_harm(abs(m), n, azi, zen))
+                                  eval_sph_harm(n, abs(m), azi, zen))
                 if m > 0:
                     Ymn[:, idx] = np.sqrt(2) * (-1) ** abs(m) * \
                                   np.real(
-                                  scyspecial.sph_harm(abs(m), n, azi, zen))
+                                  eval_sph_harm(n, abs(m), azi, zen))
 
             idx += 1
     return Ymn
