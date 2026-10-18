@@ -568,7 +568,7 @@ def energy_decay(p):
     -------
     rd : array_like
     """
-    a = np.trapz(p**2)
+    a = np.sum(p**2)
     b = np.cumsum(p[::-1]**2)[::-1]
     return 10 * np.log10(b / a)
 
