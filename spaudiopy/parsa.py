@@ -392,9 +392,9 @@ def _intensity_sample(i, W, X, Y, Z, win):
     buf = len(win)
     # global shared_array
     shared_array[int(i + buf // 2), :] = np.asarray(
-        [np.trapz(win * W[i:i + buf] * X[i:i + buf]),
-         np.trapz(win * W[i:i + buf] * Y[i:i + buf]),
-         np.trapz(win * W[i:i + buf] * Z[i:i + buf])])
+        [np.sum(win * W[i:i + buf] * X[i:i + buf]),
+         np.sum(win * W[i:i + buf] * Y[i:i + buf]),
+         np.sum(win * W[i:i + buf] * Z[i:i + buf])])
 
 
 def pseudo_intensity(ambi_b, win_len=33, f_bp=None, smoothing_order=5,
@@ -456,9 +456,9 @@ def pseudo_intensity(ambi_b, win_len=33, f_bp=None, smoothing_order=5,
         # I = p*v for each sample
         for i in range(len(ambi_b) - win_len):
             I_vec[int(i + win_len // 2), :] = np.asarray(
-                [np.trapz(win * W[i:i + win_len] * X[i:i + win_len]),
-                 np.trapz(win * W[i:i + win_len] * Y[i:i + win_len]),
-                 np.trapz(win * W[i:i + win_len] * Z[i:i + win_len])])
+                [np.sum(win * W[i:i + win_len] * X[i:i + win_len], axis=None),
+                 np.sum(win * W[i:i + win_len] * Y[i:i + win_len], axis=None),
+                 np.sum(win * W[i:i + win_len] * Z[i:i + win_len], axis=None)])
     else:
         logging.info("Using %i processes..." % jobs_count)
         # preparation
