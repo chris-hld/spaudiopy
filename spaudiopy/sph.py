@@ -440,15 +440,17 @@ def rotate_sh(F_nm, yaw, pitch, roll, sh_type='real'):
     return np.atleast_2d(F_nm) @ R.T
 
 
-def check_cond_sht(N_sph, azi, zen, sh_type, lim=None):
+def check_cond_sht(N_sph, azi, zen, weights=None, sh_type='real', lim=None):
     """Check if condition number for a least-squares SHT(N_sph) is high."""
     if lim is None:
-        lim = N_sph + N_sph / 2
+        lim = (N_sph+1)**2
     Y = sh_matrix(N_sph, azi, zen, sh_type)
-    c = np.zeros(N_sph + 1)
-    YYn = np.matmul(Y.conj().T, Y)
+    if weights is None:
+        YYn = np.matmul(Y.conj().T, Y)
+    else:
+        YYn = np.matmul(Y.conj().T, Y * weights[:, None])
     c = np.linalg.cond(YYn)
-    if np.any(c > lim):
+    if (c > lim):
         print("High condition number! " + str(c))
     return c
 
